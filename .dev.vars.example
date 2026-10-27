@@ -1,0 +1,15 @@
+# Copy to .dev.vars (gitignored). `wrangler dev` loads it.
+
+# Marks local dev: skips the force-HTTPS redirect in worker/index.ts. Unset in prod.
+ENVIRONMENT=development
+
+# HMAC key for the session cookie. MUST be >= 32 chars. `openssl rand -hex 32`
+SESSION_SECRET=replace-with-at-least-32-random-characters-xx
+
+# OPTIONAL invite code, asked while SIGNUP_OPEN (wrangler.toml) is not "1".
+# INVITE_CODE=choose-a-strong-passphrase
+
+# OPTIONAL outbound email through Resend. Both unset → no email is ever sent: invites
+# are copy-link only and the day-before reminder hides.
+# RESEND_API_KEY=re_...
+# MAIL_FROM=Viens jouer <viensjouer@marcportal.com>

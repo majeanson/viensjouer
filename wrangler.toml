@@ -1,0 +1,49 @@
+# Viens jouer — one Worker: the built SPA from [assets], /api/* in worker/index.ts, D1 for
+# every household. Plaintext config lives here; secrets (SESSION_SECRET, RESEND_API_KEY,
+# INVITE_CODE) go through `wrangler secret put` for prod and .dev.vars locally.
+name = "viensjouer"
+main = "worker/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# The public address, once decided. The zone (marcportal.com) is on this account, so
+# `custom_domain = true` creates the DNS record and the certificate at deploy time.
+# routes = [{ pattern = "viensjouer.marcportal.com", custom_domain = true }]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# D1 — all state. `database_id` is filled after `wrangler d1 create viensjouer`; blank so a
+# fresh clone cannot point at someone else's database by accident.
+[[d1_databases]]
+binding = "DB"
+database_name = "viensjouer"
+database_id = ""
+migrations_dir = "functions/db/migrations"
+
+[vars]
+APP_NAME = "Viens jouer"
+# "1" opens signup to anyone; anything else asks for the INVITE_CODE secret (when set).
+SIGNUP_OPEN = "1"
+
+[observability]
+enabled = true
+
+  [observability.logs]
+  enabled = true
+  invocation_logs = true
+  head_sampling_rate = 1
+
+# Brute-force bounds on the doors that have no session (login, signup, a reply link).
+[[ratelimits]]
+name = "LIMIT_IP"
+namespace_id = "2001"
+simple = { limit = 30, period = 60 }
+
+[[ratelimits]]
+name = "LIMIT_KEY"
+namespace_id = "2002"
+simple = { limit = 6, period = 60 }

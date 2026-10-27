@@ -18,6 +18,7 @@ interface Card {
 // THE install-free page. A parent opens it from a text, sees the plan, answers in one
 // tap, leaves their details once. No account, no app, no cookie.
 export function Reply() {
+  // `/r/<code>` or the paper spelling `/<xxxx-xxxx>`; the API forgives the hyphen.
   const { token = '' } = useParams()
   const t = useT()
   const { lang, setLang } = useLang()

@@ -93,10 +93,11 @@ CREATE TABLE encounters (
 CREATE INDEX encounters_household_idx ON encounters(household_id, starts_at);
 
 -- One invited family on one rencontre, and the link that reaches them. `token` is the
--- capability itself (32 random chars), stored RAW on purpose: the host copies the same
--- link again next week, and hashing it would force a rotation that kills the one already
--- texted. Scoped to one card and one family; dead once the rencontre is past or
--- cancelled (functions/api/r/*). Same trust model as a share-by-id link.
+-- capability itself — an 8-char paper-writable code (_lib/ids.ts newLinkCode), stored
+-- RAW on purpose: the host copies the same link again next week, and hashing it would
+-- force a rotation that kills the one already texted or written down. Scoped to one card
+-- and one family; dead once the rencontre is past or cancelled (functions/api/r/*).
+-- Same trust model as a share-by-id link, bounded by the per-address rate limit.
 CREATE TABLE invitations (
   id                TEXT PRIMARY KEY,
   encounter_id      TEXT NOT NULL REFERENCES encounters(id),

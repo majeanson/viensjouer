@@ -91,4 +91,6 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .hero .kinds { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0; }
 .linkrow { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.6rem 0; border-top: 1px solid var(--line); }
 .linkrow code { font-size: 0.75rem; word-break: break-all; color: var(--muted); }
+/* The link as you would write it on a paper: big, monospace, nothing to squint at. */
+.paper { font-family: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace; font-size: 1.15rem; letter-spacing: 0.04em; padding: 0.45rem 0.7rem; border: 1.5px dashed var(--line); border-radius: 10px; background: var(--paper); word-break: break-all; user-select: all; }
 .footer { text-align: center; padding: 2rem 0; }

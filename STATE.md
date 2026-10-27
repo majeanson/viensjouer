@@ -12,7 +12,8 @@
 | --- | --- |
 | **What it is** | Parents coordinate their toddlers' get-togethers — a park meet-up, a play-date at home, a birthday. The host has an account; the invited parent answers from a **link, with no account and no app**. Over time both families have accounts and the app is the hub of a child's social circle. |
 | **Stack** | Vite + React SPA, one Cloudflare Worker (`worker/index.ts`: static assets + `/api/*`), D1, Resend for mail (optional). FR-CA first, EN behind `typeof FR`. Same house shape as Babillard and Horizon. |
-| **Where** | `../viensjouer/`, its own git repo. No remote yet. **Not deployed.** |
+| **Where** | `../viensjouer/`, its own git repo → `github.com/majeanson/viensjouer`, push to `main`. **Live: https://jouer.marcportal.com** (also `viensjouer.<account>.workers.dev`). D1 `viensjouer` (ENAM). |
+| **The link** | `jouer.marcportal.com/xxxx-xxxx` — an 8-char no-lookalike code per invited family (`_lib/ids.ts`), short enough to write on a paper; `/r/<code>` works too; case and hyphen forgiven. |
 | **Written** | 2026-10-27, scaffolded from the plan agreed that day (see §4). |
 
 ### Health signals (run before quoting)
@@ -50,10 +51,11 @@ child's circle. Calm toned down vs Babillard — ordinary interactions are fine 
 reminder someone asked for, a thread) — but nothing that turns a friendship into a
 score. Growth is one family at a time through real invites, never discovery.
 
-- [ ] **Phase 1, finish.** Create the D1 database (`wrangler d1 create viensjouer`, paste
-      the id), set `SESSION_SECRET`, deploy to `*.workers.dev`, walk it with two real
-      emails on two phones. Decide the public address (`viensjouer.marcportal.com` is
-      commented in `wrangler.toml`).
+- [ ] **Phase 1, finish.** Deployed 2026-10-27 at jouer.marcportal.com (D1 created,
+      `SESSION_SECRET` set, migration applied). Left: `RESEND_API_KEY` (a « Sending
+      access » key of this app's own; `MAIL_FROM` is already set) so invitations can be
+      emailed; the repo's `CLOUDFLARE_API_TOKEN` secret so CI deploys on push (the
+      account id is set); walk it with two real emails on two phones.
 - [ ] **Phase 2 — the link.** « Créer mon compte » from a reply page, prefilled with the
       family's details → a bilateral child link (`friend_families.linked_household_id`
       exists for it). Le cercle de l'enfant as faces. The day-before reminder email

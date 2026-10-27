@@ -10,6 +10,26 @@ export function newId(len = 12): string {
   return out
 }
 
+// The reply-link code — written on paper at the daycare door as much as texted, so:
+// lowercase only, no look-alikes (0/o, 1/l/i), 8 chars over 31 symbols ≈ 8.5e11. The
+// code IS the credential (one card, one family, dead after the date) and the doors that
+// read it are rate-limited by address, which is what makes 8 enough. Shown to people as
+// `xxxx-xxxx` (src/lib/link.ts); normalizeLinkCode forgives the hyphen, spaces and case
+// when it is typed back.
+const LINK_ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
+export const LINK_CODE_LEN = 8
+export function newLinkCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(LINK_CODE_LEN))
+  let out = ''
+  for (let i = 0; i < LINK_CODE_LEN; i++) out += LINK_ALPHABET[bytes[i] % LINK_ALPHABET.length]
+  return out
+}
+export function normalizeLinkCode(raw: string | undefined | null): string | null {
+  if (!raw) return null
+  const code = raw.toLowerCase().replace(/[^a-z0-9]/g, '')
+  return code.length === LINK_CODE_LEN ? code : null
+}
+
 // SHA-256 hex. A reply link's token is stored hashed, never raw: the database holds
 // nothing that opens a door.
 export async function sha256Hex(input: string): Promise<string> {

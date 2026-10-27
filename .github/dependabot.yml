@@ -1,0 +1,31 @@
+# Dependency updates — the same quiet shape as Babillard's: minor + patch bumps GROUPED
+# into one pull request a week, majors one at a time, at most 5 open. CI is the gate.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '08:00'
+      timezone: America/Toronto
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: 'chore(deps)'
+    labels:
+      - dependencies
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      timezone: America/Toronto
+    commit-message:
+      prefix: 'chore(ci)'
+    labels:
+      - dependencies

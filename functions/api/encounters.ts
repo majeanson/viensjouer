@@ -1,6 +1,6 @@
 import { badRequest, created, notFound, ok, readJson, str } from '../_lib/json'
 import { authed } from '../_lib/route'
-import { newId, nowSec } from '../_lib/ids'
+import { newId, newLinkCode, nowSec } from '../_lib/ids'
 import { isKind, type EncounterRow, type Reply } from '../_lib/encounters'
 
 // The host side of a rencontre.
@@ -9,7 +9,8 @@ import { isKind, type EncounterRow, type Reply } from '../_lib/encounters'
 //   POST   /api/encounters            → create + invite families (mints one link each)
 //   PATCH  /api/encounters            → edit fields / status, or add families (`invite`)
 //   DELETE /api/encounters            → soft delete
-// A link is `${origin}/r/<token>`; the token is the capability (migration 0001).
+// A link is `${origin}/<code>` (also `/r/<code>`); the code is the capability
+// (migration 0001, _lib/ids.ts newLinkCode — short enough to write on paper).
 
 interface InviteRow {
   id: string
@@ -88,7 +89,7 @@ async function mintInvitations(db: D1Database, householdId: string, encounterId:
     .map((r) =>
       db
         .prepare('INSERT INTO invitations (id, encounter_id, friend_family_id, token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
-        .bind(newId(), encounterId, r.id, newId(32), ts, ts),
+        .bind(newId(), encounterId, r.id, newLinkCode(), ts, ts),
     )
   if (stmts.length) await db.batch(stmts)
 }

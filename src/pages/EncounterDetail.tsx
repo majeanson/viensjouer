@@ -7,6 +7,7 @@ import { useAuth } from '../lib/auth'
 import { useLang, useT } from '../i18n'
 import { whenLong } from '../lib/format'
 import { Face } from '../components/Face'
+import { linkFor, linkLabel } from '../lib/link'
 import type { Encounter, Family, Invitation, Message } from '../lib/types'
 
 // The host's card: the plan, one link per family (copy / send), the thread, and the
@@ -35,7 +36,7 @@ export function EncounterDetail() {
   const message = useMutation({ mutationFn: (text: string) => api('messages', { method: 'POST', body: { encounterId: id, text } }), onSuccess: refresh, onError: (e) => setErr(e.message) })
 
   async function copy(token: string) {
-    const link = `${location.origin}/r/${token}`
+    const link = linkFor(token)
     try {
       if (navigator.share && /iPhone|Android/i.test(navigator.userAgent)) {
         await navigator.share({ url: link })
@@ -84,6 +85,7 @@ export function EncounterDetail() {
               <span className={`chip ${i.reply ? `chip--${i.reply}` : ''}`}>{i.reply ? t.encounters.reply[i.reply] : t.encounters.reply.none}</span>
             </div>
             {i.reply_note && <p className="small" style={{ margin: 0 }}>« {i.reply_note} »</p>}
+            <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
             <div className="cluster">
               <button className="btn" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
               {me.mail && (i.email ? (

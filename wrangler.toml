@@ -7,27 +7,33 @@ compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
-# The public address, once decided. The zone (marcportal.com) is on this account, so
-# `custom_domain = true` creates the DNS record and the certificate at deploy time.
-# routes = [{ pattern = "viensjouer.marcportal.com", custom_domain = true }]
+# The public address — `jouer.marcportal.com`, short because it gets WRITTEN ON PAPER
+# beside an 8-char code (jouer.marcportal.com/h7kq-3wpm). The zone (marcportal.com) is on
+# this account, so `custom_domain = true` creates the DNS record and the certificate at
+# deploy time. workers_dev stays on so the *.workers.dev address keeps serving too.
+routes = [{ pattern = "jouer.marcportal.com", custom_domain = true }]
 
 [assets]
 directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
-# D1 — all state. `database_id` is filled after `wrangler d1 create viensjouer`; blank so a
-# fresh clone cannot point at someone else's database by accident.
+# D1 — all state. Created 2026-10-27 (`wrangler d1 create viensjouer`, region ENAM). A
+# fresh account must replace the id with its own.
 [[d1_databases]]
 binding = "DB"
 database_name = "viensjouer"
-database_id = ""
+database_id = "1d98b155-7139-4b9c-ac80-0954052e937d"
 migrations_dir = "functions/db/migrations"
 
 [vars]
 APP_NAME = "Viens jouer"
 # "1" opens signup to anyone; anything else asks for the INVITE_CODE secret (when set).
 SIGNUP_OPEN = "1"
+# Outbound mail sender. Only half the switch: nothing is sent until RESEND_API_KEY is set
+# (`wrangler secret put RESEND_API_KEY` — a « Sending access » key of this app's own, so
+# revoking one app's key never silences the other). marcportal.com is verified in Resend.
+MAIL_FROM = "Viens jouer <jouer@marcportal.com>"
 
 [observability]
 enabled = true

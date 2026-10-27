@@ -1,7 +1,7 @@
 import type { Env } from '../../_lib/env'
 import { badRequest, notFound, ok, readJson, str, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
-import { newId, nowSec } from '../../_lib/ids'
+import { newId, normalizeLinkCode, nowSec } from '../../_lib/ids'
 import { addressFor, isReply, linkAlive, type EncounterRow, type Reply } from '../../_lib/encounters'
 
 // THE install-free side. The token in the path is the whole credential: one card, one
@@ -19,8 +19,10 @@ interface Resolved {
   host: { child_first_name: string; parent_name: string; household_name: string; tz: string }
 }
 
-async function resolve(env: Env, token: string | undefined): Promise<Resolved | null> {
-  if (!token || token.length < 20 || token.length > 40) return null
+async function resolve(env: Env, raw: string | undefined): Promise<Resolved | null> {
+  // The code as typed off a paper: hyphen, spaces and case forgiven.
+  const token = normalizeLinkCode(raw)
+  if (!token) return null
   const row = await env.DB.prepare(
     `SELECT i.id AS inv_id, i.friend_family_id, i.reply, i.reply_note,
             e.id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.note, e.status,

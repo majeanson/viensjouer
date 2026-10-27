@@ -25,7 +25,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   if (!row) return notFound()
   if (!row.email) return badRequest('Cette famille n’a pas de courriel — copie le lien.')
 
-  const link = `${new URL(ctx.request.url).origin}/r/${row.token}`
+  const link = `${new URL(ctx.request.url).origin}/${row.token.slice(0, 4)}-${row.token.slice(4)}`
   const when = whenLong(row.starts_at, 'fr', row.tz)
   const subject = `${row.host_child} invite ${row.child_first_name} — ${row.title}`
   const text = `Bonjour ${row.parent_name},\n\n${actor.displayName} propose une rencontre : ${row.title}, ${when}.\n\nRéponds ici (pas de compte à créer) :\n${link}\n\n— Viens jouer`

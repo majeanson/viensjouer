@@ -28,6 +28,11 @@ export function Shell({ children }: { children: ReactNode }) {
         <NavLink to="/enfants">{t.nav.children}</NavLink>
         <NavLink to="/familles">{t.nav.families}</NavLink>
       </nav>
+      {me.demo && (
+        <div className="notice">
+          {t.trial.banner} <button className="btn btn--ghost" onClick={() => void signOut()}>{t.trial.keep}</button>
+        </div>
+      )}
       {children}
     </div>
   )

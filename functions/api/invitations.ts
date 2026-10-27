@@ -1,12 +1,14 @@
-import { badRequest, notFound, ok, readJson, serviceUnavailable, str } from '../_lib/json'
+import { badRequest, forbidden, notFound, ok, readJson, serviceUnavailable, str } from '../_lib/json'
 import { authed } from '../_lib/route'
 import { nowSec, whenLong } from '../_lib/ids'
 import { escapeHtml, mailEnabled, sendMail } from '../_lib/mail'
+import { isDemoEmail } from '../_lib/demo'
 
 // Send (or re-send) one invitation by email: POST { id }. Needs mail wired AND an address
 // on the family; otherwise the host copies the link. DELETE { id } withdraws an
 // invitation (the link dies with the row).
 export const onRequestPost = authed(async (ctx, actor) => {
+  if (isDemoEmail(actor.email)) return forbidden('Pas d’envoi en mode essai — copie le lien.')
   if (!mailEnabled(ctx.env)) return serviceUnavailable('L’envoi de courriels n’est pas branché. Copie le lien.')
   const body = await readJson<{ id?: string }>(ctx.request)
   const id = str(body?.id, 20)

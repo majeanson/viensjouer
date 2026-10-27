@@ -21,6 +21,20 @@ export function Door() {
     if (!loading && me.signedIn) nav('/rencontres', { replace: true })
   }, [loading, me.signedIn, nav])
 
+  async function tryDemo() {
+    setBusy(true)
+    setErr(null)
+    try {
+      await api('demo', { method: 'POST' })
+      await refresh()
+      nav('/rencontres', { replace: true })
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : t.common.error)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setBusy(true)
@@ -69,6 +83,10 @@ export function Door() {
         <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : mode === 'login' ? t.auth.submitLogin : t.auth.submitSignup}</button>
         {mode === 'login' && health.data?.mail && <p className="small" style={{ marginTop: '0.75rem' }}><Link to="/oubli">{t.auth.forgot}</Link></p>}
       </form>
+      <div className="card" style={{ textAlign: 'center' }}>
+        <button type="button" className="btn btn--big" disabled={busy} onClick={() => void tryDemo()}>{t.trial.button}</button>
+        <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.trial.hint}</p>
+      </div>
     </div>
   )
 }

@@ -1,7 +1,8 @@
-import { badRequest, created, notFound, ok, readJson, serviceUnavailable, str } from '../_lib/json'
+import { badRequest, created, forbidden, notFound, ok, readJson, serviceUnavailable, str } from '../_lib/json'
 import { authed } from '../_lib/route'
 import { newId, newLinkCode, nowSec, whenLong } from '../_lib/ids'
 import { escapeHtml, mailEnabled, sendMail } from '../_lib/mail'
+import { isDemoEmail } from '../_lib/demo'
 
 // « Une fenêtre ouverte » — host side. An offer of time (we are free Sunday afternoon) to
 // chosen families; each addressee gets a /w/<code> link and answers « on se voit ! » or
@@ -67,6 +68,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
 })
 
 export const onRequestPut = authed(async (ctx, actor) => {
+  if (isDemoEmail(actor.email)) return forbidden('Pas d’envoi en mode essai — copie le lien.')
   if (!mailEnabled(ctx.env)) return serviceUnavailable('L’envoi de courriels n’est pas branché. Copie le lien.')
   const body = await readJson<{ targetId?: string }>(ctx.request)
   const targetId = str(body?.targetId, 20)

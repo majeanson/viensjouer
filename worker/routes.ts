@@ -25,6 +25,9 @@ import * as windows from '../functions/api/windows'
 import * as calendar from '../functions/api/calendar'
 import * as windowReply from '../functions/api/w/[token]'
 import * as homeCard from '../functions/api/home-card'
+import * as demo from '../functions/api/demo'
+import * as join from '../functions/api/join'
+import * as parentInvite from '../functions/api/parent-invite'
 import * as relais from '../functions/api/relais'
 import * as souvenirs from '../functions/api/souvenirs'
 import * as souvenirImg from '../functions/api/souvenir-img'
@@ -52,6 +55,9 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['calendar', calendar],
   ['w/:token', windowReply],
   ['home-card', homeCard],
+  ['demo', demo],
+  ['join', join],
+  ['parent-invite', parentInvite],
   ['relais', relais],
   ['souvenirs', souvenirs],
   ['souvenirs/:id', souvenirImg],
@@ -85,5 +91,5 @@ export function matchRoute(apiPath: string): { mod: RouteMod; params: Record<str
 // every reply-link write (the token in the path is the credential, and the invited
 // parent has no session by design).
 export function csrfExempt(apiPath: string): boolean {
-  return apiPath === 'auth/login' || apiPath === 'auth/signup' || apiPath === 'auth/forgot' || apiPath === 'auth/reset' || apiPath.startsWith('r/') || apiPath.startsWith('w/')
+  return apiPath === 'auth/login' || apiPath === 'auth/signup' || apiPath === 'auth/forgot' || apiPath === 'demo' || apiPath === 'join' || apiPath === 'auth/reset' || apiPath.startsWith('r/') || apiPath.startsWith('w/')
 }

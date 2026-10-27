@@ -168,6 +168,24 @@ export const FR = {
     seriesTitle: 'Les semaines suivantes',
     seriesHint: 'Cette rencontre revient chaque semaine — répondez à chacune.',
   },
+  trial: {
+    button: 'Essayer sans compte',
+    hint: 'Une famille d’essai déjà remplie, effacée après 24 h.',
+    banner: 'Mode essai — tout s’efface après 24 h et rien ne s’envoie.',
+    keep: 'Créer mon vrai compte',
+    full: 'Beaucoup de visiteurs en ce moment — réessaie dans un moment.',
+  },
+  parent: {
+    title: 'L’autre parent',
+    hint: 'Un lien pour que l’autre parent ait son propre compte sur la même famille : mêmes enfants, mêmes familles amies, mêmes rencontres.',
+    make: 'Créer un lien d’invitation',
+    withdraw: 'Retirer',
+    expires: 'Bon 7 jours, une seule personne.',
+    joinTitle: (family: string) => `Rejoindre ${family}`,
+    joinHint: (who: string) => (who ? `${who} t’invite à gérer la famille avec lui ou elle.` : 'On t’invite à gérer la famille.'),
+    joinSend: 'Créer mon compte et rejoindre',
+    dead: 'Ce lien ne fonctionne plus — demande-en un nouveau.',
+  },
   kinds: {
     home: {
       title: 'Chez nous',
@@ -429,6 +447,24 @@ export const EN: Dict = {
     claimOpen: 'Open my space',
     seriesTitle: 'The following weeks',
     seriesHint: 'This get-together comes back every week — answer each one.',
+  },
+  trial: {
+    button: 'Try without an account',
+    hint: 'A trial family, already filled in, erased after 24 hours.',
+    banner: 'Trial mode — everything is erased after 24 hours and nothing is sent.',
+    keep: 'Create my real account',
+    full: 'Lots of visitors right now — try again in a moment.',
+  },
+  parent: {
+    title: 'The other parent',
+    hint: 'A link so the other parent has their own account on the same family: same children, same friend families, same get-togethers.',
+    make: 'Create an invitation link',
+    withdraw: 'Withdraw',
+    expires: 'Good for 7 days, one person.',
+    joinTitle: (family: string) => `Join ${family}`,
+    joinHint: (who: string) => (who ? `${who} invites you to run the family together.` : 'You are invited to run the family.'),
+    joinSend: 'Create my account and join',
+    dead: 'This link no longer works — ask for a new one.',
   },
   kinds: {
     home: {

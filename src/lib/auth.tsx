@@ -9,6 +9,7 @@ interface Me {
   displayName?: string
   household?: { id: string; name: string; tz: string } | null
   mail?: boolean
+  demo?: boolean
 }
 
 interface AuthState {

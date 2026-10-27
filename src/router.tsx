@@ -9,6 +9,7 @@ import { Families } from './pages/Families'
 import { Reply } from './pages/Reply'
 import { Circle } from './pages/Circle'
 import { Join } from './pages/Join'
+import { Keep } from './pages/Keep'
 import { Calendar } from './pages/Calendar'
 import { Windows } from './pages/Windows'
 import { WindowReply } from './pages/WindowReply'
@@ -44,6 +45,7 @@ export function AppRoutes() {
       <Route path="/fenetres" element={<Private><Windows /></Private>} />
       <Route path="/w/:token" element={<WindowReply />} />
       <Route path="/cercle" element={<Private><Circle /></Private>} />
+      <Route path="/garder" element={<Keep />} />
       <Route path="/rejoindre" element={<Join />} />
       <Route path="/oubli" element={<Forgot />} />
       <Route path="/reinitialiser" element={<Reset />} />

@@ -30,7 +30,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </nav>
       {me.demo && (
         <div className="notice">
-          {t.trial.banner} <button className="btn btn--ghost" onClick={() => void signOut()}>{t.trial.keep}</button>
+          {t.trial.banner} <Link to="/garder" className="btn btn--ghost">{t.trial.keep}</Link>
         </div>
       )}
       {children}

@@ -172,7 +172,10 @@ export const FR = {
     button: 'Essayer sans compte',
     hint: 'Une famille d’essai déjà remplie, effacée après 24 h.',
     banner: 'Mode essai — tout s’efface après 24 h et rien ne s’envoie.',
-    keep: 'Créer mon vrai compte',
+    keep: 'Garder ma maisonnée',
+    keepTitle: 'Garder ma maisonnée',
+    keepHint: 'Ton essai devient un vrai compte : mêmes enfants, mêmes familles, mêmes rencontres. Choisis un courriel et un mot de passe.',
+    keepSend: 'Créer mon compte',
     full: 'Beaucoup de visiteurs en ce moment — réessaie dans un moment.',
   },
   parent: {
@@ -452,7 +455,10 @@ export const EN: Dict = {
     button: 'Try without an account',
     hint: 'A trial family, already filled in, erased after 24 hours.',
     banner: 'Trial mode — everything is erased after 24 hours and nothing is sent.',
-    keep: 'Create my real account',
+    keep: 'Keep my family',
+    keepTitle: 'Keep my family',
+    keepHint: 'Your trial becomes a real account: same children, families and get-togethers. Pick an email and a password.',
+    keepSend: 'Create my account',
     full: 'Lots of visitors right now — try again in a moment.',
   },
   parent: {

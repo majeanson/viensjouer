@@ -59,10 +59,7 @@ score. Growth is one family at a time through real invites, never discovery.
       Zone read) — **push-to-deploy proven green** (run 40576969911). Left: walk it with
       two real emails on two phones.
 - [x] **Phase 2 — the link. Shipped 2026-10-27.** `POST /api/r/<code>/claim` turns a reply into a household (origin 'reply'), a child, a bilateral `child_links` row and a reciprocal book entry; `/cercle` shows each child's linked friends (last / next date, never a count) and either side can cut the link; the reminder checkbox sets `remind_at` and an hourly cron (`functions/_lib/reminders.ts`) sends the one email; password reset (`/oubli`, `/reinitialiser`, hash-only token, signs other devices out). Migration 0002.
-- [ ] **Phase 3 — the rhythm.** Recurring rencontres (« tous les samedis au parc », each
-      family answers per week). « Une fenêtre ouverte » (« on est libres dimanche pm »,
-      to chosen families, expires). Groups (the daycare class). The circle calendar with
-      derived birthdays.
+- [x] **Phase 3 — the rhythm. Shipped 2026-10-27.** Weekly series (up to 12 occurrences, wall time computed in the browser so DST cannot shift it; each week is its own rencontre with its own answer, the reply page lists the following weeks, "annuler toute la série"); "fenêtres ouvertes" (`/fenetres`, family link at `/w/xxxx-xxxx`, dies at its end); groups (private shortcuts in the family picker); the circle calendar (`/calendrier`: mine, the ones linked families invite me to, windows, derived birthdays — Feb 29 on Feb 28). The friend's birthdate is now on the book entry. Migration 0003.
 - [ ] **Phase 4 — the three kinds, finished.** Home: the home card (dog, pool, screens,
       nut-free) attached once; the relais note after a drop-off. Birthday: RSVP count,
       allergies asked, soft gift wish. Park: « on y est » the day of. Souvenirs: a photo

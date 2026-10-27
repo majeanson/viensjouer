@@ -4,6 +4,7 @@ import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useT } from '../i18n'
 import { Face } from '../components/Face'
+import { Groups } from '../components/Groups'
 import type { Family } from '../lib/types'
 
 // « Les familles amies » — the book. Add by hand here, or let a reply fill it.
@@ -16,7 +17,7 @@ export function Families() {
   const invalidate = () => qc.invalidateQueries({ queryKey: K.families })
 
   const save = useMutation({
-    mutationFn: (body: Record<string, string>) => api('families', { method: body.id ? 'PATCH' : 'POST', body }),
+    mutationFn: (body: Record<string, string | null>) => api('families', { method: body.id ? 'PATCH' : 'POST', body }),
     onSuccess: () => {
       setEditing(null)
       void invalidate()
@@ -31,7 +32,8 @@ export function Families() {
 
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const body = Object.fromEntries(new FormData(e.currentTarget).entries()) as Record<string, string>
+    const body = Object.fromEntries(new FormData(e.currentTarget).entries()) as Record<string, string | null>
+    if (body.childBirthdate === '') body.childBirthdate = null
     if (editing && editing !== 'new') body.id = editing.id
     save.mutate(body)
   }
@@ -61,6 +63,7 @@ export function Families() {
       {editing ? (
         <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
           <label className="field"><span>{t.families.childFirstName}</span><input className="input" name="childFirstName" required maxLength={40} defaultValue={cur?.child_first_name} autoFocus /></label>
+          <label className="field"><span>{t.families.birthdate}</span><input className="input" name="childBirthdate" type="date" defaultValue={cur?.child_birthdate ?? ''} /></label>
           <label className="field"><span>{t.families.parentName}</span><input className="input" name="parentName" required maxLength={60} defaultValue={cur?.parent_name} /></label>
           <label className="field"><span>{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /></label>
           <label className="field"><span>{t.families.phone}</span><input className="input" name="phone" type="tel" defaultValue={cur?.phone ?? ''} /></label>
@@ -74,6 +77,7 @@ export function Families() {
       ) : (
         <button className="btn btn--primary" style={{ marginTop: '0.75rem' }} onClick={() => setEditing('new')}>{t.families.add}</button>
       )}
+      <Groups families={fams} />
     </>
   )
 }

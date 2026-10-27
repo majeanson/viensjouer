@@ -16,6 +16,7 @@ import { REMIND_LEAD_SEC } from '../../_lib/reminders'
 interface Resolved {
   invitation: { id: string; friend_family_id: string; reply: Reply | null; reply_note: string | null; remind_at: number | null }
   encounter: EncounterRow & { household_id: string }
+  series_id: string | null
   family: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null }
   host: { child_first_name: string; parent_name: string; household_name: string; tz: string }
 }
@@ -26,7 +27,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
   if (!token) return null
   const row = await env.DB.prepare(
     `SELECT i.id AS inv_id, i.friend_family_id, i.reply, i.reply_note, i.remind_at,
-            e.id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.note, e.status,
+            e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.note, e.status,
             f.parent_name, f.email, f.phone, f.child_first_name, f.allergies,
             c.first_name AS host_child, h.name AS household_name, h.tz,
             (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent
@@ -62,6 +63,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
       child_first_name: row.child_first_name as string,
       allergies: row.allergies as string | null,
     },
+    series_id: row.series_id as string | null,
     host: { child_first_name: row.host_child as string, parent_name: (row.host_parent as string | null) ?? '', household_name: row.household_name as string, tz: row.tz as string },
   }
 }
@@ -74,6 +76,16 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const { results: messages } = await ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at FROM encounter_messages WHERE encounter_id = ? ORDER BY created_at')
     .bind(r.encounter.id)
     .all()
+  // The other upcoming occurrences of the same weekly series for THIS family, each with
+  // its own link: a family answers every week from one page.
+  const { results: seriesRows } = r.series_id
+    ? await ctx.env.DB.prepare(
+        `SELECT i.token, e.starts_at, i.reply FROM invitations i JOIN encounters e ON e.id = i.encounter_id
+          WHERE e.series_id = ? AND i.friend_family_id = ? AND e.deleted_at IS NULL AND e.status != 'cancelled' AND e.starts_at > ? AND e.id != ? ORDER BY e.starts_at`,
+      )
+        .bind(r.series_id, r.invitation.friend_family_id, nowSec(), r.encounter.id)
+        .all<{ token: string; starts_at: number; reply: Reply | null }>()
+    : { results: [] as { token: string; starts_at: number; reply: Reply | null }[] }
   const { address: _hidden, household_id: _hh, ...card } = r.encounter
   return ok({
     alive,
@@ -81,6 +93,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     host: r.host,
     you: { ...r.family, reply: r.invitation.reply, replyNote: r.invitation.reply_note, remind: r.invitation.remind_at !== null },
     messages,
+    series: seriesRows,
   })
 }
 

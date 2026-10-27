@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, isStatus } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
-import { whenLong } from '../lib/format'
+import { whenLong, whenShort } from '../lib/format'
+import { paperCode } from '../lib/link'
 import { useAuth } from '../lib/auth'
 import type { Encounter, Message, Reply as ReplyKind } from '../lib/types'
 
@@ -14,11 +15,19 @@ interface Card {
   host: { child_first_name: string; parent_name: string; household_name: string; tz: string }
   you: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null; reply: ReplyKind | null; replyNote: string | null; remind: boolean }
   messages: Message[]
+  series: { token: string; starts_at: number; reply: ReplyKind | null }[]
 }
 
 // THE install-free page. A parent opens it from a text, sees the plan, answers in one
 // tap, leaves their details once. No account, no app, no cookie.
+// Keyed by the code: moving between the weeks of a series must not carry one week's
+// half-typed answer into the next.
 export function Reply() {
+  const { token = '' } = useParams()
+  return <ReplyInner key={token} />
+}
+
+function ReplyInner() {
   // `/r/<code>` or the paper spelling `/<xxxx-xxxx>`; the API forgives the hyphen.
   const { token = '' } = useParams()
   const t = useT()
@@ -53,7 +62,7 @@ export function Reply() {
 
   if (q.isLoading) return <p className="shell muted">{t.common.loading}</p>
   if (!q.data) return <div className="shell"><p className="notice notice--err">{isStatus(q.error, 404) ? t.reply.dead : t.common.error}</p></div>
-  const { encounter: e, host, you, messages, alive } = q.data
+  const { encounter: e, host, you, messages, alive, series } = q.data
   const chosen = reply ?? you.reply
   const answered = you.reply !== null && !editing
 
@@ -129,6 +138,19 @@ export function Reply() {
           {err && <div className="notice notice--err">{err}</div>}
           <button className="btn btn--primary btn--big" disabled={!chosen || post.isPending}>{t.reply.send}</button>
         </form>
+      )}
+
+      {series.length > 0 && (
+        <div className="card">
+          <h3>{t.reply.seriesTitle}</h3>
+          <p className="muted small">{t.reply.seriesHint}</p>
+          {series.map((w) => (
+            <Link key={w.token} to={`/${paperCode(w.token)}`} className="row linkrow" style={{ textDecoration: 'none' }}>
+              <span>{whenShort(w.starts_at, lang)}</span>
+              <span className={`chip ${w.reply ? `chip--${w.reply}` : ''}`}>{w.reply ? t.encounters.reply[w.reply] : t.encounters.reply.none}</span>
+            </Link>
+          ))}
+        </div>
       )}
 
       <div className="card">

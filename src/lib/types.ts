@@ -17,6 +17,7 @@ export interface Family {
   email: string | null
   phone: string | null
   child_first_name: string
+  child_birthdate: string | null
   allergies: string | null
   notes: string | null
   linked_household_id: string | null
@@ -33,6 +34,7 @@ export interface Encounter {
   address: string | null
   note: string | null
   status: Status
+  series_id?: string | null
 }
 
 export interface InvitationSummary {
@@ -62,4 +64,30 @@ export interface Message {
   author_label: string
   text: string
   created_at: number
+}
+
+export interface Group {
+  id: string
+  name: string
+  families: string[]
+}
+
+export interface WindowTarget {
+  id: string
+  window_id: string
+  token: string
+  reply: 'yes' | 'no' | null
+  reply_note: string | null
+  parent_name: string
+  child_first_name: string
+  email: string | null
+}
+
+export interface OpenWindow {
+  id: string
+  child_id: string
+  starts_at: number
+  ends_at: number
+  note: string | null
+  targets: WindowTarget[]
 }

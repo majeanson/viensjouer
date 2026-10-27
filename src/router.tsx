@@ -8,6 +8,9 @@ import { Children } from './pages/Children'
 import { Families } from './pages/Families'
 import { Reply } from './pages/Reply'
 import { Circle } from './pages/Circle'
+import { Calendar } from './pages/Calendar'
+import { Windows } from './pages/Windows'
+import { WindowReply } from './pages/WindowReply'
 import { Forgot, Reset } from './pages/Forgot'
 import { Shell } from './components/Shell'
 import { useT } from './i18n'
@@ -36,6 +39,9 @@ export function AppRoutes() {
       <Route path="/rencontres/nouvelle" element={<Private><EncounterNew /></Private>} />
       <Route path="/rencontres/:id" element={<Private><EncounterDetail /></Private>} />
       <Route path="/enfants" element={<Private><Children /></Private>} />
+      <Route path="/calendrier" element={<Private><Calendar /></Private>} />
+      <Route path="/fenetres" element={<Private><Windows /></Private>} />
+      <Route path="/w/:token" element={<WindowReply />} />
       <Route path="/cercle" element={<Private><Circle /></Private>} />
       <Route path="/oubli" element={<Forgot />} />
       <Route path="/reinitialiser" element={<Reset />} />

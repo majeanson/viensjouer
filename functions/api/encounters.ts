@@ -33,7 +33,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
   const url = new URL(ctx.request.url)
   const id = url.searchParams.get('id')
   if (id) {
-    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
+    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status, series_id FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
       .bind(id, actor.householdId)
       .first<EncounterRow>()
     if (!e) return notFound()
@@ -46,7 +46,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
   // The list: everything not older than two weeks, soonest first. A hub later paginates.
   const since = nowSec() - 14 * 86_400
   const { results: encounters } = await ctx.env.DB.prepare(
-    'SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status FROM encounters WHERE household_id = ? AND deleted_at IS NULL AND starts_at > ? ORDER BY starts_at',
+    'SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status, series_id FROM encounters WHERE household_id = ? AND deleted_at IS NULL AND starts_at > ? ORDER BY starts_at',
   )
     .bind(actor.householdId, since)
     .all<EncounterRow>()
@@ -66,6 +66,10 @@ type Body = {
   kind?: string
   title?: string
   startsAt?: number
+  // A weekly series: the FIRST occurrence is startsAt, the rest come from the browser (wall
+  // time kept across DST); at most 12, ascending, within a year. Each is an ordinary rencontre.
+  startsAtList?: number[]
+  series?: boolean
   endsAt?: number | null
   place?: string
   address?: string | null
@@ -94,6 +98,18 @@ async function mintInvitations(db: D1Database, householdId: string, encounterId:
   if (stmts.length) await db.batch(stmts)
 }
 
+// The occurrence times of a (possibly recurring) creation, or null when the list is not
+// acceptable: ascending, the first equal to startsAt, at most 12, none more than a year out.
+export function seriesTimes(startsAt: number, list: unknown): number[] | null {
+  if (list === undefined) return [startsAt]
+  if (!Array.isArray(list) || list.length < 1 || list.length > 12) return null
+  const t = list.map((v) => (typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : NaN))
+  if (t.some(Number.isNaN) || t[0] !== startsAt) return null
+  for (let i = 1; i < t.length; i++) if (t[i] <= t[i - 1]) return null
+  if (t[t.length - 1] - t[0] > 366 * 86_400) return null
+  return t
+}
+
 export const onRequestPost = authed(async (ctx, actor) => {
   const body = await readJson<Body>(ctx.request)
   const childId = str(body?.childId, 20)
@@ -104,25 +120,40 @@ export const onRequestPost = authed(async (ctx, actor) => {
   const child = await ctx.env.DB.prepare('SELECT id FROM children WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(childId, actor.householdId).first()
   if (!child) return badRequest('Enfant inconnu.')
   const endsAt = typeof body?.endsAt === 'number' && body.endsAt > startsAt ? Math.floor(body.endsAt) : null
-  const id = newId()
+  const times = seriesTimes(startsAt, body?.startsAtList)
+  if (!times) return badRequest('Série invalide (12 occurrences au plus, sur un an).')
+  const seriesId = times.length > 1 ? newId() : null
   const ts = nowSec()
-  await ctx.env.DB.prepare(
-    'INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, ends_at, place, address, note, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-  )
-    .bind(id, actor.householdId, childId, body!.kind, title, startsAt, endsAt, str(body?.place, 120), str(body?.address, 200), str(body?.note, 1000), ts, ts)
-    .run()
-  await mintInvitations(ctx.env.DB, actor.householdId, id, Array.isArray(body?.invite) ? body!.invite.filter((v) => typeof v === 'string').slice(0, 40) : [])
-  return created({ id })
+  const invite = Array.isArray(body?.invite) ? body!.invite.filter((v) => typeof v === 'string').slice(0, 40) : []
+  const ids: string[] = []
+  for (const at of times) {
+    const id = newId()
+    ids.push(id)
+    await ctx.env.DB.prepare(
+      'INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, ends_at, place, address, note, series_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    )
+      .bind(id, actor.householdId, childId, body!.kind, title, at, endsAt ? at + (endsAt - startsAt) : null, str(body?.place, 120), str(body?.address, 200), str(body?.note, 1000), seriesId, ts, ts)
+      .run()
+    await mintInvitations(ctx.env.DB, actor.householdId, id, invite)
+  }
+  return created({ id: ids[0], ids })
 })
 
 export const onRequestPatch = authed(async (ctx, actor) => {
   const body = await readJson<Body>(ctx.request)
   const id = str(body?.id, 20)
   if (!id) return badRequest('id requis.')
-  const own = await ctx.env.DB.prepare('SELECT starts_at FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(id, actor.householdId).first<{ starts_at: number }>()
+  const own = await ctx.env.DB.prepare('SELECT starts_at, series_id FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(id, actor.householdId).first<{ starts_at: number; series_id: string | null }>()
   if (!own) return notFound()
   const status = body?.status
   if (status !== undefined && status !== 'proposed' && status !== 'confirmed' && status !== 'cancelled') return badRequest('Statut inconnu.')
+  // « Annuler toute la série »: the same status on this occurrence and every later one.
+  if (body?.series && own.series_id && status !== undefined) {
+    await ctx.env.DB.prepare('UPDATE encounters SET status = ?, updated_at = ? WHERE series_id = ? AND household_id = ? AND starts_at >= ? AND deleted_at IS NULL')
+      .bind(status, nowSec(), own.series_id, actor.householdId, own.starts_at)
+      .run()
+    return ok()
+  }
   const startsAt = typeof body?.startsAt === 'number' && Number.isFinite(body.startsAt) ? Math.floor(body.startsAt) : null
   const endsAt = body?.endsAt === null ? null : typeof body?.endsAt === 'number' ? Math.floor(body.endsAt) : undefined
   await ctx.env.DB.prepare(

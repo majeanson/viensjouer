@@ -17,7 +17,7 @@ function readCsrfCookie(): string | null {
   return m ? decodeURIComponent(m[1]) : null
 }
 
-type Options = { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; body?: unknown }
+type Options = { method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: unknown }
 
 export async function api<T = unknown>(path: string, opts: Options = {}): Promise<T> {
   const method = opts.method ?? 'GET'

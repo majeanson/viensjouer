@@ -1,0 +1,75 @@
+import { useState, type FormEvent } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { api } from '../lib/api'
+import { K } from '../lib/query'
+import { useT } from '../i18n'
+import { FamilyPicker } from './FamilyPicker'
+import type { Family, Group } from '../lib/types'
+
+// Groups — the host's private shortcuts (« La garderie »). Lives under the friend-families
+// list: a group is just a named set of those families.
+export function Groups({ families }: { families: Family[] }) {
+  const t = useT()
+  const qc = useQueryClient()
+  const q = useQuery({ queryKey: K.groups, queryFn: () => api<{ groups: Group[] }>('groups') })
+  const [editing, setEditing] = useState<Group | 'new' | null>(null)
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [err, setErr] = useState<string | null>(null)
+  const refresh = () => qc.invalidateQueries({ queryKey: K.groups })
+  const save = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api('groups', { method: body.id ? 'PATCH' : 'POST', body }),
+    onSuccess: () => {
+      setEditing(null)
+      setErr(null)
+      void refresh()
+    },
+    onError: (e) => setErr(e.message),
+  })
+  const remove = useMutation({ mutationFn: (id: string) => api('groups', { method: 'DELETE', body: { id } }), onSuccess: () => void refresh(), onError: (e) => setErr(e.message) })
+
+  const groups = q.data?.groups ?? []
+  const cur = editing && editing !== 'new' ? editing : null
+  const open = (g: Group | 'new') => {
+    setEditing(g)
+    setPicked(new Set(g === 'new' ? [] : g.families))
+  }
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const body: Record<string, unknown> = { name: new FormData(e.currentTarget).get('name'), families: [...picked] }
+    if (cur) body.id = cur.id
+    save.mutate(body)
+  }
+  const nameOf = (id: string) => families.find((f) => f.id === id)?.child_first_name
+
+  return (
+    <section style={{ marginTop: '1.5rem' }}>
+      <h2>{t.groups.title}</h2>
+      <p className="muted small">{t.groups.hint}</p>
+      {err && <div className="notice notice--err">{err}</div>}
+      {q.data && groups.length === 0 && !editing && <p className="muted">{t.groups.empty}</p>}
+      <div className="stack">
+        {groups.map((g) => (
+          <div key={g.id} className="card row">
+            <span><strong>{g.name}</strong><br /><span className="muted small">{g.families.map(nameOf).filter(Boolean).join(', ') || '—'}</span></span>
+            <span className="cluster">
+              <button className="btn btn--ghost" onClick={() => open(g)}>{t.encounters.edit}</button>
+              <button className="btn btn--ghost btn--danger" onClick={() => confirm(t.groups.removeConfirm) && remove.mutate(g.id)}>{t.families.remove}</button>
+            </span>
+          </div>
+        ))}
+      </div>
+      {editing ? (
+        <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
+          <label className="field"><span>{t.groups.name}</span><input className="input" name="name" required maxLength={60} defaultValue={cur?.name} placeholder={t.groups.namePlaceholder} autoFocus /></label>
+          <FamilyPicker families={families} groups={[]} selected={picked} onChange={setPicked} />
+          <div className="cluster" style={{ marginTop: '0.75rem' }}>
+            <button className="btn btn--primary" disabled={save.isPending}>{t.families.save}</button>
+            <button type="button" className="btn btn--ghost" onClick={() => setEditing(null)}>{t.encounters.back}</button>
+          </div>
+        </form>
+      ) : (
+        families.length > 0 && <button className="btn" style={{ marginTop: '0.75rem' }} onClick={() => open('new')}>{t.groups.add}</button>
+      )}
+    </section>
+  )
+}

@@ -22,6 +22,8 @@ export function Shell({ children }: { children: ReactNode }) {
       </header>
       <nav className="nav">
         <NavLink to="/rencontres" end>{t.nav.home}</NavLink>
+        <NavLink to="/calendrier">{t.nav.calendar}</NavLink>
+        <NavLink to="/fenetres">{t.nav.windows}</NavLink>
         <NavLink to="/cercle">{t.nav.circle}</NavLink>
         <NavLink to="/enfants">{t.nav.children}</NavLink>
         <NavLink to="/familles">{t.nav.families}</NavLink>

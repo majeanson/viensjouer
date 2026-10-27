@@ -70,7 +70,7 @@ export function EncounterDetail() {
       <Link to="/rencontres" className="muted small">← {t.encounters.back}</Link>
       <div className="row" style={{ marginTop: '0.5rem' }}>
         <h1>{e.title}</h1>
-        <span className="chip chip--kind">{t.encounters.kind[e.kind]}</span>
+        <span className="cluster"><span className="chip chip--kind">{t.encounters.kind[e.kind]}</span>{e.series_id && <span className="chip">{t.encounters.seriesChip}</span>}</span>
       </div>
       <p className="muted">{whenLong(e.starts_at, lang)}{e.place ? ` · ${e.place}` : ''} · {t.encounters.status[e.status]}</p>
       {e.note && <p>{e.note}</p>}
@@ -122,6 +122,7 @@ export function EncounterDetail() {
       <div className="cluster">
         {e.status === 'proposed' && <button className="btn btn--primary" onClick={() => patch.mutate({ status: 'confirmed' })}>{t.encounters.confirm}</button>}
         {e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => confirm(t.encounters.cancelConfirm) && patch.mutate({ status: 'cancelled' })}>{t.encounters.cancel}</button>}
+        {e.series_id && e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => confirm(t.encounters.cancelSeriesConfirm) && patch.mutate({ status: 'cancelled', series: true })}>{t.encounters.cancelSeries}</button>}
         <button className="btn btn--ghost btn--danger" onClick={() => confirm(t.encounters.deleteConfirm) && del.mutate()}>{t.encounters.delete}</button>
       </div>
     </>

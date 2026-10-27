@@ -29,6 +29,21 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  # The invited parent's walk on a phone-sized browser (API stubbed). Signal only: like the
+  # other repos, the deploy does not wait for it.
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+
   deploy:
     name: Deploy to Cloudflare
     needs: [ci]

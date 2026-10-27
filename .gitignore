@@ -14,3 +14,7 @@ dist/
 .idea/
 .vscode/*
 *.code-workspace
+
+# playwright
+test-results/
+playwright-report/

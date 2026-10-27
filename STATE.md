@@ -52,10 +52,12 @@ reminder someone asked for, a thread) — but nothing that turns a friendship in
 score. Growth is one family at a time through real invites, never discovery.
 
 - [ ] **Phase 1, finish.** Deployed 2026-10-27 at jouer.marcportal.com (D1 created,
-      `SESSION_SECRET` set, migration applied). Left: `RESEND_API_KEY` (a « Sending
-      access » key of this app's own; `MAIL_FROM` is already set) so invitations can be
-      emailed; the repo's `CLOUDFLARE_API_TOKEN` secret so CI deploys on push (the
-      account id is set); walk it with two real emails on two phones.
+      `SESSION_SECRET` set, migration applied, `RESEND_API_KEY` = a Resend « Sending
+      access » key named `viensjouer`, minted that day; `/api/health` says `mail: true`).
+      Left: the repo secret `CLOUDFLARE_API_TOKEN` so CI's deploy job goes green (it
+      cannot be minted from wrangler's OAuth session — a dashboard token, same shape as
+      Horizon's; the account id is set); until then deploy from a logged-in machine with
+      `npm run deploy`. Then walk it with two real emails on two phones.
 - [ ] **Phase 2 — the link.** « Créer mon compte » from a reply page, prefilled with the
       family's details → a bilateral child link (`friend_families.linked_household_id`
       exists for it). Le cercle de l'enfant as faces. The day-before reminder email

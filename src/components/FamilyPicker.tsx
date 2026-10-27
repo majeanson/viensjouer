@@ -1,4 +1,3 @@
-import { Face } from './Face'
 import { useT } from '../i18n'
 import type { Family, Group } from '../lib/types'
 
@@ -38,8 +37,7 @@ export function FamilyPicker({ families, groups, selected, onChange }: { familie
       {families.map((f) => (
         <label key={f.id} className="check">
           <input type="checkbox" checked={selected.has(f.id)} onChange={() => toggle(f.id)} />
-          <Face name={f.child_first_name} />
-          <span><strong>{f.child_first_name}</strong> <span className="muted small">· {f.parent_name}</span></span>
+                    <span><strong>{f.child_first_name}</strong> <span className="muted small">· {f.parent_name}</span></span>
         </label>
       ))}
       {families.length === 0 && <p className="muted">{t.encounters.noFamilies}</p>}

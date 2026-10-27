@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
+import { Header } from '../components/Header'
 
 // « Garder ma maisonnée » (/garder) — a trial parent turns the sandbox into a real account
 // in place: same children, families and rencontres, a real email and password.
@@ -30,6 +31,7 @@ export function Keep() {
   }
   return (
     <div className="shell">
+      <Header />
       <h1>{t.trial.keepTitle}</h1>
       <p className="muted">{t.trial.keepHint}</p>
       <form className="card" onSubmit={submit}>

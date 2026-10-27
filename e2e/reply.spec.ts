@@ -58,7 +58,7 @@ test('the invited parent sees the plan and the home card, then answers yes', asy
 test('a birthday asks how many come, only once the answer is yes', async ({ page }) => {
   const posts = await stub(page, card({ encounter: { ...card().encounter, kind: 'birthday', details: { gift: 'Un livre' } }, homeCard: null }))
   await page.goto(`/${CODE}`)
-  await expect(page.getByText('🎁 Un livre')).toBeVisible()
+  await expect(page.getByText('Idée de cadeau : Un livre')).toBeVisible()
   await expect(page.getByLabel('Adultes qui restent')).toHaveCount(0)
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   await page.getByLabel('Adultes qui restent').fill('2')
@@ -116,11 +116,27 @@ test('"What we keep" says the purpose, where it is hosted and how to erase every
   await expect(page.getByText(/Un prénom et un courriel suffisent/)).toBeVisible()
 })
 
-test('every optional field on the reply page says why it is asked and what you lose by skipping it', async ({ page }) => {
+test('every optional field on the reply page has a « Pourquoi ? » that says what you lose by skipping it', async ({ page }) => {
   await stub(page, card())
   await page.goto(`/${CODE}`)
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  // Collapsed by default so the form stays light; one tap opens the reason.
+  const whys = page.getByText('Pourquoi ?')
+  await expect(whys).toHaveCount(3)
+  await expect(page.getByText(/Sans ça : pas de rappel/)).toBeHidden()
+  await whys.nth(0).click()
   await expect(page.getByText(/Sans ça : pas de rappel/)).toBeVisible()
-  await expect(page.getByText(/Sans ça : l’hôte n’a aucune alerte/)).toBeVisible()
+  await whys.nth(1).click()
   await expect(page.getByText(/l’appli ne s’en sert pas/)).toBeVisible()
+  await whys.nth(2).click()
+  await expect(page.getByText(/Sans ça : l’hôte n’a aucune alerte/)).toBeVisible()
+})
+
+test('the header with the language switch is there on every public page', async ({ page }) => {
+  await stub(page, card())
+  for (const path of ['/', `/${CODE}`, '/confidentialite']) {
+    await page.goto(path)
+    await expect(page.getByRole('button', { name: 'EN (English)' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Viens jouer' })).toBeVisible()
+  }
 })

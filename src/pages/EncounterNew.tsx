@@ -5,7 +5,6 @@ import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useT } from '../i18n'
 import { fromLocalInput, nextSaturdayTen, toLocalInput } from '../lib/format'
-import { Face } from '../components/Face'
 import { Why } from '../components/Why'
 import { FamilyPicker } from '../components/FamilyPicker'
 import type { Child, Family, Group, Kind } from '../lib/types'
@@ -88,7 +87,7 @@ export function EncounterNew() {
         <h3>{t.encounters.whoInvites}</h3>
         <div className="seg">
           {children.map((c) => (
-            <button type="button" key={c.id} className={`btn ${chosen === c.id ? 'btn--on' : ''}`} onClick={() => setChildId(c.id)}><Face name={c.first_name} colour={c.colour} /> {c.first_name}</button>
+            <button type="button" key={c.id} className={`btn ${chosen === c.id ? 'btn--on' : ''}`} onClick={() => setChildId(c.id)}>{c.first_name}</button>
           ))}
         </div>
       </div>

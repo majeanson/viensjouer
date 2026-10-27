@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
@@ -7,7 +8,6 @@ import { useLang, useT } from '../i18n'
 import { fromLocalInput, toLocalInput, whenLong } from '../lib/format'
 import { linkFor, linkLabel } from '../lib/link'
 import { FamilyPicker } from '../components/FamilyPicker'
-import { Face } from '../components/Face'
 import type { Child, Family, Group, OpenWindow } from '../lib/types'
 
 const wlink = (token: string) => linkFor(token).replace(/\/([a-z0-9]{4}-[a-z0-9]{4})$/, '/w/$1')
@@ -83,6 +83,7 @@ export function Windows() {
         <h1>{t.windows.title}</h1>
         {!adding && <button className="btn btn--primary" onClick={() => setAdding(true)}>{t.windows.new}</button>}
       </div>
+      <p className="small"><Link to="/rencontres">← {t.nav.home}</Link></p>
       <p className="muted small">{t.windows.hint}</p>
       {err && <div className="notice notice--err">{err}</div>}
 
@@ -91,7 +92,7 @@ export function Windows() {
           <h3>{t.encounters.whoInvites}</h3>
           <div className="seg" style={{ marginBottom: '0.75rem' }}>
             {children.map((c) => (
-              <button type="button" key={c.id} className={`btn ${pickedChild === c.id ? 'btn--on' : ''}`} onClick={() => setChildId(c.id)}><Face name={c.first_name} colour={c.colour} /> {c.first_name}</button>
+              <button type="button" key={c.id} className={`btn ${pickedChild === c.id ? 'btn--on' : ''}`} onClick={() => setChildId(c.id)}>{c.first_name}</button>
             ))}
           </div>
           <label className="field"><span>{t.windows.from}</span><input className="input" name="startsAt" type="datetime-local" required defaultValue={toLocalInput(defaultStart)} /></label>
@@ -108,12 +109,11 @@ export function Windows() {
 
       {wins.data && wins.data.windows.length === 0 && !adding && <p className="muted">{t.windows.empty}</p>}
       {(wins.data?.windows ?? []).map((w) => {
-        const child = children.find((c) => c.id === w.child_id)
         const over = w.ends_at <= now
         return (
           <div key={w.id} className="card" style={over ? { opacity: 0.6 } : undefined}>
             <div className="row">
-              <span className="cluster">{child && <Face name={child.first_name} colour={child.colour} />}<strong>{whenLong(w.starts_at, lang)}</strong></span>
+              <span className="cluster"><strong>{whenLong(w.starts_at, lang)}</strong></span>
               <button className="btn btn--ghost btn--danger" onClick={() => confirm(t.windows.removeConfirm) && remove.mutate(w.id)}>{t.encounters.delete}</button>
             </div>
             {over && <p className="muted small">{t.windows.over}</p>}
@@ -121,7 +121,7 @@ export function Windows() {
             {w.targets.map((tg) => (
               <div key={tg.id} className="linkrow">
                 <div className="row">
-                  <span className="cluster"><Face name={tg.child_first_name} /><span><strong>{tg.child_first_name}</strong> <span className="muted small">· {tg.parent_name}</span></span></span>
+                  <span className="cluster"><span><strong>{tg.child_first_name}</strong> <span className="muted small">· {tg.parent_name}</span></span></span>
                   <span className={`chip ${tg.reply === 'yes' ? 'chip--yes' : tg.reply === 'no' ? 'chip--no' : ''}`}>{tg.reply === 'yes' ? t.windows.yes : tg.reply === 'no' ? t.windows.no : t.encounters.reply.none}</span>
                 </div>
                 {tg.reply_note && <p className="small" style={{ margin: 0 }}>« {tg.reply_note} »</p>}

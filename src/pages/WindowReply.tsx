@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, isStatus } from '../lib/api'
 import { useLang, useT } from '../i18n'
 import { whenLong } from '../lib/format'
+import { Header } from '../components/Header'
 
 interface Offer {
   alive: boolean
@@ -17,7 +18,7 @@ interface Offer {
 export function WindowReply() {
   const { token = '' } = useParams()
   const t = useT()
-  const { lang, setLang } = useLang()
+  const { lang } = useLang()
   const qc = useQueryClient()
   const key = ['window', token]
   const q = useQuery({ queryKey: key, queryFn: () => api<Offer>(`w/${token}`), retry: false })
@@ -42,10 +43,7 @@ export function WindowReply() {
   }
   return (
     <div className="shell">
-      <header className="topbar">
-        <span className="brand"><i />{t.appName}</span>
-        <button className="btn btn--ghost" onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}>{t.common.lang}</button>
-      </header>
+      <Header />
       <div className="card">
         <span className="chip chip--kind">{t.windows.chip}</span>
         <h1 style={{ marginTop: '0.5rem' }}>{t.windows.offer(host.child_first_name, you.child_first_name)}</h1>

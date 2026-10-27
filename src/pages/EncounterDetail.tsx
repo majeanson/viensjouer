@@ -7,7 +7,6 @@ import { useAuth } from '../lib/auth'
 import { useLang, useT } from '../i18n'
 import { timeOnly, whenLong } from '../lib/format'
 import { linkFor, linkLabel } from '../lib/link'
-import { Face } from '../components/Face'
 import { PhotoGrid } from '../components/PhotoGrid'
 import { Why } from '../components/Why'
 import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
@@ -105,16 +104,16 @@ export function EncounterDetail() {
       <Link to="/rencontres" className="muted small">← {t.encounters.back}</Link>
       <div className="row" style={{ marginTop: '0.5rem' }}>
         <h1>{e.title}</h1>
-        <span className="cluster"><span className="chip chip--kind">{t.encounters.kind[e.kind]}</span>{e.series_id && <span className="chip">{t.encounters.seriesChip}</span>}</span>
+        {e.series_id && <span className="chip">{t.encounters.seriesChip}</span>}
       </div>
-      <p className="muted">{whenLong(e.starts_at, lang)}{e.place ? ` · ${e.place}` : ''} · {t.encounters.status[e.status]}</p>
+      <p className="muted">{t.encounters.kind[e.kind]} · {whenLong(e.starts_at, lang)}{e.place ? ` · ${e.place}` : ''} · {t.encounters.status[e.status]}</p>
       {e.note && <p>{e.note}</p>}
-      {e.details.gift && <p className="muted">🎁 {e.details.gift}</p>}
+      {e.details.gift && <p className="muted">{t.kinds.birthday.giftIs} : {e.details.gift}</p>}
       {err && <div className="notice notice--err">{err}</div>}
 
       {e.kind === 'park' && e.status !== 'cancelled' && (e.here_at || e.hereOpen) && (
         <div className="card row">
-          <span>{e.here_at ? <strong>📍 {t.kinds.park.hereSince(timeOnly(e.here_at, lang))}</strong> : <span className="muted">{t.kinds.park.hint}</span>}</span>
+          <span>{e.here_at ? <strong>{t.kinds.park.hereSince(timeOnly(e.here_at, lang))}</strong> : <span className="muted">{t.kinds.park.hint}</span>}</span>
           <button className={`btn ${e.here_at ? '' : 'btn--primary'}`} disabled={patch.isPending} onClick={() => patch.mutate({ here: !e.here_at })}>{e.here_at ? t.kinds.park.gone : t.kinds.park.here}</button>
         </div>
       )}
@@ -128,22 +127,22 @@ export function EncounterDetail() {
         {invitations.map((i) => (
           <div key={i.id} className="linkrow">
             <div className="row">
-              <span className="cluster"><Face name={i.child_first_name} /><span><strong>{i.child_first_name}</strong> <span className="muted small">· {i.parent_name}</span></span></span>
+              <span className="cluster"><span><strong>{i.child_first_name}</strong> <span className="muted small">· {i.parent_name}</span></span></span>
               <span className={`chip ${i.reply ? `chip--${i.reply}` : ''}`}>{i.reply ? t.encounters.reply[i.reply] : t.encounters.reply.none}</span>
             </div>
             {i.reply_note && <p className="small" style={{ margin: 0 }}>« {i.reply_note} »</p>}
-            {i.allergies && <p className="small" style={{ margin: 0 }}>⚠ {i.allergies}</p>}
+            {i.allergies && <p className="small" style={{ margin: 0 }}>{t.families.allergies} : {i.allergies}</p>}
             {e.kind === 'birthday' && i.reply === 'yes' && (i.adults !== null || i.kids !== null) && <p className="small muted" style={{ margin: 0 }}>{t.kinds.birthday.theyCome(i.kids ?? 0, i.adults ?? 0)}</p>}
             <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
             <div className="cluster">
               <button className="btn" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
               {me.mail && (i.email ? (
-                <button className="btn" disabled={send.isPending} onClick={() => send.mutate(i.id)}>{i.sent_at ? t.encounters.resend : t.encounters.send}</button>
+                <button className="linkbtn" disabled={send.isPending} onClick={() => send.mutate(i.id)}>{i.sent_at ? t.encounters.resend : t.encounters.send}</button>
               ) : (
                 <span className="muted small">{t.encounters.noEmail}</span>
               ))}
-              {e.kind === 'home' && <button className="btn" onClick={() => setRelaisFor(relaisFor === i.id ? null : i.id)}>{relaisOf(i.id) ? t.kinds.relais.edit : t.kinds.relais.write}</button>}
-              <button className="btn btn--ghost btn--danger" onClick={() => withdraw.mutate(i.id)}>{t.encounters.withdraw}</button>
+              {e.kind === 'home' && <button className="linkbtn" onClick={() => setRelaisFor(relaisFor === i.id ? null : i.id)}>{relaisOf(i.id) ? t.kinds.relais.edit : t.kinds.relais.write}</button>}
+              <button className="linkbtn linkbtn--danger" onClick={() => withdraw.mutate(i.id)}>{t.encounters.withdraw}</button>
             </div>
             {relaisFor === i.id && (
               <form className="card" onSubmit={(ev) => submitRelais(ev, i.id)}>
@@ -164,7 +163,7 @@ export function EncounterDetail() {
         {notYet.length > 0 && (addMore ? (
           <div className="stack" style={{ marginTop: '0.75rem' }}>
             {notYet.map((f) => (
-              <button key={f.id} className="btn" onClick={() => { patch.mutate({ invite: [f.id] }); setAddMore(false) }}><Face name={f.child_first_name} /> {f.child_first_name} · {f.parent_name}</button>
+              <button key={f.id} className="btn" onClick={() => { patch.mutate({ invite: [f.id] }); setAddMore(false) }}>{f.child_first_name} · {f.parent_name}</button>
             ))}
           </div>
         ) : (
@@ -203,9 +202,9 @@ export function EncounterDetail() {
 
       <div className="cluster">
         {e.status === 'proposed' && <button className="btn btn--primary" onClick={() => patch.mutate({ status: 'confirmed' })}>{t.encounters.confirm}</button>}
-        {e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => confirm(t.encounters.cancelConfirm) && patch.mutate({ status: 'cancelled' })}>{t.encounters.cancel}</button>}
-        {e.series_id && e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => confirm(t.encounters.cancelSeriesConfirm) && patch.mutate({ status: 'cancelled', series: true })}>{t.encounters.cancelSeries}</button>}
-        <button className="btn btn--ghost btn--danger" onClick={() => confirm(t.encounters.deleteConfirm) && del.mutate()}>{t.encounters.delete}</button>
+        {e.status !== 'cancelled' && <button className="linkbtn linkbtn--danger" onClick={() => confirm(t.encounters.cancelConfirm) && patch.mutate({ status: 'cancelled' })}>{t.encounters.cancel}</button>}
+        {e.series_id && e.status !== 'cancelled' && <button className="linkbtn linkbtn--danger" onClick={() => confirm(t.encounters.cancelSeriesConfirm) && patch.mutate({ status: 'cancelled', series: true })}>{t.encounters.cancelSeries}</button>}
+        <button className="linkbtn linkbtn--danger" onClick={() => confirm(t.encounters.deleteConfirm) && del.mutate()}>{t.encounters.delete}</button>
       </div>
     </>
   )

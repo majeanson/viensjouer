@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useT } from '../i18n'
-import { Face } from '../components/Face'
 import { Why } from '../components/Why'
 import { Groups } from '../components/Groups'
 import type { Family } from '../lib/types'
@@ -43,6 +43,7 @@ export function Families() {
   const cur = editing && editing !== 'new' ? editing : null
   return (
     <>
+      <p className="small"><Link to="/cercle">← {t.circle.title}</Link></p>
       <h1>{t.families.title}</h1>
       <p className="muted small">{t.families.hint}</p>
       {err && <div className="notice notice--err">{err}</div>}
@@ -51,13 +52,13 @@ export function Families() {
         {fams.map((f) => (
           <div key={f.id} className="card">
             <div className="row">
-              <span className="cluster"><Face name={f.child_first_name} /><span><strong>{f.child_first_name}</strong><br /><span className="muted small">{f.parent_name}{f.email ? ` · ${f.email}` : ''}{f.phone ? ` · ${f.phone}` : ''}</span></span></span>
+              <span className="cluster"><span><strong>{f.child_first_name}</strong><br /><span className="muted small">{f.parent_name}{f.email ? ` · ${f.email}` : ''}{f.phone ? ` · ${f.phone}` : ''}</span></span></span>
               <span className="cluster">
                 <button className="btn btn--ghost" onClick={() => setEditing(f)}>{t.encounters.edit}</button>
                 <button className="btn btn--ghost btn--danger" onClick={() => confirm(t.families.removeConfirm) && remove.mutate(f.id)}>{t.families.remove}</button>
               </span>
             </div>
-            {(f.allergies || f.notes) && <p className="small muted" style={{ margin: '0.5rem 0 0' }}>{[f.allergies && `⚠ ${f.allergies}`, f.notes].filter(Boolean).join(' · ')}</p>}
+            {(f.allergies || f.notes) && <p className="small muted" style={{ margin: '0.5rem 0 0' }}>{[f.allergies && `${t.families.allergies} : ${f.allergies}`, f.notes].filter(Boolean).join(' · ')}</p>}
           </div>
         ))}
       </div>

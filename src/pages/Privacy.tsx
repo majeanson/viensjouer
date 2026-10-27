@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useT } from '../i18n'
+import { Header } from '../components/Header'
 
 // « Ce qu'on garde » — the plain list: what is required (a name and an email), and every
 // optional extra with what it unlocks. Public, no account needed.
@@ -7,7 +8,7 @@ export function Privacy() {
   const t = useT()
   return (
     <div className="shell">
-      <header className="topbar"><Link to="/" className="brand"><i />{t.appName}</Link></header>
+      <Header />
       <h1>{t.privacy.title}</h1>
       <p className="muted">{t.privacy.lead}</p>
       <div className="card">

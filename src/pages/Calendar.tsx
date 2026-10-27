@@ -39,7 +39,7 @@ export function Calendar() {
         <div key={`${it.type}-${it.id}`} className="card">
           {it.type === 'mine' && (
             <Link to={`/rencontres/${it.id}`} className="card--tap" style={{ textDecoration: 'none' }}>
-              <div className="row"><strong>{it.title}</strong><span className="chip chip--kind">{t.encounters.kind[it.kind]}</span></div>
+              <div className="row"><strong>{it.title}</strong><span className="kind">{t.encounters.kind[it.kind]}</span></div>
               <p className="muted small" style={{ margin: '0.3rem 0 0' }}>{whenShort(it.at, lang)}{it.place ? ` · ${it.place}` : ''}</p>
             </Link>
           )}
@@ -63,7 +63,7 @@ export function Calendar() {
           <h2 className="muted small" style={{ marginTop: '1.5rem' }}>{t.calendar.birthdays}</h2>
           {birthdays.map((b) => (
             <div key={`${b.name}-${b.date}`} className="card row">
-              <span>🎂 <strong>{b.name}</strong> <span className="muted small">{t.calendar.turns(b.turns)}</span></span>
+              <span><strong>{b.name}</strong> <span className="muted small">{t.calendar.turns(b.turns)}</span></span>
               <span className="muted small">{dayLabel(b.date, lang)}</span>
             </div>
           ))}

@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
+import { Header } from '../components/Header'
 
 // /rejoindre?t=<token> — the other parent redeems their invitation: own name, email and
 // password, added to the inviting household, signed in on the spot.
@@ -32,7 +33,7 @@ export function Join() {
   }
   return (
     <div className="shell">
-      <header className="topbar"><Link to="/" className="brand"><i />{t.appName}</Link></header>
+      <Header />
       {!token || q.isError ? (
         <div className="notice notice--err">{t.parent.dead}</div>
       ) : q.data ? (

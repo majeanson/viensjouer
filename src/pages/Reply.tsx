@@ -12,6 +12,7 @@ import { HomeCardView } from '../components/HomeCard'
 import { PhotoGrid } from '../components/PhotoGrid'
 import { Why } from '../components/Why'
 import type { Encounter, HomeCard, Message, Reply as ReplyKind } from '../lib/types'
+import { Header } from '../components/Header'
 
 interface Card {
   alive: boolean
@@ -40,7 +41,7 @@ function ReplyInner() {
   // `/r/<code>` or the paper spelling `/<xxxx-xxxx>`; the API forgives the hyphen.
   const { token = '' } = useParams()
   const t = useT()
-  const { lang, setLang } = useLang()
+  const { lang } = useLang()
   const qc = useQueryClient()
   const q = useQuery({ queryKey: K.reply(token), queryFn: () => api<Card>(`r/${token}`), retry: false, refetchInterval: 30_000 })
   const [reply, setReply] = useState<ReplyKind | null>(null)
@@ -102,13 +103,10 @@ function ReplyInner() {
 
   return (
     <div className="shell">
-      <header className="topbar">
-        <span className="brand"><i />{t.appName}</span>
-        <button className="btn btn--ghost" onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}>{t.common.lang}</button>
-      </header>
+      <Header />
 
       <div className="card">
-        <span className="chip chip--kind">{t.encounters.kind[e.kind]}</span>
+        <span className="kind">{t.encounters.kind[e.kind]}</span>
         <h1 style={{ marginTop: '0.5rem' }}>{t.reply.invites(host.child_first_name, you.child_first_name)}</h1>
         <p className="muted">{t.reply.from(host.parent_name || host.household_name)}</p>
         <h2>{e.title}</h2>
@@ -116,8 +114,8 @@ function ReplyInner() {
         {e.place && <p>{e.place}</p>}
         {e.address ? <p>{e.address}</p> : e.kind !== 'park' && <p className="muted small">{t.reply.addressOnYes}</p>}
         {e.note && <p className="muted">{e.note}</p>}
-        {e.details?.gift && <p className="muted">🎁 {e.details.gift}</p>}
-        {e.hereAt && <div className="notice">📍 {t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
+        {e.details?.gift && <p className="muted">{t.kinds.birthday.giftIs} : {e.details.gift}</p>}
+        {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
         <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
       </div>

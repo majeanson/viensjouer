@@ -71,10 +71,10 @@ export function HomeCardView({ card }: { card: HomeCardData }) {
     <div className="card">
       <h3>{t.kinds.home.beforeYouCome}</h3>
       <div className="cluster" style={{ marginBottom: card.note ? '0.5rem' : 0 }}>
-        {card.dog && <span className="chip">🐕 {t.kinds.home.dog}</span>}
-        {card.pool && <span className="chip">🏊 {t.kinds.home.pool}</span>}
-        {card.nutFree && <span className="chip chip--yes">🥜 {t.kinds.home.nutFree}</span>}
-        {card.screens && <span className="chip">📺 {t.kinds.home.screens[card.screens]}</span>}
+        {card.dog && <span className="chip">{t.kinds.home.dog}</span>}
+        {card.pool && <span className="chip">{t.kinds.home.pool}</span>}
+        {card.nutFree && <span className="chip chip--yes">{t.kinds.home.nutFree}</span>}
+        {card.screens && <span className="chip">{t.kinds.home.screens[card.screens]}</span>}
       </div>
       {card.note && <p style={{ margin: 0 }}>{card.note}</p>}
     </div>

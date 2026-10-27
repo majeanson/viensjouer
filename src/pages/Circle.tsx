@@ -4,7 +4,6 @@ import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { ageLabel, whenShort } from '../lib/format'
-import { Face } from '../components/Face'
 
 interface Linked {
   linkId: string
@@ -41,15 +40,16 @@ export function Circle() {
     <>
       <h1>{t.circle.title}</h1>
       <p className="muted small">{t.circle.hint}</p>
+      <p className="small"><Link to="/familles">{t.families.title}</Link></p>
       {none && <p className="muted">{t.circle.empty} <Link to="/familles">{t.families.add}</Link></p>}
       {q.data.children.map(({ child, linked }) => (
         <section key={child.id} className="card">
-          <h2 className="cluster"><Face name={child.first_name} colour={child.colour} />{child.first_name}</h2>
+          <h2 className="cluster">{child.first_name}</h2>
           {linked.length === 0 && <p className="muted small">{t.circle.noneLinked}</p>}
           {linked.map((l) => (
             <div key={l.linkId} className="linkrow">
               <div className="row">
-                <span className="cluster"><Face name={l.childName ?? '?'} /><span><strong>{l.childName}</strong> <span className="muted small">{ageLabel(l.childBirthdate, lang)} · {l.parentName}</span></span></span>
+                <span className="cluster"><span><strong>{l.childName}</strong> <span className="muted small">{ageLabel(l.childBirthdate, lang)} · {l.parentName}</span></span></span>
                 <button className="btn btn--ghost btn--danger" onClick={() => confirm(t.circle.cutConfirm) && cut.mutate(l.linkId)}>{t.circle.cut}</button>
               </div>
               <p className="muted small" style={{ margin: 0 }}>
@@ -64,7 +64,7 @@ export function Circle() {
           <h3>{t.circle.bookOnly}</h3>
           <p className="muted small">{t.circle.bookOnlyHint}</p>
           {q.data.book.map((b) => (
-            <div key={b.id} className="cluster"><Face name={b.child_first_name} /><span><strong>{b.child_first_name}</strong> <span className="muted small">· {b.parent_name}</span></span></div>
+            <div key={b.id} className="cluster"><span><strong>{b.child_first_name}</strong> <span className="muted small">· {b.parent_name}</span></span></div>
           ))}
         </section>
       )}

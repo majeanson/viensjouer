@@ -35,6 +35,11 @@ SIGNUP_OPEN = "1"
 # revoking one app's key never silences the other). marcportal.com is verified in Resend.
 MAIL_FROM = "Viens jouer <jouer@marcportal.com>"
 
+# The hourly cron: sends the day-before reminder an invited parent asked for
+# (functions/_lib/reminders.ts). Mail unwired -> it does nothing.
+[triggers]
+crons = ["7 * * * *"]
+
 [observability]
 enabled = true
 

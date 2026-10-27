@@ -9,6 +9,7 @@ export const K = {
   me: ['me'] as const,
   children: ['children'] as const,
   families: ['families'] as const,
+  circle: ['circle'] as const,
   encounters: ['encounters'] as const,
   encounter: (id: string) => ['encounter', id] as const,
   reply: (token: string) => ['reply', token] as const,

@@ -6,6 +6,7 @@ import type { Env } from '../functions/_lib/env'
 import { verifyCsrf } from '../functions/_lib/auth'
 import { forbidden, notFound, serverError } from '../functions/_lib/json'
 import { withSecurityHeaders } from '../functions/_lib/securityHeaders'
+import { sendDueReminders } from '../functions/_lib/reminders'
 import { csrfExempt, matchRoute, type RouteMod } from './routes'
 
 type WorkerEnv = Env & { ASSETS: Fetcher }
@@ -77,5 +78,9 @@ const app = {
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     return withSecurityHeaders(await app.fetch(request, env, ctx))
+  },
+  // The hourly cron (wrangler.toml [triggers]): the one reminder an invited parent asked for.
+  async scheduled(_controller, env, ctx): Promise<void> {
+    ctx.waitUntil(sendDueReminders(env, 'https://jouer.marcportal.com').then(() => undefined))
   },
 } satisfies ExportedHandler<WorkerEnv>

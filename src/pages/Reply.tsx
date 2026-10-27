@@ -1,17 +1,18 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, isStatus } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { whenLong } from '../lib/format'
+import { useAuth } from '../lib/auth'
 import type { Encounter, Message, Reply as ReplyKind } from '../lib/types'
 
 interface Card {
   alive: boolean
   encounter: Omit<Encounter, 'address'> & { address: string | null }
   host: { child_first_name: string; parent_name: string; household_name: string; tz: string }
-  you: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null; reply: ReplyKind | null; replyNote: string | null }
+  you: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null; reply: ReplyKind | null; replyNote: string | null; remind: boolean }
   messages: Message[]
 }
 
@@ -28,6 +29,18 @@ export function Reply() {
   const [editing, setEditing] = useState(false)
   const [done, setDone] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [claiming, setClaiming] = useState(false)
+  const { me, refresh } = useAuth()
+  const nav = useNavigate()
+
+  const claim = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api(`r/${token}/claim`, { method: 'POST', body }),
+    onSuccess: async () => {
+      await refresh()
+      nav('/cercle', { replace: true })
+    },
+    onError: (e) => setErr(e.message),
+  })
 
   const post = useMutation({
     mutationFn: (body: Record<string, unknown>) => api(`r/${token}`, { method: 'POST', body }),
@@ -48,7 +61,7 @@ export function Reply() {
     ev.preventDefault()
     if (!chosen) return
     const f = new FormData(ev.currentTarget)
-    const body: Record<string, unknown> = { reply: chosen, note: f.get('note') || null }
+    const body: Record<string, unknown> = { reply: chosen, note: f.get('note') || null, remind: f.get('remind') === 'on' }
     for (const k of ['parentName', 'email', 'phone', 'allergies'] as const) {
       const v = String(f.get(k) ?? '').trim()
       if (v) body[k] = v
@@ -112,6 +125,7 @@ export function Reply() {
           <label className="field"><span>{t.reply.email}</span><input className="input" name="email" type="email" defaultValue={you.email ?? ''} autoComplete="email" /></label>
           <label className="field"><span>{t.reply.phone}</span><input className="input" name="phone" type="tel" defaultValue={you.phone ?? ''} autoComplete="tel" /></label>
           <label className="field"><span>{t.reply.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={you.allergies ?? ''} /></label>
+          <label className="check"><input type="checkbox" name="remind" defaultChecked={you.remind} /><span>{t.reply.remind}</span></label>
           {err && <div className="notice notice--err">{err}</div>}
           <button className="btn btn--primary btn--big" disabled={!chosen || post.isPending}>{t.reply.send}</button>
         </form>
@@ -132,7 +146,19 @@ export function Reply() {
 
       <footer className="footer muted small">
         <p>{t.reply.footer}</p>
-        <Link to="/" className="btn btn--ghost">{t.reply.create}</Link>
+        {me.signedIn ? null : claiming ? (
+          <form className="card" style={{ textAlign: 'left' }} onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>
+            <h3>{t.reply.claimTitle}</h3>
+            <p className="muted small">{t.reply.claimHint}</p>
+            <label className="field"><span>{t.reply.parentName}</span><input className="input" name="displayName" required maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
+            <label className="field"><span>{t.reply.email}</span><input className="input" name="email" type="email" required defaultValue={you.email ?? ''} autoComplete="email" /></label>
+            <label className="field"><span>{t.reply.claimPassword}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
+            {err && <div className="notice notice--err">{err}</div>}
+            <button className="btn btn--primary btn--big" disabled={claim.isPending}>{t.reply.claimSend}</button>
+          </form>
+        ) : (
+          <button className="btn btn--ghost" onClick={() => setClaiming(true)}>{t.reply.create}</button>
+        )}
       </footer>
     </div>
   )

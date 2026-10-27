@@ -58,11 +58,7 @@ score. Growth is one family at a time through real invites, never discovery.
       `viensjouer-ci`: Workers Scripts · Workers Routes · D1 edit, Account Settings ·
       Zone read) — **push-to-deploy proven green** (run 40576969911). Left: walk it with
       two real emails on two phones.
-- [ ] **Phase 2 — the link.** « Créer mon compte » from a reply page, prefilled with the
-      family's details → a bilateral child link (`friend_families.linked_household_id`
-      exists for it). Le cercle de l'enfant as faces. The day-before reminder email
-      (`invitations.remind_at` exists; needs a cron). Password reset (copy Babillard's
-      `auth/forgot` + `auth/reset`, hash-only token rows).
+- [x] **Phase 2 — the link. Shipped 2026-10-27.** `POST /api/r/<code>/claim` turns a reply into a household (origin 'reply'), a child, a bilateral `child_links` row and a reciprocal book entry; `/cercle` shows each child's linked friends (last / next date, never a count) and either side can cut the link; the reminder checkbox sets `remind_at` and an hourly cron (`functions/_lib/reminders.ts`) sends the one email; password reset (`/oubli`, `/reinitialiser`, hash-only token, signs other devices out). Migration 0002.
 - [ ] **Phase 3 — the rhythm.** Recurring rencontres (« tous les samedis au parc », each
       family answers per week). « Une fenêtre ouverte » (« on est libres dimanche pm »,
       to chosen families, expires). Groups (the daycare class). The circle calendar with

@@ -3,6 +3,7 @@ import { badRequest, notFound, ok, readJson, str, tooManyRequests } from '../../
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { newId, normalizeLinkCode, nowSec } from '../../_lib/ids'
 import { addressFor, isReply, linkAlive, type EncounterRow, type Reply } from '../../_lib/encounters'
+import { REMIND_LEAD_SEC } from '../../_lib/reminders'
 
 // THE install-free side. The token in the path is the whole credential: one card, one
 // family. No cookie, no CSRF (worker/index.ts exempts `r/`), rate-limited by address.
@@ -13,7 +14,7 @@ import { addressFor, isReply, linkAlive, type EncounterRow, type Reply } from '.
 //                            message? } — any subset; a message appends to the thread
 
 interface Resolved {
-  invitation: { id: string; friend_family_id: string; reply: Reply | null; reply_note: string | null }
+  invitation: { id: string; friend_family_id: string; reply: Reply | null; reply_note: string | null; remind_at: number | null }
   encounter: EncounterRow & { household_id: string }
   family: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null }
   host: { child_first_name: string; parent_name: string; household_name: string; tz: string }
@@ -24,7 +25,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
   const token = normalizeLinkCode(raw)
   if (!token) return null
   const row = await env.DB.prepare(
-    `SELECT i.id AS inv_id, i.friend_family_id, i.reply, i.reply_note,
+    `SELECT i.id AS inv_id, i.friend_family_id, i.reply, i.reply_note, i.remind_at,
             e.id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.note, e.status,
             f.parent_name, f.email, f.phone, f.child_first_name, f.allergies,
             c.first_name AS host_child, h.name AS household_name, h.tz,
@@ -40,7 +41,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
     .first<Record<string, unknown>>()
   if (!row) return null
   return {
-    invitation: { id: row.inv_id as string, friend_family_id: row.friend_family_id as string, reply: row.reply as Reply | null, reply_note: row.reply_note as string | null },
+    invitation: { id: row.inv_id as string, friend_family_id: row.friend_family_id as string, reply: row.reply as Reply | null, reply_note: row.reply_note as string | null, remind_at: row.remind_at as number | null },
     encounter: {
       id: row.id as string,
       household_id: row.household_id as string,
@@ -78,12 +79,12 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     alive,
     encounter: { ...card, address: addressFor(r.invitation.reply, r.encounter.address) },
     host: r.host,
-    you: { ...r.family, reply: r.invitation.reply, replyNote: r.invitation.reply_note },
+    you: { ...r.family, reply: r.invitation.reply, replyNote: r.invitation.reply_note, remind: r.invitation.remind_at !== null },
     messages,
   })
 }
 
-type Body = { reply?: string; note?: string | null; parentName?: string; email?: string; phone?: string; allergies?: string; message?: string }
+type Body = { reply?: string; note?: string | null; parentName?: string; email?: string; phone?: string; allergies?: string; message?: string; remind?: boolean }
 
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
@@ -106,6 +107,12 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
         r.invitation.id,
       ),
     )
+  }
+  // The ONE reminder (the hourly cron sends it): a day before, only if still ahead, and
+  // only once the family has an email on file (sent now or already in the book).
+  if (typeof body.remind === 'boolean') {
+    const at = body.remind ? Math.max(r.encounter.starts_at - REMIND_LEAD_SEC, ts) : null
+    stmts.push(ctx.env.DB.prepare('UPDATE invitations SET remind_at = ?, reminded_at = NULL, updated_at = ? WHERE id = ?').bind(at, ts, r.invitation.id))
   }
   // Their own details, into the host's book. Only the fields they sent; a blank one is
   // left alone so a reply cannot erase what the host typed.

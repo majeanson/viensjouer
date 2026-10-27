@@ -16,6 +16,10 @@ import * as messages from '../functions/api/messages'
 import * as invitations from '../functions/api/invitations'
 import * as replyCard from '../functions/api/r/[token]'
 import * as replyIcs from '../functions/api/r/ics'
+import * as replyClaim from '../functions/api/r/claim'
+import * as authForgot from '../functions/api/auth/forgot'
+import * as authReset from '../functions/api/auth/reset'
+import * as circle from '../functions/api/circle'
 
 export type RouteMod = Partial<Record<'onRequest' | 'onRequestGet' | 'onRequestPost' | 'onRequestPatch' | 'onRequestPut' | 'onRequestDelete', PagesFunction<Env>>>
 
@@ -30,7 +34,11 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['encounters', encounters],
   ['messages', messages],
   ['invitations', invitations],
+  ['auth/forgot', authForgot],
+  ['auth/reset', authReset],
+  ['circle', circle],
   ['r/:token/ics', replyIcs],
+  ['r/:token/claim', replyClaim],
   ['r/:token', replyCard],
 ]
 
@@ -57,5 +65,5 @@ export function matchRoute(apiPath: string): { mod: RouteMod; params: Record<str
 // every reply-link write (the token in the path is the credential, and the invited
 // parent has no session by design).
 export function csrfExempt(apiPath: string): boolean {
-  return apiPath === 'auth/login' || apiPath === 'auth/signup' || apiPath.startsWith('r/')
+  return apiPath === 'auth/login' || apiPath === 'auth/signup' || apiPath === 'auth/forgot' || apiPath === 'auth/reset' || apiPath.startsWith('r/')
 }

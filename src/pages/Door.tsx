@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -15,7 +15,7 @@ export function Door() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
-  const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ invite: boolean }>('health'), staleTime: 60_000 })
+  const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ invite: boolean; mail: boolean }>('health'), staleTime: 60_000 })
 
   useEffect(() => {
     if (!loading && me.signedIn) nav('/rencontres', { replace: true })
@@ -67,6 +67,7 @@ export function Door() {
         )}
         {err && <div className="notice notice--err">{err}</div>}
         <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : mode === 'login' ? t.auth.submitLogin : t.auth.submitSignup}</button>
+        {mode === 'login' && health.data?.mail && <p className="small" style={{ marginTop: '0.75rem' }}><Link to="/oubli">{t.auth.forgot}</Link></p>}
       </form>
     </div>
   )

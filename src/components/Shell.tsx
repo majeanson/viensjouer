@@ -14,7 +14,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <header className="topbar">
         <Link to="/rencontres" className="brand"><i />{t.appName}</Link>
         <div className="cluster small">
-          <span className="muted">{me.displayName}</span>
+          <Link to="/compte" className="muted">{me.displayName}</Link>
           <button className="btn btn--ghost" onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}>{t.common.lang}</button>
           <button className="btn btn--ghost" onClick={() => applyTheme(readTheme() === 'dark' ? 'light' : 'dark')} aria-label={t.common.theme}>◐</button>
           <button className="btn btn--ghost" onClick={() => void signOut()}>{t.auth.logout}</button>

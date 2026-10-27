@@ -4,6 +4,7 @@ import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useT } from '../i18n'
 import { Face } from '../components/Face'
+import { Why } from '../components/Why'
 import { Groups } from '../components/Groups'
 import type { Family } from '../lib/types'
 
@@ -63,12 +64,12 @@ export function Families() {
       {editing ? (
         <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
           <label className="field"><span>{t.families.childFirstName}</span><input className="input" name="childFirstName" required maxLength={40} defaultValue={cur?.child_first_name} autoFocus /></label>
-          <label className="field"><span>{t.families.birthdate}</span><input className="input" name="childBirthdate" type="date" defaultValue={cur?.child_birthdate ?? ''} /></label>
+          <label className="field"><span>{t.families.birthdate}</span><input className="input" name="childBirthdate" type="date" defaultValue={cur?.child_birthdate ?? ''} /><Why k="friendBirthdate" /></label>
           <label className="field"><span>{t.families.parentName}</span><input className="input" name="parentName" required maxLength={60} defaultValue={cur?.parent_name} /></label>
-          <label className="field"><span>{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /></label>
-          <label className="field"><span>{t.families.phone}</span><input className="input" name="phone" type="tel" defaultValue={cur?.phone ?? ''} /></label>
-          <label className="field"><span>{t.families.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={cur?.allergies ?? ''} /></label>
-          <label className="field"><span>{t.families.notes}</span><input className="input" name="notes" maxLength={1000} defaultValue={cur?.notes ?? ''} /></label>
+          <label className="field"><span>{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /><Why k="friendEmail" /></label>
+          <label className="field"><span>{t.families.phone}</span><input className="input" name="phone" type="tel" defaultValue={cur?.phone ?? ''} /><Why k="phone" /></label>
+          <label className="field"><span>{t.families.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={cur?.allergies ?? ''} /><Why k="allergies" /></label>
+          <label className="field"><span>{t.families.notes}</span><input className="input" name="notes" maxLength={1000} defaultValue={cur?.notes ?? ''} /><Why k="notes" /></label>
           <div className="cluster">
             <button className="btn btn--primary" disabled={save.isPending}>{t.families.save}</button>
             <button type="button" className="btn btn--ghost" onClick={() => setEditing(null)}>{t.encounters.back}</button>

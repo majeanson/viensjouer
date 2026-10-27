@@ -27,6 +27,8 @@ import * as windowReply from '../functions/api/w/[token]'
 import * as homeCard from '../functions/api/home-card'
 import * as demo from '../functions/api/demo'
 import * as demoClaim from '../functions/api/demo-claim'
+import * as household from '../functions/api/household'
+import * as exportData from '../functions/api/export'
 import * as join from '../functions/api/join'
 import * as parentInvite from '../functions/api/parent-invite'
 import * as relais from '../functions/api/relais'
@@ -58,6 +60,8 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['home-card', homeCard],
   ['demo', demo],
   ['demo/claim', demoClaim],
+  ['household', household],
+  ['export', exportData],
   ['join', join],
   ['parent-invite', parentInvite],
   ['relais', relais],

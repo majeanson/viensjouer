@@ -40,11 +40,11 @@ export const SWEEP_ORDER: { table: string; sql: (ids: string) => string }[] = [
   { table: 'households', sql: (i) => `DELETE FROM households WHERE id IN (${i})` },
 ]
 
-// Delete aged-out sandboxes (and their photo blobs). Bounded per call so a mint stays cheap.
-export async function sweepDemos(env: Env, now = nowSec(), limit = 20): Promise<number> {
-  const { results } = await env.DB.prepare("SELECT id FROM households WHERE kind = 'demo' AND created_at < ? LIMIT ?").bind(now - DEMO_TTL_SEC, limit).all<{ id: string }>()
-  if (!results.length) return 0
-  const ids = results.map((r) => r.id)
+// Delete households for good: their photo blobs first, then every table in SWEEP_ORDER. Linked
+// families elsewhere keep their own data and only lose the link. Used by the 24 h sandbox sweep
+// AND by « Tout effacer » (DELETE /api/household) — one path, so neither can leave a table behind.
+export async function deleteHouseholds(env: Env, ids: string[]): Promise<void> {
+  if (!ids.length) return
   const marks = ids.map(() => '?').join(',')
   if (env.PHOTOS) {
     const { results: keys } = await env.DB.prepare(`SELECT s.media_key FROM souvenirs s JOIN encounters e ON e.id = s.encounter_id WHERE e.household_id IN (${marks})`).bind(...ids).all<{ media_key: string }>()
@@ -56,8 +56,15 @@ export async function sweepDemos(env: Env, now = nowSec(), limit = 20): Promise<
     const uses = sql.split(marks).length - 1
     return env.DB.prepare(sql).bind(...Array.from({ length: uses }, () => ids).flat())
   })
-  await env.DB.batch(stmts)
-  return ids.length
+  const unlink = env.DB.prepare(`UPDATE friend_families SET linked_household_id = NULL, linked_child_id = NULL WHERE linked_household_id IN (${marks})`).bind(...ids)
+  await env.DB.batch([unlink, ...stmts])
+}
+
+// Delete aged-out sandboxes. Bounded per call so a mint stays cheap.
+export async function sweepDemos(env: Env, now = nowSec(), limit = 20): Promise<number> {
+  const { results } = await env.DB.prepare("SELECT id FROM households WHERE kind = 'demo' AND created_at < ? LIMIT ?").bind(now - DEMO_TTL_SEC, limit).all<{ id: string }>()
+  await deleteHouseholds(env, results.map((r) => r.id))
+  return results.length
 }
 
 // Mint a sandbox: household + parent + a seeded child, two friend families, one park

@@ -9,6 +9,7 @@ import { timeOnly, whenLong } from '../lib/format'
 import { linkFor, linkLabel } from '../lib/link'
 import { Face } from '../components/Face'
 import { PhotoGrid } from '../components/PhotoGrid'
+import { Why } from '../components/Why'
 import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
 
 interface Detail {
@@ -147,6 +148,7 @@ export function EncounterDetail() {
             {relaisFor === i.id && (
               <form className="card" onSubmit={(ev) => submitRelais(ev, i.id)}>
                 <p className="muted small">{t.kinds.relais.hint}</p>
+                <Why k="relais" />
                 <label className="field"><span>{t.kinds.relais.nap}</span><input className="input" name="nap" maxLength={120} defaultValue={relaisOf(i.id)?.nap ?? ''} placeholder={t.kinds.relais.napPlaceholder} /></label>
                 <label className="field"><span>{t.kinds.relais.ate}</span><input className="input" name="ate" maxLength={160} defaultValue={relaisOf(i.id)?.ate ?? ''} placeholder={t.kinds.relais.atePlaceholder} /></label>
                 <label className="field"><span>{t.kinds.relais.mood}</span><input className="input" name="mood" maxLength={60} defaultValue={relaisOf(i.id)?.mood ?? ''} placeholder={t.kinds.relais.moodPlaceholder} /></label>
@@ -174,6 +176,7 @@ export function EncounterDetail() {
         <div className="card">
           <h3>{t.souvenirs.title}</h3>
           <p className="muted small">{t.souvenirs.hint}</p>
+          <Why k="photos" />
           <PhotoGrid
             items={souvenirs}
             src={(pid) => `/api/souvenirs/${pid}`}

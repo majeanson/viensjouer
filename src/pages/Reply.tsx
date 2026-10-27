@@ -10,6 +10,7 @@ import { useAuth } from '../lib/auth'
 import { timeOnly } from '../lib/format'
 import { HomeCardView } from '../components/HomeCard'
 import { PhotoGrid } from '../components/PhotoGrid'
+import { Why } from '../components/Why'
 import type { Encounter, HomeCard, Message, Reply as ReplyKind } from '../lib/types'
 
 interface Card {
@@ -156,12 +157,12 @@ function ReplyInner() {
           <h3 style={{ marginTop: '1rem' }}>{t.reply.you}</h3>
           <p className="muted small">{t.reply.youHint}</p>
           <label className="field"><span>{t.reply.parentName}</span><input className="input" name="parentName" maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
-          <label className="field"><span>{t.reply.email}</span><input className="input" name="email" type="email" defaultValue={you.email ?? ''} autoComplete="email" /></label>
-          <label className="field"><span>{t.reply.phone}</span><input className="input" name="phone" type="tel" defaultValue={you.phone ?? ''} autoComplete="tel" /></label>
-          <label className="field"><span>{t.reply.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={you.allergies ?? ''} /></label>
+          <label className="field"><span>{t.reply.email}</span><input className="input" name="email" type="email" defaultValue={you.email ?? ''} autoComplete="email" /><Why k="replyEmail" /></label>
+          <label className="field"><span>{t.reply.phone}</span><input className="input" name="phone" type="tel" defaultValue={you.phone ?? ''} autoComplete="tel" /><Why k="replyPhone" /></label>
+          <label className="field"><span>{t.reply.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={you.allergies ?? ''} /><Why k="replyAllergies" /></label>
           {e.kind === 'birthday' && chosen === 'yes' && (
             <div className="cluster" style={{ marginBottom: '0.75rem' }}>
-              <label className="field" style={{ flex: 1 }}><span>{t.kinds.birthday.adults}</span><input className="input" name="adults" type="number" min={0} max={20} defaultValue={you.adults ?? 1} /></label>
+              <label className="field" style={{ flex: 1 }}><span>{t.kinds.birthday.adults}</span><input className="input" name="adults" type="number" min={0} max={20} defaultValue={you.adults ?? 1} /><Why k="headcount" /></label>
               <label className="field" style={{ flex: 1 }}><span>{t.kinds.birthday.kids}</span><input className="input" name="kids" type="number" min={0} max={20} defaultValue={you.kids ?? 1} /></label>
             </div>
           )}
@@ -175,6 +176,7 @@ function ReplyInner() {
         <div className="card">
           <h3>{t.souvenirs.title}</h3>
           <p className="muted small">{t.souvenirs.hint}</p>
+          <Why k="photos" />
           <PhotoGrid
             items={souvenirs}
             src={(pid) => `/api/r/${token}/photo/${pid}`}
@@ -215,6 +217,7 @@ function ReplyInner() {
 
       <footer className="footer muted small">
         <p>{t.reply.footer}</p>
+        <p><Link to="/confidentialite">{t.privacy.link}</Link></p>
         {me.signedIn ? null : claiming ? (
           <form className="card" style={{ textAlign: 'left' }} onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>
             <h3>{t.reply.claimTitle}</h3>

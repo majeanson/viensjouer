@@ -105,3 +105,22 @@ test('no serious or critical accessibility violation on the reply page', async (
   const bad = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
   expect(bad.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([])
 })
+
+test('"What we keep" says the purpose, where it is hosted and how to erase everything', async ({ page }) => {
+  await stub(page, card())
+  await page.goto('/confidentialite')
+  await expect(page.getByRole('heading', { name: 'Ce qu’on garde' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'À quoi ça sert' })).toBeVisible()
+  await expect(page.getByText(/Hébergé chez Cloudflare/)).toBeVisible()
+  await expect(page.getByText(/Tout effacer/).first()).toBeVisible()
+  await expect(page.getByText(/Un prénom et un courriel suffisent/)).toBeVisible()
+})
+
+test('every optional field on the reply page says why it is asked and what you lose by skipping it', async ({ page }) => {
+  await stub(page, card())
+  await page.goto(`/${CODE}`)
+  await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  await expect(page.getByText(/Sans ça : pas de rappel/)).toBeVisible()
+  await expect(page.getByText(/Sans ça : l’hôte n’a aucune alerte/)).toBeVisible()
+  await expect(page.getByText(/l’appli ne s’en sert pas/)).toBeVisible()
+})

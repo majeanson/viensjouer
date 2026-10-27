@@ -87,6 +87,7 @@ export function Door() {
         <button type="button" className="btn btn--big" disabled={busy} onClick={() => void tryDemo()}>{t.trial.button}</button>
         <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.trial.hint}</p>
       </div>
+      <p className="small" style={{ textAlign: 'center' }}><Link to="/confidentialite">{t.privacy.link}</Link></p>
     </div>
   )
 }

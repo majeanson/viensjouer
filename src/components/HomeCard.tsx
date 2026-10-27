@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useT } from '../i18n'
+import { Why } from './Why'
 import type { HomeCard as HomeCardData } from '../lib/types'
 
 // « Chez nous » — what the other parent is too polite to ask, written once and shown on
@@ -40,6 +41,7 @@ export function HomeCardForm() {
     <section style={{ marginTop: '1.5rem' }}>
       <h2>{t.kinds.home.title}</h2>
       <p className="muted small">{t.kinds.home.hint}</p>
+      <Why k="homeCard" />
       <form className="card" onSubmit={submit} onChange={() => setSaved(false)} key={JSON.stringify(c ?? null)}>
         <label className="check"><input type="checkbox" name="dog" defaultChecked={c?.dog} /><span>{t.kinds.home.dog}</span></label>
         <label className="check"><input type="checkbox" name="pool" defaultChecked={c?.pool} /><span>{t.kinds.home.pool}</span></label>

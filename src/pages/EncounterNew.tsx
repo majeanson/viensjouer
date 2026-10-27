@@ -6,6 +6,7 @@ import { K } from '../lib/query'
 import { useT } from '../i18n'
 import { fromLocalInput, nextSaturdayTen, toLocalInput } from '../lib/format'
 import { Face } from '../components/Face'
+import { Why } from '../components/Why'
 import { FamilyPicker } from '../components/FamilyPicker'
 import type { Child, Family, Group, Kind } from '../lib/types'
 
@@ -111,8 +112,8 @@ export function EncounterNew() {
           <span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.repeatHint}</span>
         </label>
         <label className="field"><span>{t.encounters.place}</span><input className="input" name="place" maxLength={120} placeholder={t.encounters.placePlaceholder[kind]} /></label>
-        {kind !== 'park' && <label className="field"><span>{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" /></label>}
-        {kind === 'birthday' && <label className="field"><span>{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} placeholder={t.kinds.birthday.giftPlaceholder} /></label>}
+        {kind !== 'park' && <label className="field"><span>{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" /><Why k="address" /></label>}
+        {kind === 'birthday' && <label className="field"><span>{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} placeholder={t.kinds.birthday.giftPlaceholder} /><Why k="gift" /></label>}
         <label className="field"><span>{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} placeholder={t.encounters.notePlaceholder} /></label>
       </div>
       <div className="card">

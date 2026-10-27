@@ -5,6 +5,7 @@ import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { ageLabel } from '../lib/format'
 import { Face } from '../components/Face'
+import { Why } from '../components/Why'
 import { HomeCardForm } from '../components/HomeCard'
 import { ParentInvite } from '../components/ParentInvite'
 import type { Child } from '../lib/types'
@@ -74,7 +75,7 @@ export function Children() {
       {editing ? (
         <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
           <label className="field"><span>{t.children.firstName}</span><input className="input" name="firstName" required maxLength={40} defaultValue={cur?.first_name} autoFocus /></label>
-          <label className="field"><span>{t.children.birthdate}</span><input className="input" name="birthdate" type="date" defaultValue={cur?.birthdate ?? ''} /></label>
+          <label className="field"><span>{t.children.birthdate}</span><input className="input" name="birthdate" type="date" defaultValue={cur?.birthdate ?? ''} /><Why k="childBirthdate" /></label>
           <div className="field">
             <span>{t.children.colour}</span>
             <div className="cluster" role="radiogroup" aria-label={t.children.colour}>

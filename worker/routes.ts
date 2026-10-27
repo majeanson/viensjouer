@@ -24,6 +24,12 @@ import * as groups from '../functions/api/groups'
 import * as windows from '../functions/api/windows'
 import * as calendar from '../functions/api/calendar'
 import * as windowReply from '../functions/api/w/[token]'
+import * as homeCard from '../functions/api/home-card'
+import * as relais from '../functions/api/relais'
+import * as souvenirs from '../functions/api/souvenirs'
+import * as souvenirImg from '../functions/api/souvenir-img'
+import * as replyPhoto from '../functions/api/r/photo'
+import * as replyPhotoImg from '../functions/api/r/photo-img'
 
 export type RouteMod = Partial<Record<'onRequest' | 'onRequestGet' | 'onRequestPost' | 'onRequestPatch' | 'onRequestPut' | 'onRequestDelete', PagesFunction<Env>>>
 
@@ -45,7 +51,13 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['windows', windows],
   ['calendar', calendar],
   ['w/:token', windowReply],
+  ['home-card', homeCard],
+  ['relais', relais],
+  ['souvenirs', souvenirs],
+  ['souvenirs/:id', souvenirImg],
   ['r/:token/ics', replyIcs],
+  ['r/:token/photo/:id', replyPhotoImg],
+  ['r/:token/photo', replyPhoto],
   ['r/:token/claim', replyClaim],
   ['r/:token', replyCard],
 ]

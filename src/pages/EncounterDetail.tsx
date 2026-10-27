@@ -5,13 +5,23 @@ import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useAuth } from '../lib/auth'
 import { useLang, useT } from '../i18n'
-import { whenLong } from '../lib/format'
-import { Face } from '../components/Face'
+import { timeOnly, whenLong } from '../lib/format'
 import { linkFor, linkLabel } from '../lib/link'
-import type { Encounter, Family, Invitation, Message } from '../lib/types'
+import { Face } from '../components/Face'
+import { PhotoGrid } from '../components/PhotoGrid'
+import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
 
-// The host's card: the plan, one link per family (copy / send), the thread, and the
-// three verbs (confirm · cancel · delete).
+interface Detail {
+  encounter: Encounter & { details: Record<string, string>; hereOpen: boolean }
+  invitations: Invitation[]
+  messages: Message[]
+  relais: Relais[]
+  souvenirs: Souvenir[]
+}
+
+// The host's card: the plan, one link per family (copy / send), what each kind adds (the
+// park's « on y est », the birthday's RSVP, the home's relais note), the day's photos, the
+// thread, and the three verbs (confirm · cancel · delete).
 export function EncounterDetail() {
   const { id = '' } = useParams()
   const t = useT()
@@ -19,21 +29,35 @@ export function EncounterDetail() {
   const { me } = useAuth()
   const nav = useNavigate()
   const qc = useQueryClient()
-  const q = useQuery({ queryKey: K.encounter(id), queryFn: () => api<{ encounter: Encounter; invitations: Invitation[]; messages: Message[] }>(`encounters?id=${id}`), refetchInterval: 30_000 })
+  const q = useQuery({ queryKey: K.encounter(id), queryFn: () => api<Detail>(`encounters?id=${id}`), refetchInterval: 30_000 })
   const fams = useQuery({ queryKey: K.families, queryFn: () => api<{ families: Family[] }>('families') })
+  const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
   const [copied, setCopied] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [addMore, setAddMore] = useState(false)
+  const [relaisFor, setRelaisFor] = useState<string | null>(null)
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: K.encounter(id) })
     void qc.invalidateQueries({ queryKey: K.encounters })
+    void qc.invalidateQueries({ queryKey: K.calendar })
   }
+  const fail = (e: Error) => setErr(e.message)
 
-  const patch = useMutation({ mutationFn: (body: Record<string, unknown>) => api('encounters', { method: 'PATCH', body: { id, ...body } }), onSuccess: refresh, onError: (e) => setErr(e.message) })
-  const del = useMutation({ mutationFn: () => api('encounters', { method: 'DELETE', body: { id } }), onSuccess: () => { refresh(); nav('/rencontres', { replace: true }) }, onError: (e) => setErr(e.message) })
-  const send = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'POST', body: { id: invId } }), onSuccess: refresh, onError: (e) => setErr(e.message) })
-  const withdraw = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'DELETE', body: { id: invId } }), onSuccess: refresh, onError: (e) => setErr(e.message) })
-  const message = useMutation({ mutationFn: (text: string) => api('messages', { method: 'POST', body: { encounterId: id, text } }), onSuccess: refresh, onError: (e) => setErr(e.message) })
+  const patch = useMutation({ mutationFn: (body: Record<string, unknown>) => api('encounters', { method: 'PATCH', body: { id, ...body } }), onSuccess: refresh, onError: fail })
+  const del = useMutation({ mutationFn: () => api('encounters', { method: 'DELETE', body: { id } }), onSuccess: () => { refresh(); nav('/rencontres', { replace: true }) }, onError: fail })
+  const send = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'POST', body: { id: invId } }), onSuccess: refresh, onError: fail })
+  const withdraw = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'DELETE', body: { id: invId } }), onSuccess: refresh, onError: fail })
+  const message = useMutation({ mutationFn: (text: string) => api('messages', { method: 'POST', body: { encounterId: id, text } }), onSuccess: refresh, onError: fail })
+  const relaisSave = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api('relais', { method: 'POST', body }),
+    onSuccess: () => {
+      setRelaisFor(null)
+      refresh()
+    },
+    onError: fail,
+  })
+  const relaisDel = useMutation({ mutationFn: (invitationId: string) => api('relais', { method: 'DELETE', body: { invitationId } }), onSuccess: refresh, onError: fail })
+  const photoDel = useMutation({ mutationFn: (pid: string) => api('souvenirs', { method: 'DELETE', body: { id: pid } }), onSuccess: refresh, onError: fail })
 
   async function copy(token: string) {
     const link = linkFor(token)
@@ -59,11 +83,21 @@ export function EncounterDetail() {
     f.reset()
   }
 
+  function submitRelais(e: FormEvent<HTMLFormElement>, invitationId: string) {
+    e.preventDefault()
+    relaisSave.mutate({ invitationId, ...Object.fromEntries(new FormData(e.currentTarget).entries()) })
+  }
+
   if (q.isLoading) return <p className="muted">{t.common.loading}</p>
   if (!q.data) return <p className="notice notice--err">{t.common.error}</p>
-  const { encounter: e, invitations, messages } = q.data
+  const { encounter: e, invitations, messages, relais, souvenirs } = q.data
   const invited = new Set(invitations.map((i) => i.friend_family_id))
   const notYet = (fams.data?.families ?? []).filter((f) => !invited.has(f.id))
+  const relaisOf = (invId: string) => relais.find((r) => r.invitation_id === invId)
+  // The birthday's RSVP, read from the families that said yes and gave a number.
+  const counted = invitations.filter((i) => i.reply === 'yes' && (i.adults !== null || i.kids !== null))
+  const totalKids = counted.reduce((n, i) => n + (i.kids ?? 0), 0)
+  const totalAdults = counted.reduce((n, i) => n + (i.adults ?? 0), 0)
 
   return (
     <>
@@ -74,7 +108,19 @@ export function EncounterDetail() {
       </div>
       <p className="muted">{whenLong(e.starts_at, lang)}{e.place ? ` · ${e.place}` : ''} · {t.encounters.status[e.status]}</p>
       {e.note && <p>{e.note}</p>}
+      {e.details.gift && <p className="muted">🎁 {e.details.gift}</p>}
       {err && <div className="notice notice--err">{err}</div>}
+
+      {e.kind === 'park' && e.status !== 'cancelled' && (e.here_at || e.hereOpen) && (
+        <div className="card row">
+          <span>{e.here_at ? <strong>📍 {t.kinds.park.hereSince(timeOnly(e.here_at, lang))}</strong> : <span className="muted">{t.kinds.park.hint}</span>}</span>
+          <button className={`btn ${e.here_at ? '' : 'btn--primary'}`} disabled={patch.isPending} onClick={() => patch.mutate({ here: !e.here_at })}>{e.here_at ? t.kinds.park.gone : t.kinds.park.here}</button>
+        </div>
+      )}
+
+      {e.kind === 'birthday' && counted.length > 0 && (
+        <div className="notice">{t.kinds.birthday.summary(totalKids, totalAdults)}</div>
+      )}
 
       <div className="card">
         <h3>{t.encounters.links}</h3>
@@ -85,6 +131,8 @@ export function EncounterDetail() {
               <span className={`chip ${i.reply ? `chip--${i.reply}` : ''}`}>{i.reply ? t.encounters.reply[i.reply] : t.encounters.reply.none}</span>
             </div>
             {i.reply_note && <p className="small" style={{ margin: 0 }}>« {i.reply_note} »</p>}
+            {i.allergies && <p className="small" style={{ margin: 0 }}>⚠ {i.allergies}</p>}
+            {e.kind === 'birthday' && i.reply === 'yes' && (i.adults !== null || i.kids !== null) && <p className="small muted" style={{ margin: 0 }}>{t.kinds.birthday.theyCome(i.kids ?? 0, i.adults ?? 0)}</p>}
             <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
             <div className="cluster">
               <button className="btn" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
@@ -93,8 +141,22 @@ export function EncounterDetail() {
               ) : (
                 <span className="muted small">{t.encounters.noEmail}</span>
               ))}
+              {e.kind === 'home' && <button className="btn" onClick={() => setRelaisFor(relaisFor === i.id ? null : i.id)}>{relaisOf(i.id) ? t.kinds.relais.edit : t.kinds.relais.write}</button>}
               <button className="btn btn--ghost btn--danger" onClick={() => withdraw.mutate(i.id)}>{t.encounters.withdraw}</button>
             </div>
+            {relaisFor === i.id && (
+              <form className="card" onSubmit={(ev) => submitRelais(ev, i.id)}>
+                <p className="muted small">{t.kinds.relais.hint}</p>
+                <label className="field"><span>{t.kinds.relais.nap}</span><input className="input" name="nap" maxLength={120} defaultValue={relaisOf(i.id)?.nap ?? ''} placeholder={t.kinds.relais.napPlaceholder} /></label>
+                <label className="field"><span>{t.kinds.relais.ate}</span><input className="input" name="ate" maxLength={160} defaultValue={relaisOf(i.id)?.ate ?? ''} placeholder={t.kinds.relais.atePlaceholder} /></label>
+                <label className="field"><span>{t.kinds.relais.mood}</span><input className="input" name="mood" maxLength={60} defaultValue={relaisOf(i.id)?.mood ?? ''} placeholder={t.kinds.relais.moodPlaceholder} /></label>
+                <label className="field"><span>{t.kinds.relais.note}</span><input className="input" name="note" maxLength={400} defaultValue={relaisOf(i.id)?.note ?? ''} /></label>
+                <div className="cluster">
+                  <button className="btn btn--primary" disabled={relaisSave.isPending}>{t.kinds.relais.send}</button>
+                  {relaisOf(i.id) && <button type="button" className="btn btn--ghost btn--danger" onClick={() => relaisDel.mutate(i.id)}>{t.kinds.relais.remove}</button>}
+                </div>
+              </form>
+            )}
           </div>
         ))}
         {notYet.length > 0 && (addMore ? (
@@ -107,6 +169,23 @@ export function EncounterDetail() {
           <button className="btn btn--ghost" style={{ marginTop: '0.75rem' }} onClick={() => setAddMore(true)}>{t.encounters.addFamily}</button>
         ))}
       </div>
+
+      {(health.data?.photos || souvenirs.length > 0) && (
+        <div className="card">
+          <h3>{t.souvenirs.title}</h3>
+          <p className="muted small">{t.souvenirs.hint}</p>
+          <PhotoGrid
+            items={souvenirs}
+            src={(pid) => `/api/souvenirs/${pid}`}
+            enabled={!!health.data?.photos && e.status !== 'cancelled'}
+            onUpload={async (blob) => {
+              await api(`souvenirs?encounter=${id}`, { method: 'POST', body: blob })
+              refresh()
+            }}
+            onDelete={(pid) => photoDel.mutate(pid)}
+          />
+        </div>
+      )}
 
       <div className="card">
         <h3>{t.encounters.thread}</h3>

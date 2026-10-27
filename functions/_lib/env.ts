@@ -9,6 +9,10 @@ export interface Env {
   // (auth.ts): encoding `undefined` would be a publicly known key.
   SESSION_SECRET?: string
 
+  // OPTIONAL R2 bucket for souvenir photos (_lib/photos.ts). Unset: the photo doors 503 and
+  // the UI hides them; everything else works.
+  PHOTOS?: R2Bucket
+
   // Signup gate (_lib/signupGate.ts): SIGNUP_OPEN = "1" opens it; otherwise INVITE_CODE,
   // when set, is asked for; neither → open (local dev).
   SIGNUP_OPEN?: string

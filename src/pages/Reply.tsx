@@ -7,13 +7,21 @@ import { useLang, useT } from '../i18n'
 import { whenLong, whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
 import { useAuth } from '../lib/auth'
-import type { Encounter, Message, Reply as ReplyKind } from '../lib/types'
+import { timeOnly } from '../lib/format'
+import { HomeCardView } from '../components/HomeCard'
+import { PhotoGrid } from '../components/PhotoGrid'
+import type { Encounter, HomeCard, Message, Reply as ReplyKind } from '../lib/types'
 
 interface Card {
   alive: boolean
   encounter: Omit<Encounter, 'address'> & { address: string | null }
   host: { child_first_name: string; parent_name: string; household_name: string; tz: string }
-  you: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null; reply: ReplyKind | null; replyNote: string | null; remind: boolean }
+  you: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null; reply: ReplyKind | null; replyNote: string | null; remind: boolean; adults: number | null; kids: number | null }
+  homeCard: HomeCard | null
+  relais: { nap: string | null; ate: string | null; mood: string | null; note: string | null } | null
+  souvenirs: { id: string; author_label: string }[]
+  souvenirsOpen: boolean
+  photos: boolean
   messages: Message[]
   series: { token: string; starts_at: number; reply: ReplyKind | null }[]
 }
@@ -62,7 +70,7 @@ function ReplyInner() {
 
   if (q.isLoading) return <p className="shell muted">{t.common.loading}</p>
   if (!q.data) return <div className="shell"><p className="notice notice--err">{isStatus(q.error, 404) ? t.reply.dead : t.common.error}</p></div>
-  const { encounter: e, host, you, messages, alive, series } = q.data
+  const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos } = q.data
   const chosen = reply ?? you.reply
   const answered = you.reply !== null && !editing
 
@@ -74,6 +82,10 @@ function ReplyInner() {
     for (const k of ['parentName', 'email', 'phone', 'allergies'] as const) {
       const v = String(f.get(k) ?? '').trim()
       if (v) body[k] = v
+    }
+    if (e.kind === 'birthday' && chosen === 'yes') {
+      body.adults = Number(f.get('adults') ?? 1)
+      body.kids = Number(f.get('kids') ?? 1)
     }
     post.mutate(body, { onSuccess: () => { setDone(true); setEditing(false) } })
   }
@@ -103,9 +115,22 @@ function ReplyInner() {
         {e.place && <p>{e.place}</p>}
         {e.address ? <p>{e.address}</p> : e.kind !== 'park' && <p className="muted small">{t.reply.addressOnYes}</p>}
         {e.note && <p className="muted">{e.note}</p>}
+        {e.details?.gift && <p className="muted">🎁 {e.details.gift}</p>}
+        {e.hereAt && <div className="notice">📍 {t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
         <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
       </div>
+
+      {homeCard && <HomeCardView card={homeCard} />}
+      {relais && (
+        <div className="card">
+          <h3>{t.kinds.relais.title}</h3>
+          {relais.nap && <p style={{ margin: 0 }}><strong>{t.kinds.relais.nap} :</strong> {relais.nap}</p>}
+          {relais.ate && <p style={{ margin: 0 }}><strong>{t.kinds.relais.ate} :</strong> {relais.ate}</p>}
+          {relais.mood && <p style={{ margin: 0 }}><strong>{t.kinds.relais.mood} :</strong> {relais.mood}</p>}
+          {relais.note && <p style={{ margin: 0 }}>{relais.note}</p>}
+        </div>
+      )}
 
       {!alive ? (
         <div className="notice">{t.reply.closed}</div>
@@ -134,10 +159,32 @@ function ReplyInner() {
           <label className="field"><span>{t.reply.email}</span><input className="input" name="email" type="email" defaultValue={you.email ?? ''} autoComplete="email" /></label>
           <label className="field"><span>{t.reply.phone}</span><input className="input" name="phone" type="tel" defaultValue={you.phone ?? ''} autoComplete="tel" /></label>
           <label className="field"><span>{t.reply.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={you.allergies ?? ''} /></label>
+          {e.kind === 'birthday' && chosen === 'yes' && (
+            <div className="cluster" style={{ marginBottom: '0.75rem' }}>
+              <label className="field" style={{ flex: 1 }}><span>{t.kinds.birthday.adults}</span><input className="input" name="adults" type="number" min={0} max={20} defaultValue={you.adults ?? 1} /></label>
+              <label className="field" style={{ flex: 1 }}><span>{t.kinds.birthday.kids}</span><input className="input" name="kids" type="number" min={0} max={20} defaultValue={you.kids ?? 1} /></label>
+            </div>
+          )}
           <label className="check"><input type="checkbox" name="remind" defaultChecked={you.remind} /><span>{t.reply.remind}</span></label>
           {err && <div className="notice notice--err">{err}</div>}
           <button className="btn btn--primary btn--big" disabled={!chosen || post.isPending}>{t.reply.send}</button>
         </form>
+      )}
+
+      {souvenirsOpen && (photos || souvenirs.length > 0) && (
+        <div className="card">
+          <h3>{t.souvenirs.title}</h3>
+          <p className="muted small">{t.souvenirs.hint}</p>
+          <PhotoGrid
+            items={souvenirs}
+            src={(pid) => `/api/r/${token}/photo/${pid}`}
+            enabled={photos}
+            onUpload={async (blob) => {
+              await api(`r/${token}/photo`, { method: 'POST', body: blob })
+              await qc.invalidateQueries({ queryKey: K.reply(token) })
+            }}
+          />
+        </div>
       )}
 
       {series.length > 0 && (

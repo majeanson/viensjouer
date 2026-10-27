@@ -5,6 +5,7 @@ import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { ageLabel } from '../lib/format'
 import { Face } from '../components/Face'
+import { HomeCardForm } from '../components/HomeCard'
 import type { Child } from '../lib/types'
 
 // The same six colours the server hands out in turn (functions/api/children.ts).
@@ -91,6 +92,7 @@ export function Children() {
       ) : (
         <button className="btn btn--primary" style={{ marginTop: '0.75rem' }} onClick={() => setEditing('new')}>{t.children.add}</button>
       )}
+      <HomeCardForm />
     </>
   )
 }

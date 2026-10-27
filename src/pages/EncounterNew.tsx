@@ -64,6 +64,7 @@ export function EncounterNew() {
       place: f.get('place') || undefined,
       address: f.get('address') || undefined,
       note: f.get('note') || undefined,
+      ...(kind === 'birthday' && f.get('gift') ? { details: { gift: f.get('gift') } } : {}),
       invite: [...picked],
     })
   }
@@ -111,6 +112,7 @@ export function EncounterNew() {
         </label>
         <label className="field"><span>{t.encounters.place}</span><input className="input" name="place" maxLength={120} placeholder={t.encounters.placePlaceholder[kind]} /></label>
         {kind !== 'park' && <label className="field"><span>{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" /></label>}
+        {kind === 'birthday' && <label className="field"><span>{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} placeholder={t.kinds.birthday.giftPlaceholder} /></label>}
         <label className="field"><span>{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} placeholder={t.encounters.notePlaceholder} /></label>
       </div>
       <div className="card">

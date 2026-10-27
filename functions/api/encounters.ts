@@ -1,7 +1,8 @@
 import { badRequest, created, notFound, ok, readJson, str } from '../_lib/json'
 import { authed } from '../_lib/route'
 import { newId, newLinkCode, nowSec } from '../_lib/ids'
-import { isKind, type EncounterRow, type Reply } from '../_lib/encounters'
+import { isKind, type EncounterRow, type Kind, type Reply } from '../_lib/encounters'
+import { cleanDetails, hereAllowed, parseDetails } from '../_lib/kinds'
 
 // The host side of a rencontre.
 //   GET    /api/encounters            → upcoming + recent, with each invitation's reply
@@ -23,25 +24,38 @@ interface InviteRow {
   parent_name: string
   child_first_name: string
   email: string | null
+  allergies: string | null
+  adults: number | null
+  kids: number | null
 }
 
 const INVITE_SELECT = `SELECT i.id, i.friend_family_id, i.token, i.reply, i.reply_note, i.reply_at, i.sent_at,
-                              f.parent_name, f.child_first_name, f.email
+                              f.parent_name, f.child_first_name, f.email, f.allergies, i.adults, i.kids
                          FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id`
 
 export const onRequestGet = authed(async (ctx, actor) => {
   const url = new URL(ctx.request.url)
   const id = url.searchParams.get('id')
   if (id) {
-    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status, series_id FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
+    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status, series_id, here_at, details FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
       .bind(id, actor.householdId)
       .first<EncounterRow>()
     if (!e) return notFound()
-    const [inv, msgs] = await ctx.env.DB.batch<InviteRow>([
+    const now = nowSec()
+    const [inv, msgs, rel, sou] = await ctx.env.DB.batch([
       ctx.env.DB.prepare(`${INVITE_SELECT} WHERE i.encounter_id = ? ORDER BY i.created_at`).bind(id),
       ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at FROM encounter_messages WHERE encounter_id = ? ORDER BY created_at').bind(id),
+      ctx.env.DB.prepare('SELECT r.invitation_id, r.nap, r.ate, r.mood, r.note, r.expires_at FROM relais r JOIN invitations i ON i.id = r.invitation_id WHERE i.encounter_id = ? AND r.expires_at > ?').bind(id, now),
+      ctx.env.DB.prepare('SELECT id, author_kind, author_label, created_at FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(id),
     ])
-    return ok({ encounter: e, invitations: inv.results, messages: msgs.results })
+    const { details, ...rest } = e
+    return ok({
+      encounter: { ...rest, details: parseDetails(details), hereOpen: hereAllowed(e, now) },
+      invitations: inv.results as unknown as InviteRow[],
+      messages: msgs.results,
+      relais: rel.results,
+      souvenirs: sou.results,
+    })
   }
   // The list: everything not older than two weeks, soonest first. A hub later paginates.
   const since = nowSec() - 14 * 86_400
@@ -70,6 +84,8 @@ type Body = {
   // time kept across DST); at most 12, ascending, within a year. Each is an ordinary rencontre.
   startsAtList?: number[]
   series?: boolean
+  details?: unknown
+  here?: boolean
   endsAt?: number | null
   place?: string
   address?: string | null
@@ -130,9 +146,9 @@ export const onRequestPost = authed(async (ctx, actor) => {
     const id = newId()
     ids.push(id)
     await ctx.env.DB.prepare(
-      'INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, ends_at, place, address, note, series_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, ends_at, place, address, note, series_id, details, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     )
-      .bind(id, actor.householdId, childId, body!.kind, title, at, endsAt ? at + (endsAt - startsAt) : null, str(body?.place, 120), str(body?.address, 200), str(body?.note, 1000), seriesId, ts, ts)
+      .bind(id, actor.householdId, childId, body!.kind, title, at, endsAt ? at + (endsAt - startsAt) : null, str(body?.place, 120), str(body?.address, 200), str(body?.note, 1000), seriesId, JSON.stringify(cleanDetails(body!.kind as Kind, body?.details)), ts, ts)
       .run()
     await mintInvitations(ctx.env.DB, actor.householdId, id, invite)
   }
@@ -143,8 +159,14 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   const body = await readJson<Body>(ctx.request)
   const id = str(body?.id, 20)
   if (!id) return badRequest('id requis.')
-  const own = await ctx.env.DB.prepare('SELECT starts_at, series_id FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(id, actor.householdId).first<{ starts_at: number; series_id: string | null }>()
+  const own = await ctx.env.DB.prepare('SELECT starts_at, ends_at, status, series_id FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(id, actor.householdId).first<{ starts_at: number; ends_at: number | null; status: 'proposed' | 'confirmed' | 'cancelled'; series_id: string | null }>()
   if (!own) return notFound()
+  // « On y est » / « On est partis »: only around the rencontre itself (hereAllowed).
+  if (typeof body?.here === 'boolean') {
+    if (body.here && !hereAllowed(own, nowSec())) return badRequest('Pas avant le jour même.')
+    await ctx.env.DB.prepare('UPDATE encounters SET here_at = ?, updated_at = ? WHERE id = ?').bind(body.here ? nowSec() : null, nowSec(), id).run()
+    return ok()
+  }
   const status = body?.status
   if (status !== undefined && status !== 'proposed' && status !== 'confirmed' && status !== 'cancelled') return badRequest('Statut inconnu.')
   // « Annuler toute la série »: the same status on this occurrence and every later one.
@@ -193,5 +215,12 @@ export const onRequestDelete = authed(async (ctx, actor) => {
   const res = await ctx.env.DB.prepare('UPDATE encounters SET deleted_at = ?, status = ? WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
     .bind(nowSec(), 'cancelled', id, actor.householdId)
     .run()
-  return res.meta.changes ? ok() : notFound()
+  if (!res.meta.changes) return notFound()
+  // A deleted rencontre takes its photos with it: the blobs go, the rows are marked.
+  const { results: photos } = await ctx.env.DB.prepare('SELECT media_key FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL').bind(id).all<{ media_key: string }>()
+  if (photos.length) {
+    await ctx.env.DB.prepare('UPDATE souvenirs SET deleted_at = ? WHERE encounter_id = ? AND deleted_at IS NULL').bind(nowSec(), id).run()
+    await Promise.all(photos.map((p) => ctx.env.PHOTOS?.delete(p.media_key).catch(() => {})))
+  }
+  return ok()
 })

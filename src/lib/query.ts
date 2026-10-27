@@ -13,6 +13,7 @@ export const K = {
   groups: ['groups'] as const,
   windows: ['windows'] as const,
   calendar: ['calendar'] as const,
+  homeCard: ['home-card'] as const,
   encounters: ['encounters'] as const,
   encounter: (id: string) => ['encounter', id] as const,
   reply: (token: string) => ['reply', token] as const,

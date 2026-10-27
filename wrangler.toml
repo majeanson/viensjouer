@@ -26,6 +26,12 @@ database_name = "viensjouer"
 database_id = "1d98b155-7139-4b9c-ac80-0954052e937d"
 migrations_dir = "functions/db/migrations"
 
+# R2 — souvenir photos (functions/_lib/photos.ts). Optional binding: unset, the photo
+# features hide. Created 2026-10-27 (`wrangler r2 bucket create viensjouer-photos`).
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "viensjouer-photos"
+
 [vars]
 APP_NAME = "Viens jouer"
 # "1" opens signup to anyone; anything else asks for the INVITE_CODE secret (when set).

@@ -4,6 +4,8 @@ import { overAuthLimit } from '../../_lib/rateLimit'
 import { newId, normalizeLinkCode, nowSec } from '../../_lib/ids'
 import { addressFor, isReply, linkAlive, type EncounterRow, type Reply } from '../../_lib/encounters'
 import { REMIND_LEAD_SEC } from '../../_lib/reminders'
+import { cleanCount, hereAllowed, homeCardOrNull, parseDetails, souvenirsVisible } from '../../_lib/kinds'
+import { photosEnabled } from '../../_lib/photos'
 
 // THE install-free side. The token in the path is the whole credential: one card, one
 // family. No cookie, no CSRF (worker/index.ts exempts `r/`), rate-limited by address.
@@ -14,7 +16,7 @@ import { REMIND_LEAD_SEC } from '../../_lib/reminders'
 //                            message? } — any subset; a message appends to the thread
 
 interface Resolved {
-  invitation: { id: string; friend_family_id: string; reply: Reply | null; reply_note: string | null; remind_at: number | null }
+  invitation: { id: string; friend_family_id: string; reply: Reply | null; reply_note: string | null; remind_at: number | null; adults: number | null; kids: number | null }
   encounter: EncounterRow & { household_id: string }
   series_id: string | null
   family: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null }
@@ -27,7 +29,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
   if (!token) return null
   const row = await env.DB.prepare(
     `SELECT i.id AS inv_id, i.friend_family_id, i.reply, i.reply_note, i.remind_at,
-            e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.note, e.status,
+            e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.note, e.status, e.details, e.here_at, i.adults, i.kids,
             f.parent_name, f.email, f.phone, f.child_first_name, f.allergies,
             c.first_name AS host_child, h.name AS household_name, h.tz,
             (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent
@@ -42,7 +44,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
     .first<Record<string, unknown>>()
   if (!row) return null
   return {
-    invitation: { id: row.inv_id as string, friend_family_id: row.friend_family_id as string, reply: row.reply as Reply | null, reply_note: row.reply_note as string | null, remind_at: row.remind_at as number | null },
+    invitation: { id: row.inv_id as string, friend_family_id: row.friend_family_id as string, reply: row.reply as Reply | null, reply_note: row.reply_note as string | null, remind_at: row.remind_at as number | null, adults: row.adults as number | null, kids: row.kids as number | null },
     encounter: {
       id: row.id as string,
       household_id: row.household_id as string,
@@ -55,6 +57,8 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
       address: row.address as string | null,
       note: row.note as string | null,
       status: row.status as EncounterRow['status'],
+      details: row.details as string,
+      here_at: row.here_at as number | null,
     },
     family: {
       parent_name: row.parent_name as string,
@@ -86,18 +90,34 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
         .bind(r.series_id, r.invitation.friend_family_id, nowSec(), r.encounter.id)
         .all<{ token: string; starts_at: number; reply: Reply | null }>()
     : { results: [] as { token: string; starts_at: number; reply: Reply | null }[] }
-  const { address: _hidden, household_id: _hh, ...card } = r.encounter
+  // Phase 4: what each kind adds. A home card is shown BEFORE the answer (it is the
+  // point of the card); the relais only to the family it was written for; the day's photos
+  // only to a family that said yes.
+  const now = nowSec()
+  const home = r.encounter.kind === 'home'
+    ? await ctx.env.DB.prepare('SELECT details FROM home_cards WHERE household_id = ?').bind(r.encounter.household_id).first<{ details: string }>()
+    : null
+  const relais = await ctx.env.DB.prepare('SELECT nap, ate, mood, note, expires_at FROM relais WHERE invitation_id = ? AND expires_at > ?').bind(r.invitation.id, now).first()
+  const photoRows = souvenirsVisible(r.encounter, r.invitation.reply, now)
+    ? (await ctx.env.DB.prepare('SELECT id, author_label FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(r.encounter.id).all()).results
+    : []
+  const { address: _hidden, household_id: _hh, details, here_at, ...card } = r.encounter
   return ok({
     alive,
-    encounter: { ...card, address: addressFor(r.invitation.reply, r.encounter.address) },
+    encounter: { ...card, address: addressFor(r.invitation.reply, r.encounter.address), details: parseDetails(details), hereAt: hereAllowed(r.encounter, now) ? here_at ?? null : null },
+    homeCard: home ? homeCardOrNull(home.details) : null,
+    relais,
+    souvenirs: photoRows,
+    souvenirsOpen: souvenirsVisible(r.encounter, r.invitation.reply, now),
+    photos: photosEnabled(ctx.env),
     host: r.host,
-    you: { ...r.family, reply: r.invitation.reply, replyNote: r.invitation.reply_note, remind: r.invitation.remind_at !== null },
+    you: { ...r.family, reply: r.invitation.reply, replyNote: r.invitation.reply_note, remind: r.invitation.remind_at !== null, adults: r.invitation.adults, kids: r.invitation.kids },
     messages,
     series: seriesRows,
   })
 }
 
-type Body = { reply?: string; note?: string | null; parentName?: string; email?: string; phone?: string; allergies?: string; message?: string; remind?: boolean }
+type Body = { reply?: string; note?: string | null; parentName?: string; email?: string; phone?: string; allergies?: string; message?: string; remind?: boolean; adults?: number; kids?: number }
 
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
@@ -120,6 +140,10 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
         r.invitation.id,
       ),
     )
+  }
+  // A birthday asks how many adults stay and how many children come.
+  if (r.encounter.kind === 'birthday' && (body.adults !== undefined || body.kids !== undefined)) {
+    stmts.push(ctx.env.DB.prepare('UPDATE invitations SET adults = ?, kids = ?, updated_at = ? WHERE id = ?').bind(cleanCount(body.adults), cleanCount(body.kids), ts, r.invitation.id))
   }
   // The ONE reminder (the hourly cron sends it): a day before, only if still ahead, and
   // only once the family has an email on file (sent now or already in the book).

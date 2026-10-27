@@ -3,6 +3,7 @@ import { ok } from '../_lib/json'
 import { mailEnabled } from '../_lib/mail'
 import { rateLimitEnabled } from '../_lib/rateLimit'
 import { inviteRequired } from '../_lib/signupGate'
+import { photosEnabled } from '../_lib/photos'
 
 // Liveness + which optional bindings are wired, so the SPA hides a door honestly
 // instead of discovering it by failing. Open to the unauthenticated signup page.
@@ -11,6 +12,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     ok: true,
     app: ctx.env.APP_NAME ?? 'Viens jouer',
     mail: mailEnabled(ctx.env),
+    photos: photosEnabled(ctx.env),
     invite: inviteRequired(ctx.env),
     rateLimit: rateLimitEnabled(ctx.env),
     sessionSecret: !!ctx.env.SESSION_SECRET && ctx.env.SESSION_SECRET.length >= 32,

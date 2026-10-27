@@ -35,6 +35,10 @@ export interface Encounter {
   note: string | null
   status: Status
   series_id?: string | null
+  here_at?: number | null
+  hereAt?: number | null
+  hereOpen?: boolean
+  details?: Record<string, string>
 }
 
 export interface InvitationSummary {
@@ -56,6 +60,9 @@ export interface Invitation {
   parent_name: string
   child_first_name: string
   email: string | null
+  allergies: string | null
+  adults: number | null
+  kids: number | null
 }
 
 export interface Message {
@@ -90,4 +97,28 @@ export interface OpenWindow {
   ends_at: number
   note: string | null
   targets: WindowTarget[]
+}
+
+export interface HomeCard {
+  dog: boolean
+  pool: boolean
+  screens: 'none' | 'little' | 'free' | null
+  nutFree: boolean
+  note: string
+}
+
+export interface Relais {
+  invitation_id: string
+  nap: string | null
+  ate: string | null
+  mood: string | null
+  note: string | null
+  expires_at: number
+}
+
+export interface Souvenir {
+  id: string
+  author_kind: 'host' | 'guest'
+  author_label: string
+  created_at: number
 }

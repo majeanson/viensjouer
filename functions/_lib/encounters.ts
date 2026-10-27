@@ -26,6 +26,8 @@ export interface EncounterRow {
   address: string | null
   note: string | null
   status: Status
+  here_at?: number | null
+  details?: string
 }
 
 // A link stays usable until a day after the rencontre (a late « merci » still lands),

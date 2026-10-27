@@ -74,6 +74,12 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .chip--maybe { background: color-mix(in srgb, var(--accent) 25%, transparent); border-color: transparent; }
 .chip--kind { background: color-mix(in srgb, var(--teal) 18%, transparent); border-color: transparent; }
 
+/* A colour swatch that is really a radio: the ring shows the pick, the input stays
+   focusable for a keyboard. */
+.swatch { position: relative; width: 2.4rem; height: 2.4rem; border-radius: 50%; cursor: pointer; display: inline-block; outline: 3px solid transparent; outline-offset: 2px; }
+.swatch:has(input:checked) { outline-color: var(--ink); }
+.swatch:has(input:focus-visible) { outline-color: var(--accent); }
+.swatch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .face { display: inline-flex; width: 2rem; height: 2rem; border-radius: 50%; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 0.9rem; flex: none; }
 
 .seg { display: flex; gap: 0.35rem; flex-wrap: wrap; }

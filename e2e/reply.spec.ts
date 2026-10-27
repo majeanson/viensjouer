@@ -48,7 +48,7 @@ test('the invited parent sees the plan and the home card, then answers yes', asy
   await expect(page.getByText(/L’adresse s’affiche/)).toBeVisible()
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   await page.getByLabel('Votre prénom').fill('Julie')
-  await page.getByLabel('Courriel', { exact: true }).fill('julie@example.com')
+  await page.locator('input[name=email]').fill('julie@example.com')
   await page.getByLabel('Me rappeler la veille par courriel').check()
   await page.getByRole('button', { name: 'Répondre', exact: true }).click()
   await expect(page.getByText('Réponse envoyée. Merci !')).toBeVisible()

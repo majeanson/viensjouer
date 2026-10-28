@@ -46,6 +46,21 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e:ci
 
+  # The real walk: the built app on the real Worker with a real local D1/R2, a host and an invited parent in two
+  # browsers. Signal only, like e2e: it proves the stack agrees with itself, which no stubbed test can.
+  real:
+    name: Real walk (Worker + D1, no stubs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:real
+
   deploy:
     name: Deploy to Cloudflare
     needs: [ci]

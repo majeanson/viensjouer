@@ -32,6 +32,7 @@ export interface Encounter {
   ends_at: number | null
   place: string | null
   address: string | null
+  map_url: string | null
   note: string | null
   status: Status
   series_id?: string | null

@@ -21,6 +21,7 @@ export const isDemoEmail = (email: string | null | undefined): boolean => !!emai
 // a sandbox swept with a forgotten table would leave a stranger's rows behind forever.
 // `byHousehold` runs `DELETE … WHERE <col> IN (ids)`; `via` goes through a parent table.
 export const SWEEP_ORDER: { table: string; sql: (ids: string) => string }[] = [
+  { table: 'encounter_changes', sql: (i) => `DELETE FROM encounter_changes WHERE encounter_id IN (SELECT id FROM encounters WHERE household_id IN (${i}))` },
   { table: 'encounter_messages', sql: (i) => `DELETE FROM encounter_messages WHERE encounter_id IN (SELECT id FROM encounters WHERE household_id IN (${i}))` },
   { table: 'relais', sql: (i) => `DELETE FROM relais WHERE invitation_id IN (SELECT inv.id FROM invitations inv JOIN encounters e ON e.id = inv.encounter_id WHERE e.household_id IN (${i}))` },
   { table: 'souvenirs', sql: (i) => `DELETE FROM souvenirs WHERE encounter_id IN (SELECT id FROM encounters WHERE household_id IN (${i}))` },

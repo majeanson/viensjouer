@@ -1,7 +1,11 @@
 import { badRequest, created, notFound, ok, readJson, str } from '../_lib/json'
 import { authed } from '../_lib/route'
-import { freshLinkCode, newId, nowSec } from '../_lib/ids'
-import { isKind, type EncounterRow, type Kind, type Reply } from '../_lib/encounters'
+import { freshLinkCode, newId, nowSec, paperCode } from '../_lib/ids'
+import { cleanMapUrl, isKind, type EncounterRow, type Kind, type Reply, type Status } from '../_lib/encounters'
+import { changeLinesFr, diffEncounter, type Change, type Snapshot } from '../_lib/changes'
+import { REMIND_LEAD_SEC } from '../_lib/reminders'
+import { escapeHtml, mailEnabled, sendMail } from '../_lib/mail'
+import { isDemoEmail } from '../_lib/demo'
 import { cleanDetails, defaultScope, hereAllowed, isScope, parseDetails, type Scope } from '../_lib/kinds'
 
 // The host side of a rencontre.
@@ -38,16 +42,17 @@ export const onRequestGet = authed(async (ctx, actor) => {
   const url = new URL(ctx.request.url)
   const id = url.searchParams.get('id')
   if (id) {
-    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status, series_id, here_at, details FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
+    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, map_url, note, status, series_id, here_at, details FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
       .bind(id, actor.householdId)
       .first<EncounterRow>()
     if (!e) return notFound()
     const now = nowSec()
-    const [inv, msgs, rel, sou] = await ctx.env.DB.batch([
+    const [inv, msgs, rel, sou, chg] = await ctx.env.DB.batch([
       ctx.env.DB.prepare(`${INVITE_SELECT} WHERE i.encounter_id = ? ORDER BY i.created_at`).bind(id),
       ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at FROM encounter_messages WHERE encounter_id = ? ORDER BY created_at').bind(id),
       ctx.env.DB.prepare('SELECT r.invitation_id, r.nap, r.ate, r.mood, r.note, r.expires_at FROM relais r JOIN invitations i ON i.id = r.invitation_id WHERE i.encounter_id = ? AND r.expires_at > ?').bind(id, now),
       ctx.env.DB.prepare('SELECT id, author_kind, author_label, created_at FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(id),
+      ctx.env.DB.prepare('SELECT field, old_value, new_value, created_at FROM encounter_changes WHERE encounter_id = ? ORDER BY created_at DESC LIMIT 30').bind(id),
     ])
     const { details, ...rest } = e
     return ok({
@@ -56,6 +61,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
       messages: msgs.results,
       relais: rel.results,
       souvenirs: sou.results,
+      changes: chg.results,
     })
   }
   // The list: everything not older than two weeks, soonest first. A hub later paginates.
@@ -88,9 +94,11 @@ type Body = {
   details?: unknown
   here?: boolean
   scope?: string
+  notify?: boolean
   endsAt?: number | null
   place?: string
   address?: string | null
+  mapUrl?: string | null
   note?: string | null
   status?: string
   invite?: string[]
@@ -147,14 +155,16 @@ export const onRequestPost = authed(async (ctx, actor) => {
   const scope: Scope = isScope(body?.scope) ? body.scope : defaultScope(body!.kind as Kind)
   const ts = nowSec()
   const invite = Array.isArray(body?.invite) ? body!.invite.filter((v) => typeof v === 'string').slice(0, 40) : []
+  const mapUrl = cleanMapUrl(body?.mapUrl)
+  if (typeof body?.mapUrl === 'string' && body.mapUrl.trim() && !mapUrl) return badRequest('Lien de carte invalide.')
   const ids: string[] = []
   for (const at of times) {
     const id = newId()
     ids.push(id)
     await ctx.env.DB.prepare(
-      'INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, ends_at, place, address, note, series_id, details, default_scope, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, ends_at, place, address, map_url, note, series_id, details, default_scope, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     )
-      .bind(id, actor.householdId, childId, body!.kind, title, at, endsAt ? at + (endsAt - startsAt) : null, str(body?.place, 120), str(body?.address, 200), str(body?.note, 1000), seriesId, JSON.stringify(cleanDetails(body!.kind as Kind, body?.details)), scope, ts, ts)
+      .bind(id, actor.householdId, childId, body!.kind, title, at, endsAt ? at + (endsAt - startsAt) : null, str(body?.place, 120), str(body?.address, 200), mapUrl, str(body?.note, 1000), seriesId, JSON.stringify(cleanDetails(body!.kind as Kind, body?.details)), scope, ts, ts)
       .run()
     await mintInvitations(ctx.env.DB, actor.householdId, id, invite, scope)
   }
@@ -182,37 +192,81 @@ export const onRequestPatch = authed(async (ctx, actor) => {
       .run()
     return ok()
   }
-  const startsAt = typeof body?.startsAt === 'number' && Number.isFinite(body.startsAt) ? Math.floor(body.startsAt) : null
-  const endsAt = body?.endsAt === null ? null : typeof body?.endsAt === 'number' ? Math.floor(body.endsAt) : undefined
-  await ctx.env.DB.prepare(
-    `UPDATE encounters SET
-       title = COALESCE(?, title), starts_at = COALESCE(?, starts_at),
-       ends_at = CASE WHEN ? THEN ? ELSE ends_at END,
-       place = CASE WHEN ? THEN ? ELSE place END,
-       address = CASE WHEN ? THEN ? ELSE address END,
-       note = CASE WHEN ? THEN ? ELSE note END,
-       status = COALESCE(?, status), updated_at = ?
-     WHERE id = ?`,
-  )
-    .bind(
-      str(body?.title, 120),
-      startsAt,
-      endsAt !== undefined ? 1 : 0,
-      endsAt ?? null,
-      body?.place !== undefined ? 1 : 0,
-      str(body?.place, 120),
-      body?.address !== undefined ? 1 : 0,
-      str(body?.address, 200),
-      body?.note !== undefined ? 1 : 0,
-      str(body?.note, 1000),
-      status ?? null,
-      nowSec(),
-      id,
-    )
-    .run()
+  // EDIT: work out what REALLY changes, write it together with the change log (so the invited families can
+  // be shown what moved), and keep the day-before reminders honest if the start moved.
+  const cur = await ctx.env.DB.prepare('SELECT title, starts_at, ends_at, place, address, map_url, note, details, status, kind FROM encounters WHERE id = ?')
+    .bind(id)
+    .first<{ title: string; starts_at: number; ends_at: number | null; place: string | null; address: string | null; map_url: string | null; note: string | null; details: string; status: Status; kind: Kind }>()
+  if (!cur) return notFound()
+  const before: Snapshot = { title: cur.title, starts_at: cur.starts_at, ends_at: cur.ends_at, place: cur.place, address: cur.address, map_url: cur.map_url, note: cur.note, gift: parseDetails(cur.details).gift ?? null, status: cur.status }
+  const after: Snapshot = { ...before }
+  if (body?.title !== undefined) {
+    const t = str(body.title, 120)
+    if (!t) return badRequest('Le titre ne peut pas être vide.')
+    after.title = t
+  }
+  if (typeof body?.startsAt === 'number' && Number.isFinite(body.startsAt)) after.starts_at = Math.floor(body.startsAt)
+  if (body?.endsAt === null) after.ends_at = null
+  else if (typeof body?.endsAt === 'number' && Number.isFinite(body.endsAt)) after.ends_at = Math.floor(body.endsAt)
+  if (after.ends_at !== null && after.ends_at <= after.starts_at) return badRequest('La fin doit venir après le début.')
+  if (body?.place !== undefined) after.place = str(body.place, 120)
+  if (body?.address !== undefined) after.address = str(body.address, 200)
+  if (body?.mapUrl !== undefined) {
+    const m = cleanMapUrl(body.mapUrl)
+    if (typeof body.mapUrl === 'string' && body.mapUrl.trim() && !m) return badRequest('Lien de carte invalide.')
+    after.map_url = m
+  }
+  if (body?.note !== undefined) after.note = str(body.note, 1000)
+  if (body?.details !== undefined && cur.kind === 'birthday') after.gift = cleanDetails('birthday', body.details).gift ?? null
+  if (status !== undefined) after.status = status
+  const changes = diffEncounter(before, after)
+  const ts = nowSec()
+  if (changes.length) {
+    const DB = ctx.env.DB
+    const details = cur.kind === 'birthday' ? cleanDetails('birthday', { gift: after.gift ?? '' }) : parseDetails(cur.details)
+    const stmts = [
+      DB.prepare('UPDATE encounters SET title = ?, starts_at = ?, ends_at = ?, place = ?, address = ?, map_url = ?, note = ?, details = ?, status = ?, updated_at = ? WHERE id = ?').bind(after.title, after.starts_at, after.ends_at, after.place, after.address, after.map_url, after.note, JSON.stringify(details), after.status, ts, id),
+      ...changes.map((c) => DB.prepare('INSERT INTO encounter_changes (id, encounter_id, field, old_value, new_value, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), id, c.field, c.old, c.new, ts)),
+    ]
+    // A day-before reminder follows the new start; one already sent for the old time is armed again.
+    if (after.starts_at !== before.starts_at) stmts.push(DB.prepare('UPDATE invitations SET remind_at = MAX(?, ?), reminded_at = NULL, updated_at = ? WHERE encounter_id = ? AND remind_at IS NOT NULL').bind(after.starts_at - REMIND_LEAD_SEC, ts, ts, id))
+    await DB.batch(stmts)
+  }
   if (Array.isArray(body?.invite)) await mintInvitations(ctx.env.DB, actor.householdId, id, body!.invite.filter((v) => typeof v === 'string').slice(0, 40), isScope(body?.scope) ? body.scope : own.default_scope)
-  return ok()
+  // « Prévenir les familles »: one email to each family that has an address and did not say no.
+  let notified = 0
+  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) notified = await notifyChange(ctx.env, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes)
+  return ok({ changed: changes.length, notified })
 })
+
+async function notifyChange(env: Parameters<typeof mailEnabled>[0], origin: string, hostName: string, encounterId: string, title: string, changes: Change[]): Promise<number> {
+  const { results } = await env.DB.prepare(
+    `SELECT i.token, f.email, f.parent_name, h.tz FROM invitations i
+       JOIN friend_families f ON f.id = i.friend_family_id
+       JOIN encounters e ON e.id = i.encounter_id
+       JOIN households h ON h.id = e.household_id
+      WHERE i.encounter_id = ? AND f.email IS NOT NULL AND (i.reply IS NULL OR i.reply != 'no') LIMIT 40`,
+  )
+    .bind(encounterId)
+    .all<{ token: string; email: string; parent_name: string; tz: string }>()
+  let sent = 0
+  for (const r of results) {
+    const lines = changeLinesFr(changes, r.tz)
+    const link = `${origin}/${paperCode(r.token)}`
+    try {
+      await sendMail(env, {
+        to: r.email,
+        subject: `Mise à jour : ${title}`,
+        text: `Bonjour ${r.parent_name},\n\n${hostName} a modifié « ${title} » :\n- ${lines.join('\n- ')}\n\nLa page de la rencontre (tu peux y changer ta réponse) :\n${link}\n\n— Viens jouer`,
+        html: `<p>Bonjour ${escapeHtml(r.parent_name)},</p><p>${escapeHtml(hostName)} a modifié <strong>« ${escapeHtml(title)} »</strong> :</p><ul>${lines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul><p><a href="${link}">La page de la rencontre</a> (tu peux y changer ta réponse).</p><p>— Viens jouer</p>`,
+      })
+      sent++
+    } catch (err) {
+      console.error('[mail] change', err)
+    }
+  }
+  return sent
+}
 
 export const onRequestDelete = authed(async (ctx, actor) => {
   const body = await readJson<{ id?: string }>(ctx.request)

@@ -54,3 +54,32 @@ export function ageLabel(birthdate: string | null, lang: Lang): string | null {
   const y = Math.floor(months / 12)
   return lang === 'fr' ? `${y} ans` : `${y} yrs`
 }
+
+// « Jusqu'à (facultatif) » is only a TIME: the day is the one chosen in « Quand », so it is already filled in.
+// If the end time is not after the start (« 22 h » to « 1 h »), it is the next morning.
+export function endFromTime(startSec: number, hhmm: string): number | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim())
+  if (!m) return null
+  const d = new Date(startSec * 1000)
+  d.setHours(Number(m[1]), Number(m[2]), 0, 0)
+  let end = Math.floor(d.getTime() / 1000)
+  if (end <= startSec) {
+    d.setDate(d.getDate() + 1)
+    end = Math.floor(d.getTime() / 1000)
+  }
+  return end
+}
+
+// The time of day of an instant as « HH:MM » for an <input type="time">.
+export function toLocalTime(sec: number): string {
+  const d = new Date(sec * 1000)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// Same calendar day, in the browser's zone?
+export function sameLocalDay(a: number, b: number): boolean {
+  const x = new Date(a * 1000)
+  const y = new Date(b * 1000)
+  return x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate()
+}

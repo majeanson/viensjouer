@@ -83,3 +83,11 @@ rencontre could land on the board as an event).
 
 - A guard that has never been red proves nothing: plant the defect, watch it fail, restore.
 - A ledger entry is a verdict from a moment; grep the code before building on it.
+
+## Modifier une rencontre (2026-10-27)
+
+- **Edit**: « Modifier » on the host card opens a form with a live preview of exactly what the families will see change. Migration 0008 `encounter_changes` logs one row per changed field. Address and map link are logged as « mis à jour » only, never their values.
+- **Invited page**: a device that opened the link before sees « Mis à jour depuis ta dernière visite » plus « Modifié » marks with the old value; everyone gets a collapsed « Historique des modifications ». « Prévenir par courriel » is optional and only reaches families with an address who did not say no. A moved start re-arms the day-before reminder.
+- **Map link** (migration 0009 `map_url`): optional, https only (`cleanMapUrl`), standard `type=url` input. Same privacy as the address: park = everyone, home/birthday = after a yes.
+- **« Jusqu'à »** is now a standard time input on the day of « Quand » (past midnight = next day).
+- Still to build from the simplification batch: one-tap answer, short form, first-run, 3 tabs, merged friends list, calmer host card, contextual settings, folded windows, undo toasts, one Pourquoi, Refaire pareil, vocabulary, desktop columns.

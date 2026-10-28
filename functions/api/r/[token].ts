@@ -30,7 +30,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
   if (!token) return null
   const row = await env.DB.prepare(
     `SELECT i.id AS inv_id, i.friend_family_id, i.reply, i.reply_note, i.remind_at,
-            e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.note, e.status, e.details, e.here_at, i.adults, i.kids, i.scope,
+            e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.map_url, e.note, e.status, e.details, e.here_at, i.adults, i.kids, i.scope,
             f.parent_name, f.email, f.phone, f.child_first_name, f.allergies,
             c.first_name AS host_child, h.name AS household_name, h.tz,
             (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent
@@ -56,6 +56,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
       ends_at: row.ends_at as number | null,
       place: row.place as string | null,
       address: row.address as string | null,
+      map_url: row.map_url as string | null,
       note: row.note as string | null,
       status: row.status as EncounterRow['status'],
       details: row.details as string,
@@ -102,13 +103,18 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const photoRows = souvenirsVisible(r.encounter, r.invitation.reply, now)
     ? (await ctx.env.DB.prepare('SELECT id, author_label FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(r.encounter.id).all()).results
     : []
-  const { address: _hidden, household_id: _hh, details, here_at, ...card } = r.encounter
+  // What was edited since the invitation went out (the address itself is never in the log).
+  const { results: changes } = await ctx.env.DB.prepare('SELECT field, old_value, new_value, created_at FROM encounter_changes WHERE encounter_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 10')
+    .bind(r.encounter.id, now - 60 * 86_400)
+    .all()
+  const { address: _hidden, map_url: _mapHidden, household_id: _hh, details, here_at, ...card } = r.encounter
   return ok({
     alive,
-    encounter: { ...card, address: addressFor(r.invitation.reply, r.encounter.address), details: parseDetails(details), hereAt: hereAllowed(r.encounter, now) ? here_at ?? null : null },
+    encounter: { ...card, address: addressFor(r.invitation.reply, r.encounter.address), map_url: r.encounter.kind === 'park' ? r.encounter.map_url : addressFor(r.invitation.reply, r.encounter.map_url), details: parseDetails(details), hereAt: hereAllowed(r.encounter, now) ? here_at ?? null : null },
     homeCard: home ? homeCardOrNull(home.details) : null,
     relais,
     souvenirs: photoRows,
+    changes,
     souvenirsOpen: souvenirsVisible(r.encounter, r.invitation.reply, now),
     photos: photosEnabled(ctx.env),
     host: r.host,

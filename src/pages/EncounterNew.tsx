@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useT } from '../i18n'
-import { fromLocalInput, nextSaturdayTen, toLocalInput } from '../lib/format'
+import { endFromTime, fromLocalInput, nextSaturdayTen, toLocalInput } from '../lib/format'
 import { Why } from '../components/Why'
 import { FREQUENCIES, MAX_OCCURRENCES, repeatTimes, type Frequency } from '../lib/repeat'
 import { FamilyPicker } from '../components/FamilyPicker'
@@ -60,7 +60,8 @@ export function EncounterNew() {
       title: f.get('title'),
       startsAt,
       ...(freq !== 'once' && startsAt ? { startsAtList: repeatTimes(startsAt, freq, count) } : {}),
-      endsAt: endsRaw ? fromLocalInput(endsRaw) : null,
+      endsAt: endsRaw && startsAt ? endFromTime(startsAt, endsRaw) : null,
+      mapUrl: f.get('mapUrl') || undefined,
       place: f.get('place') || undefined,
       address: f.get('address') || undefined,
       note: f.get('note') || undefined,
@@ -115,7 +116,7 @@ export function EncounterNew() {
       <div className="card">
         <label className="field"><span>{t.encounters.titleField}</span><input className="input" name="title" required maxLength={120} placeholder={t.encounters.titlePlaceholder[kind]} /></label>
         <label className="field"><span>{t.encounters.when}</span><input className="input" name="startsAt" type="datetime-local" required defaultValue={toLocalInput(nextSaturdayTen())} /></label>
-        <label className="field"><span>{t.encounters.until}</span><input className="input" name="endsAt" type="datetime-local" /></label>
+        <label className="field"><span>{t.encounters.until}</span><input className="input" name="endsAt" type="time" /><span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.untilHint}</span></label>
         <label className="field">
           <span>{t.encounters.repeat}</span>
           <select className="input" name="freq" value={freq} onChange={(e) => setFreq(e.target.value as Frequency)}>
@@ -132,6 +133,7 @@ export function EncounterNew() {
           </label>
         )}
         <label className="field"><span>{t.encounters.place}</span><input className="input" name="place" maxLength={120} placeholder={t.encounters.placePlaceholder[kind]} /></label>
+        <label className="field"><span>{t.encounters.mapUrl}</span><input className="input" name="mapUrl" type="url" autoComplete="off" maxLength={300} placeholder="https://maps.app.goo.gl/…" /><Why k="mapUrl" /></label>
         {kind !== 'park' && <label className="field"><span>{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" /><Why k="address" /></label>}
         {kind === 'birthday' && <label className="field"><span>{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} placeholder={t.kinds.birthday.giftPlaceholder} /><Why k="gift" /></label>}
         <label className="field"><span>{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} placeholder={t.encounters.notePlaceholder} /></label>

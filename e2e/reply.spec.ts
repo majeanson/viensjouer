@@ -190,3 +190,43 @@ test('a two-word link works in any case and with spaces or dots', async ({ page 
     await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
   }
 })
+
+// ---- what changed: the invited parent is shown what the host edited
+const t0 = Math.floor(Date.now() / 1000) + 3 * 86400
+const edited = (over: Record<string, unknown> = {}) =>
+  card({
+    encounter: { ...card().encounter, kind: 'park', starts_at: t0 + 3600, place: 'Chez nous', note: 'Collation', address: null },
+    homeCard: null,
+    changes: [
+      { field: 'starts_at', old_value: String(t0), new_value: String(t0 + 3600), created_at: Math.floor(Date.now() / 1000) - 60 },
+      { field: 'place', old_value: 'Parc Lafontaine', new_value: 'Chez nous', created_at: Math.floor(Date.now() / 1000) - 60 },
+      { field: 'address', old_value: null, new_value: null, created_at: Math.floor(Date.now() / 1000) - 60 },
+    ],
+    ...over,
+  })
+
+test('a parent who has seen the page before is shown exactly what changed, and can change their answer', async ({ page }) => {
+  await page.addInitScript((key) => localStorage.setItem(key, String(Math.floor(Date.now() / 1000) - 3600)), `vj-seen-${CODE}`)
+  await stub(page, edited({ you: { ...card().you, reply: 'yes' } }))
+  await page.goto(`/${CODE}`)
+  const banner = page.getByRole('status')
+  await expect(banner.getByText('Mis à jour depuis ta dernière visite')).toBeVisible()
+  await expect(banner.getByText('Chez nous', { exact: true })).toBeVisible()
+  await expect(banner.getByText('L’adresse a été mise à jour.')).toBeVisible()
+  // the rows that moved carry a « Modifié » mark with what they were before
+  await expect(page.locator('.changed')).toHaveCount(2)
+  await expect(page.locator('.was').first()).toContainText('avant :')
+  await expect(banner.getByRole('button', { name: 'Changer ma réponse' })).toBeVisible()
+})
+
+test('a first-time visitor sees no « new » marks, but can read the history', async ({ page }) => {
+  await stub(page, edited())
+  await page.goto(`/${CODE}`)
+  await expect(page.getByText('Mis à jour depuis ta dernière visite')).toHaveCount(0)
+  await expect(page.locator('.changed')).toHaveCount(0)
+  await page.getByText('Historique des modifications').click()
+  await expect(page.getByText('Début :', { exact: false }).first()).toBeVisible()
+  await expect(page.getByText('L’adresse a été mise à jour.')).toBeVisible()
+  // the address itself is never in the history
+  await expect(page.getByText(/rue/)).toHaveCount(0)
+})

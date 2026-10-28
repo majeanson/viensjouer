@@ -5,9 +5,11 @@ import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useAuth } from '../lib/auth'
 import { useLang, useT } from '../i18n'
-import { timeOnly, whenLong } from '../lib/format'
+import { timeOnly, whenLong, whenShort } from '../lib/format'
 import { linkFor, linkLabel } from '../lib/link'
 import { PhotoGrid } from '../components/PhotoGrid'
+import { EncounterEdit } from '../components/EncounterEdit'
+import { fromRow, isPrivate, showValue, type ChangeRow } from '../lib/changes'
 import { Why } from '../components/Why'
 import { kidsComing } from '../lib/scope'
 import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
@@ -18,6 +20,7 @@ interface Detail {
   messages: Message[]
   relais: Relais[]
   souvenirs: Souvenir[]
+  changes: ChangeRow[]
 }
 
 // The host's card: the plan, one link per family (copy / send), what each kind adds (the
@@ -37,6 +40,8 @@ export function EncounterDetail() {
   const [err, setErr] = useState<string | null>(null)
   const [addMore, setAddMore] = useState(false)
   const [relaisFor, setRelaisFor] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [flash, setFlash] = useState<string | null>(null)
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: K.encounter(id) })
     void qc.invalidateQueries({ queryKey: K.encounters })
@@ -109,7 +114,8 @@ export function EncounterDetail() {
 
   if (q.isLoading) return <p className="muted">{t.common.loading}</p>
   if (!q.data) return <p className="notice notice--err">{t.common.error}</p>
-  const { encounter: e, invitations, messages, relais, souvenirs } = q.data
+  const { encounter: e, invitations, messages, relais, souvenirs, changes: rawChanges } = q.data
+  const changes = rawChanges ?? []
   const invited = new Set(invitations.map((i) => i.friend_family_id))
   const notYet = (fams.data?.families ?? []).filter((f) => !invited.has(f.id))
   const relaisOf = (invId: string) => relais.find((r) => r.invitation_id === invId)
@@ -129,7 +135,24 @@ export function EncounterDetail() {
       <p className="muted">{t.encounters.kind[e.kind]} · {whenLong(e.starts_at, lang)}{e.place ? ` · ${e.place}` : ''} · {t.encounters.status[e.status]}</p>
       {e.note && <p>{e.note}</p>}
       {e.details.gift && <p className="muted">{t.kinds.birthday.giftIs} : {e.details.gift}</p>}
+      {flash && <div className="notice">{flash}</div>}
       {err && <div className="notice notice--err">{err}</div>}
+      {editing ? (
+        <EncounterEdit
+          e={e}
+          gift={e.details.gift ?? null}
+          canNotify={!!me.mail && invitations.some((i) => i.email && i.reply !== 'no')}
+          onClose={() => setEditing(false)}
+          onSaved={(r) => {
+            setEditing(false)
+            setFlash(r.changed === 0 ? t.edit.nothing : r.notified ? t.edit.savedNotified(r.notified) : t.edit.saved)
+            refresh()
+            setTimeout(() => setFlash(null), 6000)
+          }}
+        />
+      ) : (
+        e.status !== 'cancelled' && <p style={{ margin: '0 0 0.75rem' }}><button className="linkbtn" onClick={() => setEditing(true)}>{t.edit.button}</button></p>
+      )}
 
       {e.kind === 'park' && e.status !== 'cancelled' && (e.here_at || e.hereOpen) && (
         <div className="card row">
@@ -219,6 +242,23 @@ export function EncounterDetail() {
           <button className="btn" disabled={message.isPending}>{t.encounters.sendMsg}</button>
         </form>
       </div>
+
+      {changes.length > 0 && (
+        <details className="why" style={{ marginBottom: '1rem' }}>
+          <summary>{t.edit.history}</summary>
+          <ul className="small" style={{ margin: '0.4rem 0 0' }}>
+            {changes.map((c, n) => {
+              const d = fromRow(c)
+              return (
+                <li key={n}>
+                  <span className="muted">{whenShort(c.created_at, lang)} · {t.edit.fields[c.field]} :</span>{' '}
+                  {isPrivate(c.field) ? t.edit.hidden[c.field] : <><s>{showValue(c.field, d.from, lang, t.edit.status, t.edit.empty)}</s> → {showValue(c.field, d.to, lang, t.edit.status, t.edit.empty)}</>}
+                </li>
+              )
+            })}
+          </ul>
+        </details>
+      )}
 
       <div className="cluster">
         {e.status === 'proposed' && <button className="btn btn--primary" onClick={() => patch.mutate({ status: 'confirmed' })}>{t.encounters.confirm}</button>}

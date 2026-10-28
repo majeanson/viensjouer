@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, isStatus } from '../lib/api'
@@ -6,6 +6,7 @@ import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { timeOnly, whenDay, whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
+import { fromRow, isPrivate, readSeen, seenKey, showValue, writeSeen, type ChangeField, type ChangeRow } from '../lib/changes'
 import { useAuth } from '../lib/auth'
 import { HomeCardView } from '../components/HomeCard'
 import { PhotoGrid } from '../components/PhotoGrid'
@@ -25,6 +26,7 @@ interface Card {
   photos: boolean
   messages: Message[]
   series: { token: string; starts_at: number; reply: ReplyKind | null }[]
+  changes: ChangeRow[]
 }
 
 // THE install-free page. A parent opens it from a text, sees the plan, answers in one
@@ -50,6 +52,14 @@ function ReplyInner() {
   const [claiming, setClaiming] = useState(false)
   const { me, refresh } = useAuth()
   const nav = useNavigate()
+  // When this device last opened this link: what was edited AFTER that is marked as new.
+  const [seenAt] = useState<number | null>(() => readSeen(seenKey(token)))
+  const loaded = !!q.data
+  useEffect(() => {
+    if (!loaded) return
+    const id = setTimeout(() => writeSeen(seenKey(token), Math.floor(Date.now() / 1000)), 2500)
+    return () => clearTimeout(id)
+  }, [loaded, token])
 
   const claim = useMutation({
     mutationFn: (body: Record<string, unknown>) => api(`r/${token}/claim`, { method: 'POST', body }),
@@ -71,7 +81,18 @@ function ReplyInner() {
 
   if (q.isLoading) return <p className="shell muted">{t.common.loading}</p>
   if (!q.data) return <div className="shell"><p className="notice notice--err">{isStatus(q.error, 404) ? t.reply.dead : t.common.error}</p></div>
-  const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos } = q.data
+  const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos, changes: rawChanges } = q.data
+  const changes = rawChanges ?? []
+  const fresh = seenAt === null ? [] : changes.filter((c) => c.created_at > seenAt)
+  const freshOf = (...fields: ChangeField[]) => fresh.find((c) => fields.includes(c.field))
+  // A « Modifié » mark with what it was before, under the row that changed.
+  const mark = (c: ChangeRow | undefined) =>
+    c ? (
+      <>
+        {' '}<span className="changed">{t.edit.changed}</span>
+        {!isPrivate(c.field) && <small className="was">{t.edit.before} : {showValue(c.field, c.old_value, lang, t.edit.status, t.edit.empty)}</small>}
+      </>
+    ) : null
   const chosen = reply ?? you.reply
   const answered = you.reply !== null && !editing
 
@@ -104,22 +125,51 @@ function ReplyInner() {
     <div className="shell">
       <Header />
 
+      {fresh.length > 0 && (
+        <div className="notice notice--changed" role="status">
+          <div>
+            <strong>{t.edit.updatedSince}</strong>
+            <ul className="small" style={{ margin: '0.25rem 0 0' }}>
+              {fresh.map((c, n) => (
+                <li key={n}>
+                  {isPrivate(c.field) ? t.edit.hidden[c.field] : <><span className="muted">{t.edit.fields[c.field]} :</span> <s>{showValue(c.field, fromRow(c).from, lang, t.edit.status, t.edit.empty)}</s> → <strong>{showValue(c.field, fromRow(c).to, lang, t.edit.status, t.edit.empty)}</strong></>}
+                </li>
+              ))}
+            </ul>
+          </div>
+          {you.reply && alive && !editing && <button className="btn btn--small" onClick={() => setEditing(true)}>{t.edit.changeAnswer}</button>}
+        </div>
+      )}
       <section className="card">
         <p className="kind" style={{ margin: 0 }}>{t.reply.invitation} · {t.encounters.kind[e.kind]}</p>
         <h1 style={{ marginTop: '0.25rem' }}>{t.reply.invites(host.child_first_name, you.child_first_name)}</h1>
         <p className="muted">{t.reply.organizer(host.parent_name || host.household_name, host.child_first_name)}</p>
         <p><strong>{you.scope === 'friend' ? t.scope.youFriend(you.child_first_name) : t.scope.youFamily}</strong></p>
         <dl className="facts">
-          <div><dt>{t.reply.what}</dt><dd>{e.title}</dd></div>
-          <div><dt>{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}</dd></div>
-          {e.place && <div><dt>{t.reply.where}</dt><dd>{e.place}</dd></div>}
-          {e.address ? <div><dt>{t.reply.addressLabel}</dt><dd>{e.address}</dd></div> : e.kind !== 'park' && <div><dt>{t.reply.addressLabel}</dt><dd className="muted">{t.reply.addressOnYes}</dd></div>}
-          {e.note && <div><dt>{t.reply.toKnow}</dt><dd>{e.note}</dd></div>}
-          {e.details?.gift && <div><dt>{t.kinds.birthday.giftIs}</dt><dd>{e.details.gift}</dd></div>}
+          <div><dt>{t.reply.what}</dt><dd>{e.title}{mark(freshOf('title'))}</dd></div>
+          <div><dt>{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
+          {e.place && <div><dt>{t.reply.where}</dt><dd>{e.place}{mark(freshOf('place'))}</dd></div>}
+          {e.map_url && <div><dt>{t.reply.map}</dt><dd><a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a>{mark(freshOf('map_url'))}</dd></div>}
+          {e.address ? <div><dt>{t.reply.addressLabel}</dt><dd>{e.address}{mark(freshOf('address'))}</dd></div> : e.kind !== 'park' && <div><dt>{t.reply.addressLabel}</dt><dd className="muted">{t.reply.addressOnYes}</dd></div>}
+          {e.note && <div><dt>{t.reply.toKnow}</dt><dd>{e.note}{mark(freshOf('note'))}</dd></div>}
+          {e.details?.gift && <div><dt>{t.kinds.birthday.giftIs}</dt><dd>{e.details.gift}{mark(freshOf('gift'))}</dd></div>}
         </dl>
         {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
         <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
+        {changes.length > 0 && (
+          <details className="why" style={{ marginTop: '0.75rem' }}>
+            <summary>{t.edit.history}</summary>
+            <ul className="small" style={{ margin: '0.4rem 0 0' }}>
+              {changes.map((c, n) => (
+                <li key={n}>
+                  <span className="muted">{whenShort(c.created_at, lang)} · {t.edit.fields[c.field]} :</span>{' '}
+                  {isPrivate(c.field) ? t.edit.hidden[c.field] : <><s>{showValue(c.field, fromRow(c).from, lang, t.edit.status, t.edit.empty)}</s> → {showValue(c.field, fromRow(c).to, lang, t.edit.status, t.edit.empty)}</>}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </section>
 
       <section className="card">

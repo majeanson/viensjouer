@@ -149,3 +149,10 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .steps li.now { color: var(--ink); font-weight: 600; }
 .steps li.now::before { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
 .steps li.done::before { content: '\2713'; background: var(--ok); border-color: transparent; color: #fff; }
+
+/* Editing: the preview the host sees, and the « Modifié » marks the families see. */
+.changes-preview { border: 1px dashed var(--line); border-radius: var(--radius); padding: 0.6rem 0.8rem; margin-bottom: 0.9rem; }
+.changes-preview ul { margin: 0.35rem 0 0; padding-left: 1.1rem; }
+.changed { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.05rem 0.4rem; border-radius: 4px; background: var(--accent); color: var(--accent-ink); vertical-align: middle; }
+.was { display: block; color: var(--muted); font-size: 0.8rem; text-decoration: line-through; margin-top: 0.1rem; }
+.notice--changed { background: color-mix(in srgb, var(--accent) 22%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); align-items: flex-start; }

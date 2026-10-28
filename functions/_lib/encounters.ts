@@ -24,6 +24,7 @@ export interface EncounterRow {
   ends_at: number | null
   place: string | null
   address: string | null
+  map_url: string | null
   note: string | null
   status: Status
   here_at?: number | null
@@ -69,4 +70,21 @@ export function toIcs(e: { id: string; title: string; starts_at: number; ends_at
   ]
     .filter((l): l is string => l !== null)
     .join('\r\n')
+}
+
+// An optional link to a map (Google Maps, Apple Plans, OpenStreetMap, a short link…). Only https, no
+// credentials, one line. A bare « maps.app.goo.gl/x » gets its https:// added. Anything else is refused,
+// so a stored link can never be a javascript: or data: URL.
+export function cleanMapUrl(v: unknown): string | null {
+  if (typeof v !== 'string') return null
+  let t = v.trim()
+  if (!t || t.length > 300 || /\s/.test(t)) return null
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(t)) t = 'https://' + t
+  try {
+    const u = new URL(t)
+    if (u.protocol !== 'https:' || !u.hostname.includes('.') || u.username || u.password) return null
+    return t
+  } catch {
+    return null
+  }
 }

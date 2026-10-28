@@ -133,3 +133,45 @@ test('a family with no email gets a ready-to-send message with the short link', 
   expect(text).toContain('Toute la famille est la bienvenue.')
   expect(text).toContain('/lune-miel')
 })
+
+test('the host edits a rencontre, sees what will change, and the PATCH carries only the real change', async ({ page }) => {
+  const patched: Record<string, unknown>[] = []
+  const soon = Math.floor(Date.now() / 1000) + 86400
+  await page.route('**/api/**', async (r) => {
+    const req = r.request()
+    const p = new URL(req.url()).pathname.replace('/api/', '')
+    const j = (json: unknown) => r.fulfill({ json })
+    if (p === 'auth/me') return j({ signedIn: true, email: 'm@example.com', displayName: 'Marc', household: null, mail: true, demo: false })
+    if (p === 'health') return j({ ok: true, mail: true, photos: false })
+    if (p === 'families') return j({ families: [] })
+    if (p === 'encounters' && req.method() === 'PATCH') {
+      patched.push(req.postDataJSON() as Record<string, unknown>)
+      return j({ changed: 1, notified: 1 })
+    }
+    if (p.startsWith('encounters')) {
+      return j({
+        encounter: { id: 'e1', child_id: 'c1', kind: 'park', title: 'Au parc', starts_at: soon, ends_at: null, place: 'Parc Lafontaine', address: null, note: null, status: 'proposed', details: {}, hereOpen: false },
+        invitations: [{ id: 'i1', friend_family_id: 'f1', token: 'lune-miel', reply: 'yes', reply_note: null, reply_at: 1, sent_at: null, parent_name: 'Julie', child_first_name: 'Léa', email: 'j@example.com', allergies: null, adults: null, kids: null, scope: 'family' }],
+        messages: [], relais: [], souvenirs: [],
+        changes: [{ field: 'place', old_value: 'Parc', new_value: 'Parc Lafontaine', created_at: soon - 5000 }],
+      })
+    }
+    return j({})
+  })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByText('Historique des modifications')).toBeVisible()
+  await page.getByRole('button', { name: 'Modifier', exact: true }).click()
+  // untouched form: nothing to save
+  await expect(page.getByText('Rien n’a changé.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Enregistrer les changements' })).toBeDisabled()
+  // change the place: the preview shows old → new and Save wakes up
+  await page.getByLabel('Où').fill('Chez nous')
+  await expect(page.getByText('Ce qui va changer')).toBeVisible()
+  await expect(page.locator('.changes-preview s', { hasText: 'Parc Lafontaine' })).toBeVisible()
+  await expect(page.locator('.changes-preview strong', { hasText: 'Chez nous' })).toBeVisible()
+  await expect(page.getByRole('checkbox', { name: /Prévenir par courriel/ })).toBeChecked()
+  await page.getByRole('button', { name: 'Enregistrer les changements' }).click()
+  await expect.poll(() => patched.length).toBe(1)
+  expect(patched[0]).toMatchObject({ id: 'e1', title: 'Au parc', place: 'Chez nous', notify: true })
+  await expect(page.getByText('Modifié. 1 courriel envoyé.')).toBeVisible()
+})

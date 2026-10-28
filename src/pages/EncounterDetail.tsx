@@ -63,6 +63,7 @@ export function EncounterDetail() {
 
   const patch = useMutation({ mutationFn: (body: Record<string, unknown>) => api('encounters', { method: 'PATCH', body: { id, ...body } }), onSuccess: refresh, onError: fail })
   const record = useMutation({ mutationFn: (b: { id: string; reply: 'yes' | 'maybe' | 'no' }) => api('invitations', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
+  const reshuffle = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'PATCH', body: { id: invId, newCode: true } }), onSuccess: refresh, onError: fail })
   const send = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'POST', body: { id: invId } }), onSuccess: refresh, onError: fail })
   const setScope = useMutation({ mutationFn: (b: { id: string; scope: 'friend' | 'family' }) => api('invitations', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
   const message = useMutation({ mutationFn: (text: string) => api('messages', { method: 'POST', body: { encounterId: id, text } }), onSuccess: refresh, onError: fail })
@@ -261,9 +262,23 @@ export function EncounterDetail() {
                   {me.mail && i.email && <button className="linkbtn" disabled={send.isPending} onClick={() => send.mutate(i.id)}>{i.sent_at ? t.encounters.resend : t.encounters.send}</button>}
                   <details className="more">
                     <summary>{t.form.more}</summary>
-                    <div>
-                      <p className="small muted" style={{ margin: 0 }}>{i.scope === 'friend' ? t.scope.chipFriend(i.child_first_name) : t.scope.chipFamily}</p>
-                      <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
+                    <div className="stack">
+                      <div>
+                        <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.encounters.theLink}</p>
+                        <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
+                        <div className="cluster">
+                          <button className="linkbtn" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
+                          {!i.reply && !i.sent_at && <button className="linkbtn" disabled={reshuffle.isPending} onClick={() => reshuffle.mutate(i.id)}>{t.encounters.reshuffle}</button>}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.scope.label}</p>
+                        <div className="seg" role="group" aria-label={t.scope.label}>
+                          {(['family', 'friend'] as const).map((s) => (
+                            <button key={s} type="button" className={`btn btn--small ${i.scope === s ? 'btn--on' : ''}`} aria-pressed={i.scope === s} onClick={() => i.scope !== s && setScope.mutate({ id: i.id, scope: s })}>{s === 'friend' ? t.scope.chipFriend(i.child_first_name) : t.scope.chipFamily}</button>
+                          ))}
+                        </div>
+                      </div>
                       <div>
                         <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.record.label}</p>
                         <div className="seg" role="group" aria-label={t.record.label}>
@@ -272,10 +287,7 @@ export function EncounterDetail() {
                           ))}
                         </div>
                       </div>
-                      {(!i.email || !me.mail) && <p className="muted small" style={{ margin: 0 }}>{t.share.noEmailHint}</p>}
                       <div className="cluster">
-                        <button className="linkbtn" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
-                        <button className="linkbtn" onClick={() => setScope.mutate({ id: i.id, scope: i.scope === 'friend' ? 'family' : 'friend' })}>{i.scope === 'friend' ? t.scope.toFamily : t.scope.toFriend}</button>
                         {e.kind === 'home' && <button className="linkbtn" onClick={() => setRelaisFor(relaisFor === i.id ? null : i.id)}>{relaisOf(i.id) ? t.kinds.relais.edit : t.kinds.relais.write}</button>}
                         <button
                           className="linkbtn linkbtn--danger"

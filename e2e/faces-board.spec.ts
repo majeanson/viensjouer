@@ -87,7 +87,7 @@ test('my profile: a face and the first name shown on invitations', async ({ page
     'GET auth/me': () => ({ json: { signedIn: true, email: 'm@example.com', displayName: name, household: { id: 'h', name: 'Les Jeanson', tz: 'America/Toronto' }, mail: false, demo: false, photo: 'me1' } }),
   })
   await page.goto('/compte')
-  await expect(page.getByRole('heading', { name: 'Mon profil' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Profil', selected: true })).toBeVisible()
   await expect(page.locator('.avatarpick .face img')).toHaveAttribute('src', '/api/avatar/parent/me?v=me1')
   await page.getByLabel('Mon prénom').fill('Marc-Antoine')
   await page.locator('form', { has: page.getByLabel('Mon prénom') }).getByRole('button').click()
@@ -279,7 +279,7 @@ test('« Courriel d’essai »: one tap sends a sample to my own address, and on
 test('no test-mail button without mail, or in a trial', async ({ page }) => {
   await host(page, {}, { me: { mail: false } })
   await page.goto('/compte')
-  await expect(page.getByRole('heading', { name: 'Mon profil' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Profil', selected: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'M’envoyer un courriel d’essai' })).toHaveCount(0)
   await page.unrouteAll({ behavior: 'ignoreErrors' })
   await host(page, {}, { me: { mail: true, demo: true } })

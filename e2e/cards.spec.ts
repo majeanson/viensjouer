@@ -51,6 +51,22 @@ test('the host notes an answer given on paper or in person', async ({ page }) =>
   expect(patches[0]).toEqual({ id: 'i1', reply: 'yes' })
 })
 
+test('two words that read badly can be drawn again, only while nothing depends on them', async ({ page }) => {
+  const patches = await hostStub(page)
+  await page.goto('/rencontres/e1')
+  const lea = page.locator('.linkrow').filter({ hasText: 'Léa' })
+  const zoe = page.locator('.linkrow').filter({ hasText: 'Zoé' })
+  await lea.getByText('Plus d’options').click()
+  await zoe.getByText('Plus d’options').click()
+  // Zoé already said yes: her words are fixed
+  await expect(zoe.getByRole('button', { name: 'Autres mots' })).toHaveCount(0)
+  await lea.getByRole('button', { name: 'Autres mots' }).click()
+  await expect.poll(() => patches.length).toBe(1)
+  expect(patches[0]).toEqual({ id: 'i1', newCode: true })
+  // one clear block per question: the link, who is invited, the answer by hand
+  await expect(lea.getByRole('group', { name: 'Qui est invité ?' }).getByRole('button', { name: 'Toute la famille' })).toHaveAttribute('aria-pressed', 'true')
+})
+
 test('the home page takes the two words of a card, with a space, a capital or an accent', async ({ page }) => {
   await page.route('**/api/**', (r) => r.fulfill({ status: 404, json: { error: 'x' } }))
   await page.route('**/api/auth/me', (r) => r.fulfill({ json: { signedIn: false } }))

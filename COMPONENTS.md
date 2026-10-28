@@ -18,7 +18,7 @@
 | `Loading` | First read in flight | Skeleton cards + a status line. `page` for screens rendered before the header. |
 | `QueryError` | A read failed | `role=alert`, a « Réessayer » button; `dead` gives the 404 sentence and drops the button. |
 | `ErrorBoundary` / `OfflineNotice` | A thrown render error; no network | Reloads once when a deploy replaced a chunk. |
-| `Header` | The sticky top bar on every page | Brand, language, theme, account menu (closes on Escape / outside press). |
+| `Header` | The sticky top bar on every page | Brand, language, theme, your face and name (one tap to your account) and a separate sign-out button. No dropdown. |
 | `Shell` | The signed-in frame: header, tabs, offline notice, main | Tabs are the bottom bar on a phone. |
 | `FamilyPicker` | Choosing friend families (and groups) for a rencontre | |
 | `Groups` | Private shortcuts in the family picker | |

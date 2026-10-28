@@ -1,6 +1,6 @@
 import { badRequest, forbidden, notFound, ok, readJson, serviceUnavailable, str, tooManyRequests } from '../_lib/json'
 import { authed } from '../_lib/route'
-import { nowSec, paperCode, whenLong } from '../_lib/ids'
+import { freshLinkCode, nowSec, paperCode, whenLong } from '../_lib/ids'
 import { mailEnabled, sendMail } from '../_lib/mail'
 import { mailLang } from '../_lib/lang'
 import { invitationMail } from '../_lib/mailCopy'
@@ -71,15 +71,23 @@ export const onRequestDelete = authed(async (ctx, actor) => {
 // PATCH { id, reply } — the host writes down an answer given in person or on paper (a card from the cubby, a word
 // at pick-up). It is the family's own answer, only entered by hand: nobody is mailed, and the family can still
 // change it from their link.
+// PATCH { id, newCode: true } — draw two other words for this link (a word that is odd or hard to say). Only while
+// nothing depends on the old ones: not emailed, not answered. A link already texted by hand cannot be known, which
+// is why the button says what it does.
 const HAND_REPLIES = ['yes', 'maybe', 'no']
 export const onRequestPatch = authed(async (ctx, actor) => {
-  const body = await readJson<{ id?: string; scope?: string; reply?: string }>(ctx.request)
+  const body = await readJson<{ id?: string; scope?: string; reply?: string; newCode?: boolean }>(ctx.request)
   const id = str(body?.id, 20)
   if (!id) return badRequest('id requis.')
-  const reply = typeof body?.reply === 'string' && HAND_REPLIES.includes(body.reply) ? body.reply : null
-  if (!reply && !isScope(body?.scope)) return badRequest('id et portée ou réponse requis.')
   const ts = nowSec()
   const own = 'id = ? AND encounter_id IN (SELECT id FROM encounters WHERE household_id = ?)'
+  if (body?.newCode === true) {
+    const code = await freshLinkCode(ctx.env.DB, 'invitations')
+    const res = await ctx.env.DB.prepare(`UPDATE invitations SET token = ?, updated_at = ? WHERE ${own} AND reply IS NULL AND sent_at IS NULL`).bind(code, ts, id, actor.householdId).run()
+    return res.meta.changes ? ok() : badRequest('Ce lien est déjà parti ou a une réponse : ses mots ne changent plus.')
+  }
+  const reply = typeof body?.reply === 'string' && HAND_REPLIES.includes(body.reply) ? body.reply : null
+  if (!reply && !isScope(body?.scope)) return badRequest('id et portée ou réponse requis.')
   const res = reply
     ? await ctx.env.DB.prepare(`UPDATE invitations SET reply = ?, reply_at = ?, updated_at = ? WHERE ${own}`).bind(reply, ts, ts, id, actor.householdId).run()
     : await ctx.env.DB.prepare(`UPDATE invitations SET scope = ?, updated_at = ? WHERE ${own}`).bind(body!.scope, ts, id, actor.householdId).run()

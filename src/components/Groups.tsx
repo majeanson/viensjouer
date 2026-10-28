@@ -44,8 +44,7 @@ export function Groups({ families }: { families: Family[] }) {
   const nameOf = (id: string) => families.find((f) => f.id === id)?.child_first_name
 
   return (
-    <section style={{ marginTop: '1.5rem' }}>
-      <h2><Icon name="tag" />{t.groups.title}</h2>
+    <section>
       <p className="muted small">{t.groups.hint}</p>
       {err && <div className="notice notice--err">{err}</div>}
       {q.data && groups.length === 0 && !editing && <p className="muted">{t.groups.empty}</p>}

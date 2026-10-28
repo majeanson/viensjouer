@@ -27,8 +27,16 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await expect(host.getByText('la collation')).toBeVisible()
   await host.getByText('Plus d’options').first().click()
   const written = await host.locator('.paper').first().innerText()
-  const code = written.match(/([a-z]{3,7}-[a-z]{3,7})$/)?.[1]
-  expect(code, `a two-word link in "${written}"`).toBeTruthy()
+  const firstCode = written.match(/([a-z]{3,7}-[a-z]{3,7})$/)?.[1]
+  expect(firstCode, `a two-word link in "${written}"`).toBeTruthy()
+
+  // -- two words that read badly can be drawn again; the old ones stop opening the invitation
+  await host.getByRole('button', { name: 'Autres mots' }).first().click()
+  await expect(host.locator('.paper').first()).not.toHaveText(written)
+  const code = (await host.locator('.paper').first().innerText()).match(/([a-z]{3,7}-[a-z]{3,7})$/)?.[1]
+  expect(code).toBeTruthy()
+  expect(code).not.toBe(firstCode)
+  expect((await host.request.get(`/api/r/${firstCode}`)).status()).toBe(404)
 
   // -- the invited parent, on a phone, with no account
   const guestCtx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'fr-CA' })

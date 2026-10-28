@@ -18,7 +18,7 @@
   --r-sm: 6px; --r-md: 10px; --r-lg: 12px; --r-pill: 999px;
   --target: 44px; /* the floor for anything a finger presses */
   --nav-h: 3.75rem; /* the phone tab bar; the offsets of what sits above it derive from this */
-  --z-sticky: 5; --z-head: 20; --z-menu: 30; --z-nav: 30; --z-toast: 50; --z-skip: 100;
+  --z-sticky: 5; --z-head: 20; --z-nav: 30; --z-toast: 50; --z-skip: 100;
   --gutter: 16px;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
 }
@@ -58,14 +58,8 @@ li { margin-bottom: 0.4rem; }
 .brand { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; font-size: 1.05rem; text-decoration: none; white-space: nowrap; }
 .brand i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--accent); }
 .head__tools { display: flex; align-items: center; gap: 0.25rem; }
-.tool { appearance: none; background: transparent; border: 1px solid transparent; border-radius: var(--radius); padding: 0.35rem 0.6rem; min-height: var(--target); min-width: var(--target); cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--ink); list-style: none; display: inline-flex; align-items: center; justify-content: center; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool { appearance: none; background: transparent; border: 1px solid transparent; border-radius: var(--radius); padding: 0.35rem 0.6rem; min-height: var(--target); min-width: var(--target); cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; justify-content: center; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tool:hover { border-color: var(--line); }
-.tool::-webkit-details-marker { display: none; }
-.menu { position: relative; }
-.menu__panel { position: absolute; right: 0; top: calc(100% + 4px); min-width: 14rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-md); padding: 0.5rem; display: flex; flex-direction: column; gap: 0.15rem; box-shadow: 0 6px 20px rgba(0,0,0,.12); z-index: var(--z-menu); }
-.menu__panel a, .menu__panel button { display: block; text-align: left; background: none; border: 0; padding: 0.55rem 0.6rem; border-radius: 6px; text-decoration: none; cursor: pointer; }
-.menu__panel a:hover, .menu__panel button:hover { background: var(--paper); }
-.menu__panel .muted { padding: 0.3rem 0.6rem; overflow-wrap: anywhere; }
 
 .nav { display: flex; gap: 0; margin: 0 0 1rem; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 .nav::-webkit-scrollbar { display: none; }
@@ -314,7 +308,6 @@ main:focus { outline: none; }
   .notice, .changed { animation: pop 0.24s var(--ease) backwards; }
   @keyframes slide-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   .toast { animation: slide-up 0.28s var(--ease) backwards; }
-  .menu__panel { animation: pop 0.16s var(--ease) backwards; transform-origin: top right; }
   .bmsg:nth-child(-n + 6), .roster__row:nth-child(-n + 6), .linkrow:nth-child(-n + 6) { animation: rise 0.3s var(--ease) backwards; }
 
   /* Folds: the plus turns, the content unrolls. */

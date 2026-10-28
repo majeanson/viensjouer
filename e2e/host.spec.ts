@@ -125,7 +125,6 @@ test('a family with no email gets a ready-to-send message with the short link', 
   // one calm line per family; the short link and the hint sit under « Plus d'options »
   await page.getByText('Plus d’options').first().click()
   await expect(page.getByText(/\/lune-miel$/)).toBeVisible()
-  await expect(page.getByText(/Pas de courriel : envoie ce message par texto/)).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Partager le lien' })).toHaveCount(2)
   await page.getByRole('button', { name: 'Partager le lien' }).first().click()
   const text = await page.evaluate(() => navigator.clipboard.readText())

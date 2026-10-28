@@ -3,8 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 
 // Faces (a child's, mine), the profile name, the message board on both sides, the phone's bottom tabs,
 // the icons, and the invitation answering first. The API is stubbed like in the other specs.
-const now = Math.floor(Date.now() / 1000)
-const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
+import { PNG, now } from './fixtures'
 
 type Call = { method: string; path: string; full: string; body: unknown; type: string }
 type Handler = (c: Call, url: URL) => { status?: number; json?: unknown } | undefined

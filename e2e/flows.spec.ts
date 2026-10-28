@@ -3,15 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 
 // The host's day-to-day flows: the agenda, who is coming, undo instead of « êtes-vous sûr ? », the short
 // form, « Refaire pareil », the friends list. The API is stubbed, like the other specs.
-const now = Math.floor(Date.now() / 1000)
-const soon = now + 2 * 86_400
-
-const child = { id: 'c1', first_name: 'Noé', birthdate: null, colour: '#e8922a', position: 0 }
-const fam = (id: string, kid: string, parent: string, over: Record<string, unknown> = {}) => ({ id, parent_name: parent, email: null, phone: null, child_first_name: kid, child_birthdate: null, allergies: null, notes: null, linked_household_id: null, ...over })
-const inv = (id: string, fid: string, kid: string, parent: string, reply: string | null, over: Record<string, unknown> = {}) => ({
-  id, friend_family_id: fid, token: `tok-${id}`, reply, reply_note: null, reply_at: null, sent_at: null, parent_name: parent, child_first_name: kid, email: null, allergies: null, adults: null, kids: null, scope: 'family', ...over,
-})
-const enc = (over: Record<string, unknown> = {}) => ({ id: 'e1', child_id: 'c1', kind: 'park', title: 'Au parc', starts_at: soon, ends_at: null, place: 'Parc Lafontaine', address: null, map_url: null, note: null, status: 'proposed', series_id: null, details: {}, hereOpen: false, ...over })
+import { child, enc, fam, inv, now, soon } from './fixtures'
 
 type Reply = { status?: number; json: unknown }
 type Handler = (body: Record<string, unknown> | null, url: URL) => Reply | undefined

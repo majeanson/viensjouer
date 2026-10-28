@@ -119,7 +119,7 @@ export function MessageBoard({
 
   const Row = ({ m }: { m: BoardMessage }) => (
     <li className={`bmsg ${m.author_kind === 'host' ? 'bmsg--host' : ''} ${isNew(m) ? 'bmsg--new' : ''}`}>
-      <Face name={m.author_label} colour={m.author_kind === 'host' ? 'var(--ink)' : colourOf(m.author_label)} size="sm" />
+      <Face name={m.author_label} colour={m.author_kind === 'host' ? 'var(--host)' : colourOf(m.author_label)} size="sm" />
       <div className="bmsg__body">
         <div className="bmsg__head">
           <strong>{m.author_label}</strong>

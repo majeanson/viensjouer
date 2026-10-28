@@ -46,7 +46,7 @@ export function Account() {
         <h2><Icon name="user" />{t.profile.title}</h2>
         <AvatarPicker
           name={me.displayName ?? ''}
-          colour="var(--ink)"
+          colour="var(--host)"
           src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null}
           enabled={!!health.data?.photos && !me.demo}
           label={t.avatar.add}

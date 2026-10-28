@@ -157,7 +157,7 @@ function ReplyInner() {
         {cover && <img className="cover" src={`/api/r/${token}/cover?v=${cover}`} alt="" />}
         <div className="faces" aria-hidden="true">
           <Face name={host.child_first_name} colour="var(--accent)" src={host.childPhoto ? `/api/r/${token}/avatar/child?v=${host.childPhoto}` : null} size="lg" />
-          <Face name={host.parent_name || host.household_name} colour="var(--ink)" src={host.parentPhoto ? `/api/r/${token}/avatar/parent?v=${host.parentPhoto}` : null} size="lg" />
+          <Face name={host.parent_name || host.household_name} colour="var(--host)" src={host.parentPhoto ? `/api/r/${token}/avatar/parent?v=${host.parentPhoto}` : null} size="lg" />
         </div>
         <p className="kind" style={{ margin: 0 }}>{t.reply.invitation} · {t.encounters.kind[e.kind]}</p>
         <h1 style={{ marginTop: '0.25rem' }}>{t.reply.invites(host.child_first_name, you.child_first_name)}</h1>

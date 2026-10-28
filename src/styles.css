@@ -8,6 +8,7 @@
   --line: #e4ddd0;
   --accent: #e8922a;
   --accent-ink: #1f1a14;
+  --host: #4a4036; /* the host and me: a deep warm brown in both themes, so a white initial always reads */
   --ok: #3f7d4f;
   --bad: #b5483f;
   --radius: 8px;

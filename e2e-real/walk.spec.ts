@@ -82,6 +82,30 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await enPage.goto(`${baseURL}/${code}`)
   await expect(enPage.getByRole('heading', { name: /invites Léa/ })).toBeVisible()
 
+  // -- pictures: a cover and two faces go up, are served to the right people, and « Tout effacer » removes it all
+  const csrf = (await hostCtx.cookies()).find((c) => c.name === 'vj-csrf' || c.name === 'vj_csrf')?.value ?? ''
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
+  const post = (url: string) => host.request.post(url, { data: png, headers: { 'x-csrf-token': csrf, 'content-type': 'image/png' } })
+  const encounterId = hostUrl.split('/').pop()!
+  const children = (await (await host.request.get('/api/children')).json()) as { children: { id: string }[] }
+  expect((await post(`/api/cover?encounter=${encounterId}`)).status()).toBe(201)
+  expect((await post(`/api/avatar?kind=child&id=${children.children[0].id}`)).status()).toBe(201)
+  expect((await post('/api/avatar?kind=parent')).status()).toBe(201)
+  const card = (await (await guest.request.get(`/api/r/${code}`)).json()) as { cover: string | null; host: { childPhoto: string | null; parentPhoto: string | null } }
+  expect(card.cover).toBeTruthy()
+  expect(card.host.childPhoto).toBeTruthy()
+  expect(card.host.parentPhoto).toBeTruthy()
+  expect((await guest.request.get(`/api/r/${code}/cover`)).status()).toBe(200)
+  expect((await guest.request.get(`/api/r/${code}/avatar/child`)).status()).toBe(200)
+  expect((await guest.request.get(`/api/r/${code}/avatar/parent`)).status()).toBe(200)
+
+  const erase = await host.request.delete('/api/household', { data: {}, headers: { 'x-csrf-token': csrf } })
+  expect(erase.status(), await erase.text()).toBe(200)
+  expect((await (await host.request.get('/api/auth/me')).json()).signedIn).toBe(false)
+  // everything the invitation pointed at is gone with it
+  expect((await guest.request.get(`/api/r/${code}`)).status()).toBe(404)
+  expect((await guest.request.get(`/api/r/${code}/cover`)).status()).toBe(404)
+
   await hostCtx.close()
   await guestCtx.close()
   await en.close()

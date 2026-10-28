@@ -8,6 +8,7 @@ export const FR = {
   appName: 'Viens jouer',
   tagline: 'Les parents s’organisent pour que les tout-petits se voient.',
   door: {
+    points: ['Tu proposes un parc, une visite ou une fête.', 'Tu envoies un lien court, deux mots faciles à écrire.', 'L’autre parent répond d’un toucher, sans compte.'] as string[],
     pitch: 'Ton enfant veut voir son ami. Toi, tu veux que ça se fasse sans vingt messages. Crée la rencontre, envoie le lien, l’autre parent répond sans compte.',
     kinds: ['Au parc', 'Chez nous', 'Une fête'],
     login: 'Se connecter',
@@ -252,6 +253,7 @@ export const FR = {
     replyPhone: 'Une note pour l’hôte seulement ; l’appli ne s’en sert pas. Sans ça : rien ne change.',
     replyAllergies: 'Sert à prévenir l’hôte avant la collation. Sans ça : l’hôte n’a aucune alerte.',
     cover: 'Sert à illustrer l’invitation ; toute famille qui a le lien la voit. Sans ça : l’invitation n’a pas d’image.',
+    avatar: 'Sert à reconnaître l’enfant ou le parent sur l’invitation : les familles invitées voient ces photos sur la page de leur lien, et nulle part ailleurs. Sans ça : une initiale sur une couleur.',
   },
   privacy: {
     title: 'Ce qu’on garde',
@@ -270,6 +272,8 @@ export const FR = {
       ['Fiche de relais', 'Des nouvelles après une visite (disparaît en une semaine).'],
       ['Photos', 'Les souvenirs partagés avec les familles qui y étaient.'],
       ['Image de la rencontre', 'Illustre l’invitation ; visible de toute famille qui a le lien.'],
+      ['Photo d’un enfant ou d’un parent', 'Les familles invitées la voient sur la page de leur lien, rien de plus.'],
+      ['Le tableau', 'Les mots écrits sur une rencontre sont lus par les familles invitées ; l’hôte peut tout retirer, chacun retire les siens.'],
       ['À apporter', 'Le prénom du parent s’affiche à côté de ce qu’il apporte, pour les familles invitées.'],
       ['Mon calendrier', 'Un lien secret vers tes rencontres, que tu peux changer ou couper.'],
     ] as [string, string][],
@@ -451,6 +455,9 @@ export const FR = {
     groupsFold: 'Groupes',
   },
   agenda: { birthday: (n: string, y: number) => `Anniversaire de ${n} · ${y} an${y > 1 ? 's' : ''}`, free: 'Je suis libre', invited: (h: string) => `Invité par ${h}` },
+  avatar: { add: 'Ajouter une photo', change: 'Changer la photo', remove: 'Retirer la photo' },
+  profile: { title: 'Mon profil', name: 'Mon prénom', nameHint: 'Le prénom qui s’affiche sur les invitations que tu envoies.', save: 'Enregistrer', saved: 'Enregistré.' },
+  board: { title: 'Le tableau', hint: 'Un mot pour tout le monde : où se retrouver, quoi apporter, une photo à venir voir. Il reste là, tu peux y revenir.', empty: 'Rien d’écrit encore. Écris le premier mot.', closedEmpty: 'Rien n’a été écrit.', placeholder: 'Écrire sur le tableau…', send: 'Publier', host: 'Hôte', mine: 'Toi', pinned: 'Épinglés', pin: 'Épingler', unpin: 'Détacher', remove: 'Retirer', new: 'Nouveau', newCount: (n: number) => `${n} nouveau${n > 1 ? 'x' : ''}`, closed: 'La rencontre est passée : le tableau reste ouvert à la lecture.' },
   common: { loading: 'Chargement…', why: 'Pourquoi ?', error: 'Ça n’a pas marché. Réessaie.', offline: 'Hors ligne, réessaie quand le réseau revient.', theme: 'Thème', lang: 'English' },
 }
 
@@ -460,6 +467,7 @@ export const EN: Dict = {
   appName: 'Viens jouer',
   tagline: 'Parents get organized so the little ones can see each other.',
   door: {
+    points: ['You suggest a park, a visit or a party.', 'You send a short link, two easy words.', 'The other parent answers with one tap, no account.'] as string[],
     pitch: 'Your child wants to see their friend. You want it to happen without twenty messages. Create the get-together, send the link, the other parent answers with no account.',
     kinds: ['At the park', 'At our place', 'A party'],
     login: 'Sign in',
@@ -704,6 +712,7 @@ export const EN: Dict = {
     replyPhone: 'A note for the host only; the app does not use it. If you skip it: nothing changes.',
     replyAllergies: 'Used to warn the host before the snack. If you skip it: the host gets no alert.',
     cover: 'Used to illustrate the invitation; any family with the link sees it. If you skip it: the invitation has no picture.',
+    avatar: 'Used to recognise the child or the parent on the invitation: the invited families see these photos on their link’s page, and nowhere else. If you skip it: an initial on a colour.',
   },
   privacy: {
     title: 'What we keep',
@@ -722,6 +731,8 @@ export const EN: Dict = {
       ['Hand-off note', 'News after a visit (disappears in a week).'],
       ['Photos', 'Souvenirs shared with the families who were there.'],
       ['Get-together picture', 'Illustrates the invitation; any family with the link sees it.'],
+      ['A child’s or a parent’s photo', 'The invited families see it on their link’s page, nothing more.'],
+      ['The board', 'Notes written on a get-together are read by the invited families; the host can remove anything, everyone removes their own.'],
       ['To bring', 'The parent’s first name shows next to what they bring, for the invited families.'],
       ['My calendar', 'A secret link to your get-togethers, which you can change or switch off.'],
     ] as [string, string][],
@@ -903,6 +914,9 @@ export const EN: Dict = {
     groupsFold: 'Groups',
   },
   agenda: { birthday: (n: string, y: number) => `${n}’s birthday · ${y} year${y > 1 ? 's' : ''}`, free: 'I am free', invited: (h: string) => `Invited by ${h}` },
+  avatar: { add: 'Add a photo', change: 'Change the photo', remove: 'Remove the photo' },
+  profile: { title: 'My profile', name: 'My first name', nameHint: 'The first name shown on the invitations you send.', save: 'Save', saved: 'Saved.' },
+  board: { title: 'The board', hint: 'A note for everyone: where to meet, what to bring, a photo to come and see. It stays here, you can come back to it.', empty: 'Nothing written yet. Write the first note.', closedEmpty: 'Nothing was written.', placeholder: 'Write on the board…', send: 'Post', host: 'Host', mine: 'You', pinned: 'Pinned', pin: 'Pin', unpin: 'Unpin', remove: 'Remove', new: 'New', newCount: (n: number) => `${n} new`, closed: 'The get-together is over: the board stays open to read.' },
   common: { loading: 'Loading…', why: 'Why?', error: 'That did not work. Try again.', offline: 'Offline, try again when the network is back.', theme: 'Theme', lang: 'Français' },
 }
 

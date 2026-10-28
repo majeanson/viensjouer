@@ -46,6 +46,11 @@ export function Door() {
       <section className="hero">
         <h1>{t.tagline}</h1>
         <p className="muted">{t.door.pitch}</p>
+        <ul className="points">
+          <li><Icon name="calendar" /><span>{t.door.points[0]}</span></li>
+          <li><Icon name="share" /><span>{t.door.points[1]}</span></li>
+          <li><Icon name="check" /><span>{t.door.points[2]}</span></li>
+        </ul>
       </section>
       <form className="card" onSubmit={submit}>
         <div className="seg" role="tablist" style={{ marginBottom: '1rem' }}>

@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useLang, useT } from '../i18n'
 import { applyTheme, readTheme } from '../lib/theme'
+import { Face } from './Face'
+import { Icon } from './Icon'
 
 // One header for EVERY page, signed in or not, so the language switch is always in the
 // same corner. Brand on the left; on the right the language, the theme and — when signed
@@ -26,10 +28,10 @@ export function Header() {
         >
           {lang === 'fr' ? 'EN' : 'FR'}
         </button>
-        <button className="tool" aria-label={t.common.theme} onClick={() => applyTheme(readTheme() === 'dark' ? 'light' : 'dark')}>◐</button>
+        <button className="tool tool--icon" aria-label={t.common.theme} onClick={() => applyTheme(readTheme() === 'dark' ? 'light' : 'dark')}><Icon name="sun" /></button>
         {me.signedIn && (
           <details className="menu">
-            <summary className="tool">{me.displayName ?? t.account.title}</summary>
+            <summary className="tool"><Face name={me.displayName ?? '·'} colour="var(--ink)" src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null} size="sm" /><span className="tool__name">{me.displayName ?? t.account.title}</span></summary>
             <div className="menu__panel">
               <span className="muted small">{me.email}</span>
               <Link to="/compte" onClick={close}>{t.account.title}</Link>

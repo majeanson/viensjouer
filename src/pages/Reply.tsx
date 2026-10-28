@@ -15,11 +15,13 @@ import { WhyMany } from '../components/WhyMany'
 import type { Encounter, HomeCard, Message, Reply as ReplyKind } from '../lib/types'
 import { Header } from '../components/Header'
 import { Icon } from '../components/Icon'
+import { Face } from '../components/Face'
+import { MessageBoard } from '../components/MessageBoard'
 
 interface Card {
   alive: boolean
   encounter: Omit<Encounter, 'address'> & { address: string | null }
-  host: { child_first_name: string; parent_name: string; household_name: string; tz: string }
+  host: { child_first_name: string; parent_name: string; household_name: string; tz: string; childPhoto?: string | null; parentPhoto?: string | null }
   you: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null; reply: ReplyKind | null; replyNote: string | null; remind: boolean; adults: number | null; kids: number | null; scope: 'friend' | 'family' }
   homeCard: HomeCard | null
   relais: { nap: string | null; ate: string | null; mood: string | null; note: string | null } | null
@@ -130,15 +132,6 @@ function ReplyInner() {
     post.mutate(body, { onSuccess: () => { setDone(true); setJustAnswered(false) } })
   }
 
-  function sendMsg(ev: FormEvent<HTMLFormElement>) {
-    ev.preventDefault()
-    const f = ev.currentTarget
-    const text = String(new FormData(f).get('text') ?? '').trim()
-    if (!text) return
-    post.mutate({ message: text })
-    f.reset()
-  }
-
   return (
     <div className="shell">
       <Header />
@@ -160,18 +153,22 @@ function ReplyInner() {
       )}
       <section className="card">
         {cover && <img className="cover" src={`/api/r/${token}/cover?v=${cover}`} alt="" />}
+        <div className="faces" aria-hidden="true">
+          <Face name={host.child_first_name} colour="var(--accent)" src={host.childPhoto ? `/api/r/${token}/avatar/child?v=${host.childPhoto}` : null} size="lg" />
+          <Face name={host.parent_name || host.household_name} colour="var(--ink)" src={host.parentPhoto ? `/api/r/${token}/avatar/parent?v=${host.parentPhoto}` : null} size="lg" />
+        </div>
         <p className="kind" style={{ margin: 0 }}>{t.reply.invitation} · {t.encounters.kind[e.kind]}</p>
         <h1 style={{ marginTop: '0.25rem' }}>{t.reply.invites(host.child_first_name, you.child_first_name)}</h1>
         <p className="muted">{t.reply.organizer(host.parent_name || host.household_name, host.child_first_name)}</p>
         <p><strong>{you.scope === 'friend' ? t.scope.youFriend(you.child_first_name) : t.scope.youFamily}</strong></p>
         <dl className="facts">
-          <div><dt>{t.reply.what}</dt><dd>{e.title}{mark(freshOf('title'))}</dd></div>
-          <div><dt>{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
-          {e.place && <div><dt>{t.reply.where}</dt><dd>{e.place}{mark(freshOf('place'))}</dd></div>}
-          {e.map_url && <div><dt>{t.reply.map}</dt><dd><a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a>{mark(freshOf('map_url'))}</dd></div>}
-          {e.address ? <div><dt>{t.reply.addressLabel}</dt><dd>{e.address}{mark(freshOf('address'))}</dd></div> : e.kind !== 'park' && <div><dt>{t.reply.addressLabel}</dt><dd className="muted">{t.reply.addressOnYes}</dd></div>}
-          {e.note && <div><dt>{t.reply.toKnow}</dt><dd>{e.note}{mark(freshOf('note'))}</dd></div>}
-          {e.details?.gift && <div><dt>{t.kinds.birthday.giftIs}</dt><dd>{e.details.gift}{mark(freshOf('gift'))}</dd></div>}
+          <div><dt><Icon name="tag" />{t.reply.what}</dt><dd>{e.title}{mark(freshOf('title'))}</dd></div>
+          <div><dt><Icon name="calendar" />{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
+          {e.place && <div><dt><Icon name="pin" />{t.reply.where}</dt><dd>{e.place}{mark(freshOf('place'))}</dd></div>}
+          {e.map_url && <div><dt><Icon name="map" />{t.reply.map}</dt><dd><a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a>{mark(freshOf('map_url'))}</dd></div>}
+          {e.address ? <div><dt><Icon name="home" />{t.reply.addressLabel}</dt><dd>{e.address}{mark(freshOf('address'))}</dd></div> : e.kind !== 'park' && <div><dt><Icon name="home" />{t.reply.addressLabel}</dt><dd className="muted">{t.reply.addressOnYes}</dd></div>}
+          {e.note && <div><dt><Icon name="note" />{t.reply.toKnow}</dt><dd>{e.note}{mark(freshOf('note'))}</dd></div>}
+          {e.details?.gift && <div><dt><Icon name="gift" />{t.kinds.birthday.giftIs}</dt><dd>{e.details.gift}{mark(freshOf('gift'))}</dd></div>}
         </dl>
         {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
@@ -194,14 +191,58 @@ function ReplyInner() {
         )}
       </section>
 
-      <section className="card">
-        <h2><Icon name="info" />{t.reply.stepsTitle}</h2>
-        <ol className="steps">
-          <li className={answered ? 'done' : 'now'}>{t.reply.step1}</li>
-          <li className={answered ? 'done' : ''}>{t.reply.step2(host.parent_name || host.household_name)}</li>
-          <li className={answered && you.reply === 'yes' ? 'now' : ''}>{t.reply.step3}</li>
-        </ol>
-      </section>
+      {!alive ? (
+        <div className="notice">{t.reply.closed}</div>
+      ) : answered ? (
+        <div className="card">
+          {done && <div className="notice">{t.reply.saved}</div>}
+          <div className="row">
+            <span><span className="muted small">{t.reply.yourReply}</span><br /><strong className={`chip chip--${you.reply}`}>{t.encounters.reply[you.reply!]}</strong>{you.replyNote && <span className="small"> · « {you.replyNote} »</span>}</span>
+            <button className="btn btn--ghost" onClick={() => setEditing(true)}>{t.reply.change}</button>
+          </div>
+          <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.reply.hostKnows(host.parent_name || host.household_name)}</p>
+          <details className="why" key={String(justAnswered)} open={justAnswered && you.reply === 'yes' && (e.kind === 'birthday' || you.scope === 'family')} style={{ marginTop: '0.75rem' }}>
+            <summary>{t.reply.extras}</summary>
+            <form onSubmit={saveExtras} style={{ marginTop: '0.75rem' }}>
+              <label className="field"><span><Icon name="note" />{t.reply.note}</span><input className="input" name="note" maxLength={500} placeholder={t.reply.notePlaceholder} defaultValue={you.replyNote ?? ''} /></label>
+              <label className="field"><span><Icon name="user" />{t.reply.parentName}</span><input className="input" name="parentName" maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
+              <label className="field"><span><Icon name="mail" />{t.reply.email}</span><input className="input" name="email" type="email" defaultValue={you.email ?? ''} autoComplete="email" /></label>
+              <label className="field"><span><Icon name="phone" />{t.reply.phone}</span><input className="input" name="phone" type="tel" defaultValue={you.phone ?? ''} autoComplete="tel" /></label>
+              <label className="field"><span><Icon name="alert" />{t.reply.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={you.allergies ?? ''} /></label>
+              {you.reply === 'yes' && (you.scope === 'family' || e.kind === 'birthday') && (
+                <div className="cluster" style={{ marginBottom: '0.75rem' }}>
+                  {you.scope === 'family' && <label className="field" style={{ flex: 1 }}><span><Icon name="users" />{t.scope.kidsLabel}</span><input className="input" name="kids" type="number" min={0} max={20} defaultValue={you.kids ?? 1} /></label>}
+                  {e.kind === 'birthday' && <label className="field" style={{ flex: 1 }}><span><Icon name="users" />{t.kinds.birthday.adults}</span><input className="input" name="adults" type="number" min={0} max={20} defaultValue={you.adults ?? 1} /></label>}
+                </div>
+              )}
+              <label className="check"><input type="checkbox" name="remind" defaultChecked={you.remind} /><span><Icon name="bell" />{t.reply.remind}</span></label>
+              <WhyMany
+                items={[
+                  [t.reply.email, 'replyEmail'],
+                  [t.reply.phone, 'replyPhone'],
+                  [t.reply.allergies, 'replyAllergies'],
+                  ...(you.reply === 'yes' && (you.scope === 'family' || e.kind === 'birthday') ? ([[t.scope.kidsLabel, 'headcount']] as [string, 'headcount'][]) : []),
+                ]}
+              />
+              {err && <div className="notice notice--err">{err}</div>}
+              <button className="btn btn--primary" disabled={post.isPending} style={{ marginTop: '0.75rem' }}>{t.reply.saveExtras}</button>
+            </form>
+          </details>
+        </div>
+      ) : (
+        <section className="card">
+          <h3><Icon name="help" />{t.reply.question}</h3>
+          <div className="stack">
+            <button type="button" className="btn btn--big btn--yes" disabled={post.isPending} onClick={() => answer('yes')}><Icon name="check" />{t.reply.yes}</button>
+            <div className="seg">
+              <button type="button" className="btn" disabled={post.isPending} onClick={() => answer('maybe')}><Icon name="help" />{t.reply.maybe}</button>
+              <button type="button" className="btn" disabled={post.isPending} onClick={() => answer('no')}><Icon name="x" />{t.reply.no}</button>
+            </div>
+          </div>
+          {err && <div className="notice notice--err" style={{ marginTop: '0.75rem' }}>{err}</div>}
+          <p className="muted small" style={{ margin: '0.75rem 0 0' }}>{t.reply.oneTap}</p>
+        </section>
+      )}
 
       {guests && (guests.yes.length > 0 || guests.maybe.length > 0) && (
         <section className="card guests" aria-label={t.roster.guestsTitle}>
@@ -255,59 +296,6 @@ function ReplyInner() {
         </div>
       )}
 
-      {!alive ? (
-        <div className="notice">{t.reply.closed}</div>
-      ) : answered ? (
-        <div className="card">
-          {done && <div className="notice">{t.reply.saved}</div>}
-          <div className="row">
-            <span><span className="muted small">{t.reply.yourReply}</span><br /><strong className={`chip chip--${you.reply}`}>{t.encounters.reply[you.reply!]}</strong>{you.replyNote && <span className="small"> · « {you.replyNote} »</span>}</span>
-            <button className="btn btn--ghost" onClick={() => setEditing(true)}>{t.reply.change}</button>
-          </div>
-          <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.reply.hostKnows(host.parent_name || host.household_name)}</p>
-          <details className="why" key={String(justAnswered)} open={justAnswered && you.reply === 'yes' && (e.kind === 'birthday' || you.scope === 'family')} style={{ marginTop: '0.75rem' }}>
-            <summary>{t.reply.extras}</summary>
-            <form onSubmit={saveExtras} style={{ marginTop: '0.75rem' }}>
-              <label className="field"><span><Icon name="note" />{t.reply.note}</span><input className="input" name="note" maxLength={500} placeholder={t.reply.notePlaceholder} defaultValue={you.replyNote ?? ''} /></label>
-              <label className="field"><span><Icon name="user" />{t.reply.parentName}</span><input className="input" name="parentName" maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
-              <label className="field"><span><Icon name="mail" />{t.reply.email}</span><input className="input" name="email" type="email" defaultValue={you.email ?? ''} autoComplete="email" /></label>
-              <label className="field"><span><Icon name="phone" />{t.reply.phone}</span><input className="input" name="phone" type="tel" defaultValue={you.phone ?? ''} autoComplete="tel" /></label>
-              <label className="field"><span><Icon name="alert" />{t.reply.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={you.allergies ?? ''} /></label>
-              {you.reply === 'yes' && (you.scope === 'family' || e.kind === 'birthday') && (
-                <div className="cluster" style={{ marginBottom: '0.75rem' }}>
-                  {you.scope === 'family' && <label className="field" style={{ flex: 1 }}><span><Icon name="users" />{t.scope.kidsLabel}</span><input className="input" name="kids" type="number" min={0} max={20} defaultValue={you.kids ?? 1} /></label>}
-                  {e.kind === 'birthday' && <label className="field" style={{ flex: 1 }}><span><Icon name="users" />{t.kinds.birthday.adults}</span><input className="input" name="adults" type="number" min={0} max={20} defaultValue={you.adults ?? 1} /></label>}
-                </div>
-              )}
-              <label className="check"><input type="checkbox" name="remind" defaultChecked={you.remind} /><span><Icon name="bell" />{t.reply.remind}</span></label>
-              <WhyMany
-                items={[
-                  [t.reply.email, 'replyEmail'],
-                  [t.reply.phone, 'replyPhone'],
-                  [t.reply.allergies, 'replyAllergies'],
-                  ...(you.reply === 'yes' && (you.scope === 'family' || e.kind === 'birthday') ? ([[t.scope.kidsLabel, 'headcount']] as [string, 'headcount'][]) : []),
-                ]}
-              />
-              {err && <div className="notice notice--err">{err}</div>}
-              <button className="btn btn--primary" disabled={post.isPending} style={{ marginTop: '0.75rem' }}>{t.reply.saveExtras}</button>
-            </form>
-          </details>
-        </div>
-      ) : (
-        <section className="card">
-          <h3><Icon name="help" />{t.reply.question}</h3>
-          <div className="stack">
-            <button type="button" className="btn btn--big btn--yes" disabled={post.isPending} onClick={() => answer('yes')}>{t.reply.yes}</button>
-            <div className="seg">
-              <button type="button" className="btn" disabled={post.isPending} onClick={() => answer('maybe')}>{t.reply.maybe}</button>
-              <button type="button" className="btn" disabled={post.isPending} onClick={() => answer('no')}>{t.reply.no}</button>
-            </div>
-          </div>
-          {err && <div className="notice notice--err" style={{ marginTop: '0.75rem' }}>{err}</div>}
-          <p className="muted small" style={{ margin: '0.75rem 0 0' }}>{t.reply.oneTap}</p>
-        </section>
-      )}
-
       {souvenirsOpen && (photos || souvenirs.length > 0) && (
         <div className="card">
           <h3><Icon name="camera" />{t.souvenirs.title}</h3>
@@ -338,18 +326,25 @@ function ReplyInner() {
         </div>
       )}
 
-      <div className="card">
-        <h3><Icon name="message" />{t.reply.thread}</h3>
-        {messages.map((m) => (
-          <div key={m.id} className={`msg ${m.author_kind === 'host' ? 'msg--host' : ''}`}><b>{m.author_label}</b>{m.text}</div>
-        ))}
-        {alive && (
-          <form className="cluster" onSubmit={sendMsg} style={{ marginTop: '0.5rem' }}>
-            <input className="input" name="text" placeholder={t.reply.write} maxLength={1000} style={{ flex: '1 1 12rem' }} />
-            <button className="btn" disabled={post.isPending}>{t.reply.sendMsg}</button>
-          </form>
-        )}
-      </div>
+      <section className="card">
+        <h2><Icon name="info" />{t.reply.stepsTitle}</h2>
+        <ol className="steps">
+          <li className={answered ? 'done' : 'now'}>{t.reply.step1}</li>
+          <li className={answered ? 'done' : ''}>{t.reply.step2(host.parent_name || host.household_name)}</li>
+          <li className={answered && you.reply === 'yes' ? 'now' : ''}>{t.reply.step3}</li>
+        </ol>
+      </section>
+
+      <MessageBoard
+        messages={messages}
+        canPost={alive}
+        posting={post.isPending}
+        isHost={false}
+        seenKey={token}
+        full
+        onPost={(text) => post.mutate({ message: text })}
+        onDelete={(m) => post.mutate({ deleteMessage: m.id })}
+      />
 
       <footer className="footer muted small">
         <p>{t.reply.whatIs}</p>

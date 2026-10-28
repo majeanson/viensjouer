@@ -22,3 +22,19 @@ export async function resizeToJpeg(file: File): Promise<Blob> {
   if (!blob) throw new Error('encode')
   return blob
 }
+
+// A face: a centred square crop, shrunk to 256 px, as a JPEG (a few kilobytes). The server caps it at 400 KB.
+export async function resizeToSquare(file: File, size = 256): Promise<Blob> {
+  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  const side = Math.min(bmp.width, bmp.height)
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('canvas')
+  ctx.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, size, size)
+  bmp.close()
+  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.85))
+  if (!blob) throw new Error('encode')
+  return blob
+}

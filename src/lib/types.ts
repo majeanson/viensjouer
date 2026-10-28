@@ -8,6 +8,7 @@ export interface Child {
   first_name: string
   birthdate: string | null
   colour: string
+  photo?: string | null
   position: number
 }
 
@@ -76,6 +77,8 @@ export interface Message {
   author_label: string
   text: string
   created_at: number
+  pinned?: number | boolean
+  mine?: boolean
 }
 
 export interface Group {

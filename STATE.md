@@ -122,3 +122,12 @@ rencontre could land on the board as an event).
 ## In progress (2026-10-27 night): faces, icons, message board, 2026 layout
 
 Done so far: the icon set (`components/Icon.tsx`, in front of labels, headings and fold summaries), the server for faces (`/api/avatar`, `/api/profile`, migration 0012) and for the message board (pin, delete, own messages; migration 0013). Next: the face picker, the board component, bottom tab bar, meta rows with icons, screenshots, e2e.
+
+## Faces, icons, board, phone layout (2026-10-27 night) — done, then what is left
+
+- **Faces**: a photo for each child and each parent (`/api/avatar`, migration 0012), cropped to a small square in the browser, shown on the children page, the header, the new-rencontre child chooser and the invitation. « Mon profil » on the account page also edits the first name (`/api/profile`). No photo storage, no button.
+- **Icons**: `components/Icon.tsx`, in front of labels, headings and fold summaries; decorative only.
+- **Message board** (migration 0013): `components/MessageBoard.tsx` on the host page and the invitation. Pin (3 max), the host removes anything, a family removes its own, « Nouveau » marks per device, links clickable, readable after the rencontre.
+- **Layout**: tabs at the thumb on phones (bottom bar, icons), 44 px targets, the invitation asks « Vous venez ? » first, skeleton loading, safe areas.
+- **Guard**: `export.test.ts` pins query aliases (a real export bug was caught by the smoke and fixed).
+- **Left**: the screenshot pass should be re-run (`SHOTS=1 npx playwright test shots`) and eyeballed once more; the Door page points and the account cards were not re-viewed; ideas not started: dynamic link previews per invitation, Babillard/Horizon-style audit pass.

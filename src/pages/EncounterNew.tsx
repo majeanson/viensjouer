@@ -12,7 +12,8 @@ import { FamilyPicker } from '../components/FamilyPicker'
 import { HomeCardForm } from '../components/HomeCard'
 import { Windows } from './Windows'
 import type { Child, Encounter, Family, Group, Invitation, Kind } from '../lib/types'
-import { Icon } from '../components/Icon'
+import { Icon, kindIcon } from '../components/Icon'
+import { Face } from '../components/Face'
 
 type Scope = 'friend' | 'family'
 // A birthday starts as « the friend only », everything else as « the whole family ».
@@ -163,7 +164,7 @@ export function EncounterNew() {
                 <h3><Icon name="smile" />{t.encounters.whoInvites}</h3>
                 <div className="seg" style={{ marginBottom: '0.75rem' }}>
                   {children.map((c) => (
-                    <button type="button" key={c.id} className={`btn ${chosen === c.id ? 'btn--on' : ''}`} onClick={() => setChildId(c.id)}>{c.first_name}</button>
+                    <button type="button" key={c.id} className={`btn ${chosen === c.id ? 'btn--on' : ''}`} onClick={() => setChildId(c.id)}><Face name={c.first_name} colour={c.colour} src={c.photo ? `/api/avatar/child/${c.id}?v=${c.photo}` : null} size="sm" />{c.first_name}</button>
                   ))}
                 </div>
               </>
@@ -171,7 +172,7 @@ export function EncounterNew() {
             <h3><Icon name="sparkle" />{t.encounters.whichKind}</h3>
             <div className="seg">
               {KINDS.map((k) => (
-                <button type="button" key={k} className={`btn ${kind === k ? 'btn--on' : ''}`} onClick={() => chooseKind(k)}>{t.encounters.kind[k]}</button>
+                <button type="button" key={k} className={`btn ${kind === k ? 'btn--on' : ''}`} onClick={() => chooseKind(k)}><Icon name={kindIcon(k)} />{t.encounters.kind[k]}</button>
               ))}
             </div>
           </div>
@@ -257,7 +258,7 @@ export function EncounterNew() {
             </details>
           </div>
 
-          <div className="cluster" style={{ marginBottom: '1rem' }}>
+          <div className="cluster sticky-actions">
             <button className="btn btn--primary btn--big" disabled={create.isPending || !chosen}>{t.encounters.create}</button>
             <Link to="/rencontres" className="btn btn--ghost">{t.encounters.back}</Link>
           </div>

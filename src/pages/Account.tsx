@@ -8,6 +8,8 @@ import { ParentInvite } from '../components/ParentInvite'
 import { HomeCardForm } from '../components/HomeCard'
 import { useInstall } from '../lib/install'
 import { CalendarFeed } from '../components/CalendarFeed'
+import { AvatarPicker } from '../components/AvatarPicker'
+import { useQuery } from '@tanstack/react-query'
 import { Icon } from '../components/Icon'
 
 // « Mon compte » — what is kept (link), a download of everything, and « tout effacer ».
@@ -18,6 +20,8 @@ export function Account() {
   const { me, refresh } = useAuth()
   const [err, setErr] = useState<string | null>(null)
   const install = useInstall()
+  const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
+  const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
   async function erase(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -38,6 +42,37 @@ export function Account() {
     <>
       <h1>{t.account.title}</h1>
       <p className="muted small">{me.email}</p>
+      <div className="card">
+        <h2><Icon name="user" />{t.profile.title}</h2>
+        <AvatarPicker
+          name={me.displayName ?? ''}
+          colour="var(--ink)"
+          src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null}
+          enabled={!!health.data?.photos && !me.demo}
+          label={t.avatar.add}
+          onUpload={async (blob) => { await api('avatar?kind=parent', { method: 'POST', body: blob }); await refresh() }}
+          onRemove={async () => { await api('avatar', { method: 'DELETE', body: { kind: 'parent' } }); await refresh() }}
+        />
+        <form
+          onSubmit={async (ev) => {
+            ev.preventDefault()
+            const displayName = String(new FormData(ev.currentTarget).get('displayName') ?? '').trim()
+            if (!displayName) return
+            setErr(null)
+            try {
+              await api('profile', { method: 'PATCH', body: { displayName } })
+              await refresh()
+              setSaved(true)
+              setTimeout(() => setSaved(false), 2500)
+            } catch (ex) {
+              setErr(ex instanceof Error ? ex.message : t.common.error)
+            }
+          }}
+        >
+          <label className="field"><span><Icon name="user" />{t.profile.name}</span><input className="input" name="displayName" required maxLength={60} defaultValue={me.displayName ?? ''} autoComplete="given-name" /><span className="small muted" style={{ fontWeight: 400 }}>{t.profile.nameHint}</span></label>
+          <button className="btn btn--primary" style={{ marginTop: '0.5rem' }}>{saved ? t.profile.saved : t.profile.save}</button>
+        </form>
+      </div>
       {!install.installed && (install.canPrompt || install.ios) && (
         <div className="card">
           <h2><Icon name="download" />{t.install.title}</h2>
@@ -46,8 +81,8 @@ export function Account() {
         </div>
       )}
       <CalendarFeed />
-      <ParentInvite />
-      <HomeCardForm />
+      <div className="card card--nest"><ParentInvite /></div>
+      <div className="card card--nest"><HomeCardForm /></div>
       <div className="card" style={{ marginTop: '1.5rem' }}>
         <h2><Icon name="shield" />{t.privacy.title}</h2>
         <p className="muted small">{t.account.keptHint}</p>

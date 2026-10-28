@@ -7,6 +7,7 @@ import { useLang, useT } from '../i18n'
 import { whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
 import type { Child, Encounter, Family, InvitationSummary } from '../lib/types'
+import { Icon, kindIcon } from '../components/Icon'
 
 type Reply = 'yes' | 'no' | 'maybe' | null
 type CalItem =
@@ -39,10 +40,11 @@ export function Encounters() {
       <div className="row">
         <span className="cluster"><strong>{e.title}</strong></span>
       </div>
-      <p className="muted small" style={{ margin: '0.35rem 0' }}>
-        {t.encounters.kind[e.kind]} · {whenShort(e.starts_at, lang)}
-        {e.place ? ` · ${e.place}` : ''}
-        {e.status !== 'proposed' ? ` · ${t.encounters.status[e.status]}` : ''}
+      <p className="meta--row muted small">
+        <span><Icon name={kindIcon(e.kind)} />{t.encounters.kind[e.kind]}</span>
+        <span><Icon name="clock" />{whenShort(e.starts_at, lang)}</span>
+        {e.place && <span><Icon name="pin" />{e.place}</span>}
+        {e.status !== 'proposed' && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
       </p>
       <div className="cluster">
         {(byEnc.get(e.id) ?? []).map((i) => (
@@ -64,7 +66,12 @@ export function Encounters() {
         node: (
           <Link to={`/${paperCode(it.token)}`} className="card card--tap">
             <div className="row"><strong>{it.title}</strong><span className="chip chip--kind">{t.agenda.invited(it.host ?? '')}</span></div>
-            <p className="muted small" style={{ margin: '0.35rem 0 0' }}>{whenShort(it.at, lang)}{it.place ? ` · ${it.place}` : ''} · {it.reply ? t.encounters.reply[it.reply] : t.encounters.reply.none}</p>
+            <p className="meta--row muted small">
+              <span><Icon name={kindIcon(it.kind)} />{t.encounters.kind[it.kind]}</span>
+              <span><Icon name="clock" />{whenShort(it.at, lang)}</span>
+              {it.place && <span><Icon name="pin" />{it.place}</span>}
+              <span className={`chip ${it.reply ? `chip--${it.reply}` : ''}`}>{it.reply ? t.encounters.reply[it.reply] : t.encounters.reply.none}</span>
+            </p>
           </Link>
         ),
       })
@@ -74,8 +81,11 @@ export function Encounters() {
         key: `w-${it.id}`,
         node: (
           <Link to="/fenetres" className="card card--tap">
-            <div className="row"><strong>{t.agenda.free}</strong><span className="chip">{t.windows.chip}</span></div>
-            <p className="muted small" style={{ margin: '0.35rem 0 0' }}>{whenShort(it.at, lang)} → {whenShort(it.endsAt, lang)}{it.note ? ` · ${it.note}` : ''}</p>
+            <div className="row"><strong><Icon name="sparkle" />{t.agenda.free}</strong><span className="chip">{t.windows.chip}</span></div>
+            <p className="meta--row muted small">
+              <span><Icon name="clock" />{whenShort(it.at, lang)} → {whenShort(it.endsAt, lang)}</span>
+              {it.note && <span><Icon name="note" />{it.note}</span>}
+            </p>
           </Link>
         ),
       })
@@ -105,7 +115,7 @@ export function Encounters() {
         <h1>{t.encounters.title}</h1>
         <Link to="/rencontres/nouvelle" className="btn btn--primary">{t.encounters.new}</Link>
       </div>
-      {!ready && <p className="muted">{t.common.loading}</p>}
+      {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && (
         <div className="card">
           <p style={{ marginTop: 0 }}>{noChild ? t.first.child : noFriend ? t.first.friend : t.first.go}</p>

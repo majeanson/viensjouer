@@ -5,6 +5,7 @@ import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { ageLabel } from '../lib/format'
 import { Face } from '../components/Face'
+import { AvatarPicker } from '../components/AvatarPicker'
 import { Why } from '../components/Why'
 import { useDeferredRemove } from '../lib/toast'
 import type { Child } from '../lib/types'
@@ -20,13 +21,18 @@ export function Children() {
   const { lang } = useLang()
   const qc = useQueryClient()
   const q = useQuery({ queryKey: K.children, queryFn: () => api<{ children: Child[] }>('children') })
+  const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
+  const [pending, setPending] = useState<Blob | null>(null)
   const [editing, setEditing] = useState<Child | 'new' | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const invalidate = () => qc.invalidateQueries({ queryKey: K.children })
 
   const save = useMutation({
-    mutationFn: (body: Record<string, unknown>) => api('children', { method: body.id ? 'PATCH' : 'POST', body }),
-    onSuccess: () => {
+    mutationFn: (body: Record<string, unknown>) => api<{ id?: string }>('children', { method: body.id ? 'PATCH' : 'POST', body }),
+    onSuccess: async (r, body) => {
+      // A face picked while adding goes up once the child exists (best effort: it can be added again).
+      if (!body.id && pending && r?.id) await api(`avatar?kind=child&id=${r.id}`, { method: 'POST', body: pending }).catch(() => {})
+      setPending(null)
       setEditing(null)
       setErr(null)
       void invalidate()
@@ -60,9 +66,9 @@ export function Children() {
       <div className="stack">
         {kids.map((c) => (
           <div key={c.id} className="card row">
-            <span className="cluster"><Face name={c.first_name} colour={c.colour} /><strong>{c.first_name}</strong><span className="muted small">{ageLabel(c.birthdate, lang)}</span></span>
+            <span className="cluster"><Face name={c.first_name} colour={c.colour} src={c.photo ? `/api/avatar/child/${c.id}?v=${c.photo}` : null} size="lg" /><strong>{c.first_name}</strong><span className="muted small">{ageLabel(c.birthdate, lang)}</span></span>
             <span className="cluster">
-              <button className="btn btn--ghost" onClick={() => setEditing(c)}>{t.children.edit}</button>
+              <button className="btn btn--ghost" onClick={() => { setPending(null); setEditing(c) }}>{t.children.edit}</button>
               <button className="btn btn--ghost btn--danger" onClick={() => rm.remove(c.id, t.undo.removed, async () => { await api('children', { method: 'DELETE', body: { id: c.id } }); void invalidate() })}>{t.children.remove}</button>
             </span>
           </div>
@@ -70,6 +76,16 @@ export function Children() {
       </div>
       {editing ? (
         <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
+          <AvatarPicker
+            name={cur?.first_name ?? ''}
+            colour={cur?.colour}
+            src={cur?.photo ? `/api/avatar/child/${cur.id}?v=${cur.photo}` : null}
+            enabled={!!health.data?.photos}
+            label={t.avatar.add}
+            onPick={cur ? undefined : setPending}
+            onUpload={cur ? async (blob) => { await api(`avatar?kind=child&id=${cur.id}`, { method: 'POST', body: blob }); await invalidate() } : undefined}
+            onRemove={cur ? async () => { await api('avatar', { method: 'DELETE', body: { kind: 'child', id: cur.id } }); await invalidate() } : undefined}
+          />
           <label className="field"><span><Icon name="smile" />{t.children.firstName}</span><input className="input" name="firstName" required maxLength={40} defaultValue={cur?.first_name} autoFocus /></label>
           <label className="field"><span><Icon name="cake" />{t.children.birthdate}</span><input className="input" name="birthdate" type="date" defaultValue={cur?.birthdate ?? ''} /><Why k="childBirthdate" /></label>
           <div className="field">
@@ -88,7 +104,7 @@ export function Children() {
           </div>
         </form>
       ) : (
-        <button className="btn btn--primary" style={{ marginTop: '0.75rem' }} onClick={() => setEditing('new')}>{t.children.add}</button>
+        <button className="btn btn--primary" style={{ marginTop: '0.75rem' }} onClick={() => { setPending(null); setEditing('new') }}>{t.children.add}</button>
       )}
     </>
   )

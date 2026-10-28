@@ -15,7 +15,8 @@ import { Why } from '../components/Why'
 import { kidsComing } from '../lib/scope'
 import { useDeferredRemove, useToast } from '../lib/toast'
 import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
-import { Icon } from '../components/Icon'
+import { Icon, kindIcon } from '../components/Icon'
+import { MessageBoard } from '../components/MessageBoard'
 
 interface Detail {
   encounter: Encounter & { details: Record<string, string>; hereOpen: boolean }
@@ -40,6 +41,7 @@ export function EncounterDetail() {
   const inviteRm = useDeferredRemove()
   const photoRm = useDeferredRemove()
   const bringRm = useDeferredRemove()
+  const msgRm = useDeferredRemove()
   const q = useQuery({ queryKey: K.encounter(id), queryFn: () => api<Detail>(`encounters?id=${id}`), refetchInterval: 30_000 })
   const fams = useQuery({ queryKey: K.families, queryFn: () => api<{ families: Family[] }>('families') })
   const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
@@ -60,6 +62,7 @@ export function EncounterDetail() {
   const send = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'POST', body: { id: invId } }), onSuccess: refresh, onError: fail })
   const setScope = useMutation({ mutationFn: (b: { id: string; scope: 'friend' | 'family' }) => api('invitations', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
   const message = useMutation({ mutationFn: (text: string) => api('messages', { method: 'POST', body: { encounterId: id, text } }), onSuccess: refresh, onError: fail })
+  const pin = useMutation({ mutationFn: (b: { id: string; pinned: boolean }) => api('messages', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
   const relaisSave = useMutation({
     mutationFn: (body: Record<string, unknown>) => api('relais', { method: 'POST', body }),
     onSuccess: () => {
@@ -130,15 +133,6 @@ export function EncounterDetail() {
     }
   }
 
-  function sendMsg(ev: FormEvent<HTMLFormElement>) {
-    ev.preventDefault()
-    const f = ev.currentTarget
-    const text = String(new FormData(f).get('text') ?? '').trim()
-    if (!text) return
-    message.mutate(text)
-    f.reset()
-  }
-
   function submitRelais(ev: FormEvent<HTMLFormElement>, invitationId: string) {
     ev.preventDefault()
     relaisSave.mutate({ invitationId, ...Object.fromEntries(new FormData(ev.currentTarget).entries()) })
@@ -146,7 +140,8 @@ export function EncounterDetail() {
 
   if (q.isLoading) return <p className="muted">{t.common.loading}</p>
   if (!q.data) return <p className="notice notice--err">{t.common.error}</p>
-  const { encounter: e, messages, relais, changes: rawChanges } = q.data
+  const { encounter: e, relais, changes: rawChanges } = q.data
+  const messages = msgRm.visible(q.data.messages)
   const invitations = inviteRm.visible(q.data.invitations)
   const souvenirs = photoRm.visible(q.data.souvenirs)
   const bring = bringRm.visible(q.data.bring ?? [])
@@ -179,8 +174,11 @@ export function EncounterDetail() {
         <h1>{e.title}</h1>
         {e.series_id && <span className="chip">{t.encounters.seriesChip}</span>}
       </div>
-      <p className="muted">{t.encounters.kind[e.kind]} · {whenLong(e.starts_at, lang)}{e.place ? ` · ${e.place}` : ''} · {t.encounters.status[e.status]}</p>
-      {e.map_url && <p style={{ margin: '0 0 0.5rem' }}><a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a></p>}
+      <ul className="meta">
+        <li><Icon name={kindIcon(e.kind)} />{t.encounters.kind[e.kind]} <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span></li>
+        <li><Icon name="clock" />{whenLong(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}</li>
+        {e.place && <li><Icon name="pin" />{e.place}{e.map_url && <>{' '}· <a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a></>}</li>}
+      </ul>
       {e.note && <p>{e.note}</p>}
       {e.details.gift && <p className="muted">{t.kinds.birthday.giftIs} : {e.details.gift}</p>}
       {flash && <div className="notice">{flash}</div>}
@@ -352,18 +350,16 @@ export function EncounterDetail() {
             </details>
           )}
 
-          <details className="fold">
-            <summary><span><Icon name="message" />{t.encounters.thread}{messages.length > 0 ? ` (${messages.length})` : ''}</span></summary>
-            <div>
-              {messages.map((m) => (
-                <div key={m.id} className={`msg ${m.author_kind === 'host' ? 'msg--host' : ''}`}><b>{m.author_label}</b>{m.text}</div>
-              ))}
-              <form className="cluster" onSubmit={sendMsg} style={{ marginTop: '0.5rem' }}>
-                <input className="input" name="text" placeholder={t.encounters.write} maxLength={1000} style={{ flex: '1 1 12rem' }} />
-                <button className="btn" disabled={message.isPending}>{t.encounters.sendMsg}</button>
-              </form>
-            </div>
-          </details>
+          <MessageBoard
+            messages={messages}
+            canPost
+            posting={message.isPending}
+            isHost
+            seenKey={`h-${id}`}
+            onPost={(text) => message.mutate(text)}
+            onPin={(m, pinned) => pin.mutate({ id: m.id, pinned })}
+            onDelete={(m) => msgRm.remove(m.id, t.undo.removed, async () => { await api('messages', { method: 'DELETE', body: { id: m.id } }); refresh() })}
+          />
 
           {changes.length > 0 && (
             <details className="fold">

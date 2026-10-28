@@ -2,6 +2,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
 import { Header } from './Header'
+import { Icon } from './Icon'
 import type { ReactNode } from 'react'
 
 // The signed-in frame: the header (always there), three tabs, and the page. The agenda holds the
@@ -13,9 +14,9 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="shell">
       <Header />
       <nav className="nav" aria-label="Navigation">
-        <NavLink to="/rencontres">{t.nav.home}</NavLink>
-        <NavLink to="/amis">{t.nav.friends}</NavLink>
-        <NavLink to="/enfants">{t.nav.children}</NavLink>
+        <NavLink to="/rencontres"><Icon name="calendar" /><span>{t.nav.home}</span></NavLink>
+        <NavLink to="/amis"><Icon name="users" /><span>{t.nav.friends}</span></NavLink>
+        <NavLink to="/enfants"><Icon name="home" /><span>{t.nav.children}</span></NavLink>
       </nav>
       {me.demo && (
         <div className="notice">

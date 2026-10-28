@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mailLang, requestLang } from './lang'
-import { hostReminderMail, invitationMail, reminderMail, resetMail, thanksMail, updateMail, windowMail, type MailBody } from './mailCopy'
+import { answerMail, hostReminderMail, invitationMail, reminderMail, resetMail, thanksMail, updateMail, windowMail, type MailBody } from './mailCopy'
 
 const link = 'https://jouer.example/lune-miel'
 const evil = '<script>x</script>'
@@ -15,6 +15,7 @@ const all = (lang: 'fr' | 'en'): Record<string, MailBody> => ({
   reminder: reminderMail(lang, { parent: evil, title: 'Au parc', hostChild: 'Noé', when: 'samedi', place: 'Parc', link }),
   hostReminder: hostReminderMail(lang, { name: evil, title: 'Au parc', hostChild: 'Noé', when: 'samedi', place: null, who: [], link }),
   reset: resetMail(lang, { link }),
+  answer: answerMail(lang, { name: evil, guestParent: 'Julie', guestChild: 'Léa', reply: 'maybe', title: 'Au parc', when: 'samedi', link }),
 })
 
 describe('email copy', () => {

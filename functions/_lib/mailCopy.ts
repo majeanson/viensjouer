@@ -137,3 +137,37 @@ export function resetMail(lang: MailLang, v: { link: string }): MailBody {
     ),
   }
 }
+
+export function answerMail(lang: MailLang, v: { name: string; guestParent: string; guestChild: string; reply: 'yes' | 'maybe' | 'no'; title: string; when: string; link: string }): MailBody {
+  const word = lang === 'fr' ? { yes: 'oui', maybe: 'peut-être', no: 'non' }[v.reply] : { yes: 'yes', maybe: 'maybe', no: 'no' }[v.reply]
+  const foot = pick(lang, 'Tu reçois ce courriel parce que tu l’as demandé dans Mon profil. Tu peux le couper là-bas.', 'You get this email because you asked for it in My profile. You can turn it off there.')
+  return {
+    subject: pick(lang, `${v.guestChild} : ${word} (${v.title})`, `${v.guestChild}: ${word} (${v.title})`),
+    text: pick(
+      lang,
+      `Bonjour ${v.name},
+
+${v.guestParent} a répondu « ${word} » pour ${v.guestChild} : ${v.title}, ${v.when}.
+
+La page de la rencontre : ${v.link}
+
+${foot}
+
+${SIGN}`,
+      `Hello ${v.name},
+
+${v.guestParent} answered “${word}” for ${v.guestChild}: ${v.title}, ${v.when}.
+
+The get-together page: ${v.link}
+
+${foot}
+
+${SIGN}`,
+    ),
+    html: pick(
+      lang,
+      p(`Bonjour ${e(v.name)},`) + p(`${e(v.guestParent)} a répondu <strong>« ${e(word)} »</strong> pour ${e(v.guestChild)} : ${e(v.title)}, ${e(v.when)}.`) + p(`<a href="${v.link}">La page de la rencontre</a>`) + `<p class="small">${e(foot)}</p>` + p(SIGN),
+      p(`Hello ${e(v.name)},`) + p(`${e(v.guestParent)} answered <strong>“${e(word)}”</strong> for ${e(v.guestChild)}: ${e(v.title)}, ${e(v.when)}.`) + p(`<a href="${v.link}">The get-together page</a>`) + `<p class="small">${e(foot)}</p>` + p(SIGN),
+    ),
+  }
+}

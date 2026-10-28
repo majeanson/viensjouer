@@ -76,22 +76,29 @@ export function Account() {
           <button className="btn btn--primary" style={{ marginTop: '0.5rem' }}>{saved ? t.profile.saved : t.profile.save}</button>
         </form>
         {me.mail && !me.demo && (
-          <label className="check" style={{ marginTop: '1rem' }}>
-            <input
-              type="checkbox"
-              checked={!!me.remindHost}
-              onChange={async (ev) => {
-                setErr(null)
-                try {
-                  await api('profile', { method: 'PATCH', body: { remindHost: ev.currentTarget.checked } })
-                  await refresh()
-                } catch (ex) {
-                  setErr(ex instanceof Error ? ex.message : t.common.error)
-                }
-              }}
-            />
-            <span>{t.profile.remindHost}<span className="small muted" style={{ display: 'block', fontWeight: 400 }}>{t.profile.remindHostHint}</span></span>
-          </label>
+          <>
+            {([
+              ['remindHost', !!me.remindHost, t.profile.remindHost, t.profile.remindHostHint],
+              ['notifyAnswers', !!me.notifyAnswers, t.profile.notifyAnswers, t.profile.notifyAnswersHint],
+            ] as const).map(([key, on, label, hint]) => (
+              <label key={key} className="check" style={{ marginTop: '1rem' }}>
+                <input
+                  type="checkbox"
+                  checked={on}
+                  onChange={async (ev) => {
+                    setErr(null)
+                    try {
+                      await api('profile', { method: 'PATCH', body: { [key]: ev.currentTarget.checked } })
+                      await refresh()
+                    } catch (ex) {
+                      setErr(ex instanceof Error ? ex.message : t.common.error)
+                    }
+                  }}
+                />
+                <span>{label}<span className="small muted" style={{ display: 'block', fontWeight: 400 }}>{hint}</span></span>
+              </label>
+            ))}
+          </>
         )}
         {me.mail && !me.demo && (
           <div style={{ marginTop: '1rem' }}>

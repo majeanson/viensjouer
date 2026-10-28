@@ -73,13 +73,6 @@ export function toLocalTime(sec: number): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-// Same calendar day, in the browser's zone?
-export function sameLocalDay(a: number, b: number): boolean {
-  const x = new Date(a * 1000)
-  const y = new Date(b * 1000)
-  return x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate()
-}
-
 // « samedi 10 h » — the weekday and the hour, for an automatic title.
 export const dayHour = (sec: number, lang: Lang) => {
   const d = new Date(sec * 1000)

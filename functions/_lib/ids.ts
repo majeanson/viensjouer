@@ -97,6 +97,3 @@ export function whenLong(sec: number, lang: 'fr' | 'en' = 'fr', tz = DEFAULT_TZ)
   return fmt(tz, lang, 'long').format(new Date(sec * 1000))
 }
 
-export function whenTime(sec: number, lang: 'fr' | 'en' = 'fr', tz = DEFAULT_TZ): string {
-  return fmt(tz, lang, 'time').format(new Date(sec * 1000))
-}

@@ -14,11 +14,12 @@
     "cf:dev": "wrangler dev",
     "db:migrate:local": "wrangler d1 migrations apply viensjouer --local",
     "db:migrate:prod": "wrangler d1 migrations apply viensjouer --remote",
-    "verify": "npm run typecheck && npm test && npm run build && npm run check:bundle",
+    "verify": "npm run typecheck && npm run knip && npm test && npm run build && npm run check:bundle",
     "deploy": "npm run build && wrangler deploy",
     "e2e": "playwright test",
     "e2e:ci": "playwright test --workers=1 --retries=0 --forbid-only",
-    "check:bundle": "node scripts/check-bundle.mjs"
+    "check:bundle": "node scripts/check-bundle.mjs",
+    "knip": "knip"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.5",
@@ -35,6 +36,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "happy-dom": "^20.14.6",
+    "knip": "^6.43.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^4.1.11",

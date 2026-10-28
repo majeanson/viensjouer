@@ -1,5 +1,5 @@
 import type { Env } from '../_lib/env'
-import { badRequest, conflict, notFound, ok, readJson, serverError, str, tooManyRequests } from '../_lib/json'
+import { badRequest, conflict, notFound, ok, readJson, serverError, str, tooManyRequests, ACCOUNT_UNAVAILABLE } from '../_lib/json'
 import { overAuthLimit } from '../_lib/rateLimit'
 import { signInAs, sessionCookies } from '../_lib/auth'
 import { hashPassword } from '../_lib/password'
@@ -40,7 +40,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (!displayName) return badRequest('Ton prénom est requis.')
   const inv = await live(ctx.env, body?.token ?? null)
   if (!inv) return notFound('Ce lien ne fonctionne plus.')
-  if (await ctx.env.DB.prepare('SELECT email FROM parents WHERE email = ?').bind(email).first()) return conflict('Un compte existe déjà pour ce courriel — connecte-toi.')
+  if (await ctx.env.DB.prepare('SELECT email FROM parents WHERE email = ?').bind(email).first()) return conflict(ACCOUNT_UNAVAILABLE)
   const ts = nowSec()
   try {
     // Spend the token and add the parent in ONE batch; `used_at IS NULL` in the UPDATE plus
@@ -51,7 +51,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     ])
     if (!spent.meta.changes) return notFound('Ce lien ne fonctionne plus.')
   } catch {
-    return conflict('Un compte existe déjà pour ce courriel — connecte-toi.')
+    return conflict(ACCOUNT_UNAVAILABLE)
   }
   try {
     const { session, csrf } = await signInAs(ctx.env, email)

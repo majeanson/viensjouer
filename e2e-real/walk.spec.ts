@@ -142,6 +142,17 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   expect((await host.request.get(`/api/encounters?id=${encounterId}`)).status()).toBe(200)
   await strangerCtx.close()
 
+  // -- signup never says whether an address has an account: a wrong password gets the neutral answer, the right one signs in
+  const addr = `walk-${Date.now()}@example.com`
+  const probeCtx = await browser.newContext() // its own cookies: a signup signs its caller in
+  const mk = (password: string) => probeCtx.request.post('/api/auth/signup', { data: { email: addr, password, displayName: 'Walk' } })
+  expect((await mk('un-bon-mot-de-passe')).status()).toBe(201)
+  const again = await mk('pas-le-bon-mot-de-passe')
+  expect(again.status()).toBe(409)
+  expect(await again.text()).not.toMatch(/existe déjà/)
+  expect((await mk('un-bon-mot-de-passe')).status()).toBe(201)
+  await probeCtx.close()
+
   // -- « Me déconnecter partout »: a copy of this session (another device) dies, this one stays signed in
   const other = await browser.newContext({ storageState: await hostCtx.storageState() })
   expect((await (await other.request.get('/api/auth/me')).json()).signedIn).toBe(true)

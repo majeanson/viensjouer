@@ -1,6 +1,6 @@
 import type { Env } from '../../_lib/env'
 import { lockedOut, lookupMiss } from '../../_lib/guessLimit'
-import { badRequest, conflict, readJson, serverError, str, tooManyRequests } from '../../_lib/json'
+import { badRequest, conflict, readJson, serverError, str, tooManyRequests, ACCOUNT_UNAVAILABLE } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { signInAs, sessionCookies } from '../../_lib/auth'
 import { hashPassword } from '../../_lib/password'
@@ -61,7 +61,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (!inv) return lookupMiss(ctx.env, ctx.request)
   if (inv.linked_household_id) return conflict('Cette famille a déjà son compte — connecte-toi.')
   if (await ctx.env.DB.prepare('SELECT email FROM parents WHERE email = ?').bind(email).first()) {
-    return conflict('Un compte existe déjà pour ce courriel — connecte-toi, puis demande à l’hôte de te relier.')
+    return conflict(ACCOUNT_UNAVAILABLE)
   }
 
   const ts = nowSec()
@@ -110,7 +110,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       ).bind(reciprocalId, householdId, inv.host_parent ?? inv.host_household_name, inv.host_email, inv.host_child_name, inv.host_child_birthdate, inv.host_household, inv.host_child, ts, ts),
     ])
   } catch {
-    return conflict('Un compte existe déjà pour ce courriel — connecte-toi.')
+    return conflict(ACCOUNT_UNAVAILABLE)
   }
 
   try {

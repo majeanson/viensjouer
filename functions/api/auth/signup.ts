@@ -1,9 +1,9 @@
 import type { Env } from '../../_lib/env'
 import { requestLang } from '../../_lib/lang'
-import { badRequest, conflict, forbidden, readJson, serverError, str, tooManyRequests } from '../../_lib/json'
+import { badRequest, conflict, forbidden, readJson, serverError, str, tooManyRequests, ACCOUNT_UNAVAILABLE } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { signInAs, sessionCookies } from '../../_lib/auth'
-import { hashPassword } from '../../_lib/password'
+import { hashPassword, verifyPassword } from '../../_lib/password'
 import { inviteAccepted } from '../../_lib/signupGate'
 import { newId, nowSec } from '../../_lib/ids'
 
@@ -23,8 +23,22 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const householdName = str(body?.householdName, 60) ?? `La famille de ${displayName}`
   if (!inviteAccepted(ctx.env, body?.invite)) return forbidden('Code d’invitation invalide.')
 
-  const existing = await ctx.env.DB.prepare('SELECT email FROM parents WHERE email = ?').bind(email).first()
-  if (existing) return conflict('Un compte existe déjà pour ce courriel — connecte-toi.')
+  // An address that already has an account is never confirmed to the caller: the right password simply signs in
+  // (this IS a login), anything else gets the same neutral answer a lost race gets below.
+  const existing = await ctx.env.DB.prepare('SELECT password_hash FROM parents WHERE email = ?').bind(email).first<{ password_hash: string }>()
+  if (existing) {
+    // Same per-address bound as the login door: this branch is a password check too.
+    if (await overAuthLimit(ctx.env, ctx.request, `login:${email}`)) return tooManyRequests()
+    if (!(await verifyPassword(password, existing.password_hash))) return conflict(ACCOUNT_UNAVAILABLE)
+    try {
+      const { session, csrf } = await signInAs(ctx.env, email)
+      const headers = new Headers({ 'content-type': 'application/json; charset=utf-8' })
+      for (const c of sessionCookies(session, csrf)) headers.append('Set-Cookie', c)
+      return new Response(JSON.stringify({ ok: true, email }), { status: 201, headers })
+    } catch {
+      return serverError('Connexion impossible (SESSION_SECRET manquant ?).')
+    }
+  }
 
   const householdId = newId()
   const ts = nowSec()
@@ -41,7 +55,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       ),
     ])
   } catch {
-    return conflict('Un compte existe déjà pour ce courriel — connecte-toi.')
+    return conflict(ACCOUNT_UNAVAILABLE)
   }
 
   const lang = requestLang(ctx.request)

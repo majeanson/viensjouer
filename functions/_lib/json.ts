@@ -39,3 +39,8 @@ export function str(v: unknown, cap: number): string | null {
   const s = v.trim().slice(0, cap)
   return s.length ? s : null
 }
+
+// What every account-creating door says when the email is already taken. It never confirms that an account exists:
+// the person is pointed at both ways out (sign in, or reset the password) and the doors that can tell by
+// the password (signup) simply sign them in.
+export const ACCOUNT_UNAVAILABLE = 'Impossible de créer un compte avec ce courriel. Si tu en as déjà un, connecte-toi ou réinitialise ton mot de passe.'

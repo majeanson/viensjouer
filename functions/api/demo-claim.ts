@@ -1,4 +1,4 @@
-import { badRequest, conflict, forbidden, readJson, serverError, str, tooManyRequests } from '../_lib/json'
+import { badRequest, conflict, forbidden, readJson, serverError, str, tooManyRequests, ACCOUNT_UNAVAILABLE } from '../_lib/json'
 import { authed } from '../_lib/route'
 import { overAuthLimit } from '../_lib/rateLimit'
 import { signInAs, sessionCookies } from '../_lib/auth'
@@ -22,7 +22,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   if ((body?.password ?? '').length < 8) return badRequest('Mot de passe trop court (8 caractères minimum).')
   const displayName = str(body?.displayName, 60)
   if (!displayName) return badRequest('Ton prénom est requis.')
-  if (await ctx.env.DB.prepare('SELECT email FROM parents WHERE email = ?').bind(email).first()) return conflict('Un compte existe déjà pour ce courriel — connecte-toi.')
+  if (await ctx.env.DB.prepare('SELECT email FROM parents WHERE email = ?').bind(email).first()) return conflict(ACCOUNT_UNAVAILABLE)
 
   const ts = nowSec()
   try {
@@ -31,7 +31,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
       ctx.env.DB.prepare("UPDATE households SET kind = 'real', name = ?, updated_at = ? WHERE id = ? AND kind = 'demo'").bind(`La famille de ${displayName}`, ts, actor.householdId),
     ])
   } catch {
-    return conflict('Un compte existe déjà pour ce courriel — connecte-toi.')
+    return conflict(ACCOUNT_UNAVAILABLE)
   }
   try {
     const { session, csrf } = await signInAs(ctx.env, email)

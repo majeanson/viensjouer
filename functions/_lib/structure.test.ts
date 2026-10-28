@@ -122,3 +122,10 @@ describe('the deploy gate', () => {
     expect(ci).toMatch(/real:[\s\S]*?npm run e2e:real/)
   })
 })
+
+describe('accounts that exist', () => {
+  it('no door confirms that an email already has an account', () => {
+    const leaks = handlers.filter((f) => /existe déjà|already exists|already has an account/i.test(code(f)))
+    expect(leaks, 'answer with ACCOUNT_UNAVAILABLE (functions/_lib/json.ts) instead').toEqual([])
+  })
+})

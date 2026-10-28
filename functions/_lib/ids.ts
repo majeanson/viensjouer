@@ -10,12 +10,14 @@ export function newId(len = 12): string {
   return out
 }
 
-// The share-link code: two plain words and a number, « lune-pain-482 » — easy to say, spell and write on a
-// paper (words.ts has the list and the honest strength trade). The code IS the credential (one
-// rencontre, one family, dead after the date) behind a per-address rate limit. Older 8-character
-// codes (« h7kq-3wpm ») still resolve: normalizeLinkCode accepts both shapes and forgives case, spaces,
-// dots, accents and the hyphen.
+// The share-link code: two plain words, « lune-miel » — easy to say, spell and write on a paper (words.ts has the
+// list and the honest strength trade). The code IS the credential (one rencontre, one family, dead after
+// the date) behind a per-address rate limit and a wrong-guess lockout. Older 8-character codes
+// (« h7kq-3wpm ») still resolve: normalizeLinkCode accepts both shapes and forgives case, spaces, dots,
+// accents and the hyphen.
 import { WORDS } from './words'
+
+const WORD_SET = new Set(WORDS)
 
 // Uniform integer in [0, n) by rejection sampling, so no word is likelier than another.
 function randBelow(n: number): number {
@@ -30,14 +32,15 @@ export function newLinkCode(): string {
   const first = WORDS[randBelow(WORDS.length)]
   let second = WORDS[randBelow(WORDS.length)]
   while (second === first) second = WORDS[randBelow(WORDS.length)]
-  return `${first}-${second}-${100 + randBelow(900)}`
+  return `${first}-${second}`
 }
 
-const NEW_SHAPE = /^[a-z]{3,6}-[a-z]{3,6}-\d{3}$/
 export function normalizeLinkCode(raw: string | undefined | null): string | null {
   if (!raw) return null
   const s = raw.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\s_.,]+/g, '-')
-  if (NEW_SHAPE.test(s)) return s
+  // A new code is exactly two LISTED words: that is what tells it apart from an old all-letter 8-character code.
+  const parts = s.split('-')
+  if (parts.length === 2 && WORD_SET.has(parts[0]) && WORD_SET.has(parts[1]) && parts[0] !== parts[1]) return s
   const flat = s.replace(/[^a-z0-9]/g, '')
   return flat.length === 8 ? flat : null
 }
@@ -48,7 +51,7 @@ export function paperCode(token: string): string {
   return token.length === 8 ? `${token.slice(0, 4)}-${token.slice(4)}` : token
 }
 
-// A code that no row of `table` holds yet. The space is ~1.3e8, so a clash is rare but real, and a
+// A code that no row of `table` holds yet. The space is ~4.2e6, so a clash is rare but real, and a
 // UNIQUE violation must never reach a parent as a 500.
 export async function freshLinkCode(db: D1Database, table: 'invitations' | 'window_targets'): Promise<string> {
   for (let i = 0; i < 8; i++) {

@@ -1,5 +1,6 @@
 import type { Env } from '../../_lib/env'
-import { badRequest, notFound, ok, readJson, str, tooManyRequests } from '../../_lib/json'
+import { lockedOut, lookupMiss } from '../../_lib/guessLimit'
+import { badRequest, ok, readJson, str, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { newId, normalizeLinkCode, nowSec } from '../../_lib/ids'
 import { addressFor, isReply, linkAlive, type EncounterRow, type Reply } from '../../_lib/encounters'
@@ -73,9 +74,9 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
 }
 
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
-  if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
+  if ((await overAuthLimit(ctx.env, ctx.request)) || (await lockedOut(ctx.env, ctx.request))) return tooManyRequests()
   const r = await resolve(ctx.env, ctx.params.token as string | undefined)
-  if (!r) return notFound('Ce lien ne mène nulle part.')
+  if (!r) return lookupMiss(ctx.env, ctx.request)
   const alive = linkAlive(r.encounter, nowSec())
   const { results: messages } = await ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at FROM encounter_messages WHERE encounter_id = ? ORDER BY created_at')
     .bind(r.encounter.id)
@@ -120,9 +121,9 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
 type Body = { reply?: string; note?: string | null; parentName?: string; email?: string; phone?: string; allergies?: string; message?: string; remind?: boolean; adults?: number; kids?: number }
 
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
-  if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
+  if ((await overAuthLimit(ctx.env, ctx.request)) || (await lockedOut(ctx.env, ctx.request))) return tooManyRequests()
   const r = await resolve(ctx.env, ctx.params.token as string | undefined)
-  if (!r) return notFound('Ce lien ne mène nulle part.')
+  if (!r) return lookupMiss(ctx.env, ctx.request)
   if (!linkAlive(r.encounter, nowSec())) return badRequest('Cette rencontre est passée ou annulée.')
   const body = await readJson<Body>(ctx.request)
   if (!body) return badRequest('Corps invalide.')

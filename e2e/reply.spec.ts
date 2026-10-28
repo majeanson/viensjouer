@@ -185,7 +185,7 @@ test('the shared page says what it is, the facts, who it is for and what happens
 
 test('a two-word link works in any case and with spaces or dots', async ({ page }) => {
   await stub(page, card())
-  for (const path of ['/lune-pain-482', '/Lune-Pain-482', '/r/lune-pain-482']) {
+  for (const path of ['/lune-miel', '/Lune-Miel', '/r/lune-miel']) {
     await page.goto(path)
     await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
   }

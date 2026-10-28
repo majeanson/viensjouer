@@ -1,5 +1,6 @@
 import type { Env } from '../../_lib/env'
-import { badRequest, notFound, ok, readJson, str, tooManyRequests } from '../../_lib/json'
+import { lockedOut, lookupMiss } from '../../_lib/guessLimit'
+import { badRequest, ok, readJson, str, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { normalizeLinkCode, nowSec } from '../../_lib/ids'
 
@@ -42,9 +43,9 @@ async function resolve(env: Env, raw: string | undefined): Promise<Row | null> {
 }
 
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
-  if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
+  if ((await overAuthLimit(ctx.env, ctx.request)) || (await lockedOut(ctx.env, ctx.request))) return tooManyRequests()
   const r = await resolve(ctx.env, ctx.params.token as string | undefined)
-  if (!r) return notFound('Ce lien ne mène nulle part.')
+  if (!r) return lookupMiss(ctx.env, ctx.request)
   return ok({
     alive: r.ends_at > nowSec(),
     window: { starts_at: r.starts_at, ends_at: r.ends_at, note: r.note },
@@ -54,9 +55,9 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
 }
 
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
-  if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
+  if ((await overAuthLimit(ctx.env, ctx.request)) || (await lockedOut(ctx.env, ctx.request))) return tooManyRequests()
   const r = await resolve(ctx.env, ctx.params.token as string | undefined)
-  if (!r) return notFound('Ce lien ne mène nulle part.')
+  if (!r) return lookupMiss(ctx.env, ctx.request)
   if (r.ends_at <= nowSec()) return badRequest('Cette fenêtre est passée.')
   const body = await readJson<{ reply?: string; note?: string | null }>(ctx.request)
   if (body?.reply !== 'yes' && body?.reply !== 'no') return badRequest('Réponse inconnue.')

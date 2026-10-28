@@ -1,5 +1,6 @@
 import type { Env } from '../../_lib/env'
-import { badRequest, conflict, readJson, serverError, str, tooManyRequests, notFound } from '../../_lib/json'
+import { lockedOut, lookupMiss } from '../../_lib/guessLimit'
+import { badRequest, conflict, readJson, serverError, str, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { signInAs, sessionCookies } from '../../_lib/auth'
 import { hashPassword } from '../../_lib/password'
@@ -17,9 +18,9 @@ import { EMAIL_RE } from '../auth/signup'
 // No signup gate here: a person holding a live invitation was invited by someone who
 // already has an account. CSRF-exempt like every r/ route (no session yet).
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
-  if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
+  if ((await overAuthLimit(ctx.env, ctx.request)) || (await lockedOut(ctx.env, ctx.request))) return tooManyRequests()
   const code = normalizeLinkCode(ctx.params.token as string | undefined)
-  if (!code) return notFound('Ce lien ne mène nulle part.')
+  if (!code) return lookupMiss(ctx.env, ctx.request)
   const body = await readJson<{ displayName?: string; email?: string; password?: string }>(ctx.request)
   const email = body?.email?.trim().toLowerCase()
   if (!email || !EMAIL_RE.test(email)) return badRequest('Courriel invalide.')
@@ -57,7 +58,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       host_parent: string | null
       host_email: string | null
     }>()
-  if (!inv) return notFound('Ce lien ne mène nulle part.')
+  if (!inv) return lookupMiss(ctx.env, ctx.request)
   if (inv.linked_household_id) return conflict('Cette famille a déjà son compte — connecte-toi.')
   if (await ctx.env.DB.prepare('SELECT email FROM parents WHERE email = ?').bind(email).first()) {
     return conflict('Un compte existe déjà pour ce courriel — connecte-toi, puis demande à l’hôte de te relier.')

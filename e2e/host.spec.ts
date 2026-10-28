@@ -112,8 +112,8 @@ test('a family with no email gets a ready-to-send message with the short link', 
       return j({
         encounter: { id: 'e1', child_id: 'c1', kind: 'park', title: 'Au parc Lafontaine', starts_at: soon, ends_at: null, place: null, address: null, note: null, status: 'proposed', details: {}, hereOpen: false },
         invitations: [
-          { id: 'i1', friend_family_id: 'f1', token: 'lune-pain-482', reply: null, reply_note: null, reply_at: null, sent_at: null, parent_name: 'Julie', child_first_name: 'Léa', email: null, allergies: null, adults: null, kids: null, scope: 'family' },
-          { id: 'i2', friend_family_id: 'f2', token: 'ours-miel-731', reply: null, reply_note: null, reply_at: null, sent_at: null, parent_name: 'Paul', child_first_name: 'Max', email: 'paul@example.com', allergies: null, adults: null, kids: null, scope: 'friend' },
+          { id: 'i1', friend_family_id: 'f1', token: 'lune-miel', reply: null, reply_note: null, reply_at: null, sent_at: null, parent_name: 'Julie', child_first_name: 'Léa', email: null, allergies: null, adults: null, kids: null, scope: 'family' },
+          { id: 'i2', friend_family_id: 'f2', token: 'ours-miel', reply: null, reply_note: null, reply_at: null, sent_at: null, parent_name: 'Paul', child_first_name: 'Max', email: 'paul@example.com', allergies: null, adults: null, kids: null, scope: 'friend' },
         ],
         messages: [], relais: [], souvenirs: [],
       })
@@ -122,7 +122,7 @@ test('a family with no email gets a ready-to-send message with the short link', 
   })
   await page.goto('/rencontres/e1')
   // the short, writable link is shown for each family
-  await expect(page.getByText(/\/lune-pain-482$/)).toBeVisible()
+  await expect(page.getByText(/\/lune-miel$/)).toBeVisible()
   // no email: the share message is the primary action and says what to do
   await expect(page.getByText(/Pas de courriel : envoie ce message par texto/)).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Partager le lien' })).toHaveCount(1)
@@ -131,5 +131,5 @@ test('a family with no email gets a ready-to-send message with the short link', 
   expect(text).toContain('Salut Julie !')
   expect(text).toContain('Marc organise « Au parc Lafontaine »')
   expect(text).toContain('Toute la famille est la bienvenue.')
-  expect(text).toContain('/lune-pain-482')
+  expect(text).toContain('/lune-miel')
 })

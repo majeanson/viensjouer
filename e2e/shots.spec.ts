@@ -57,7 +57,7 @@ async function stubAll(page: Page) {
 
 const SCREENS: [string, string][] = [
   ['door', '/'],
-  ['reply', '/lune-pain-482'],
+  ['reply', '/lune-miel'],
   ['encounters', '/rencontres'],
   ['new', '/rencontres/nouvelle'],
   ['detail', '/rencontres/e2'],

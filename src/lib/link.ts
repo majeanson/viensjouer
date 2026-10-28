@@ -1,6 +1,6 @@
 // The shareable link, in the shape a parent writes on a paper at the daycare door:
-// `jouer.marcportal.com/lune-pain-482`. Older 8-character codes (« h7kq-3wpm ») still work.
-export const CODE_RE = /^([a-z]{3,6}-[a-z]{3,6}-\d{3}|[a-z0-9]{4}-?[a-z0-9]{4})$/i
+// `jouer.marcportal.com/lune-miel`. Older 8-character codes (« h7kq-3wpm ») still work.
+export const CODE_RE = /^([a-z]{3,7}-[a-z]{3,7}|[a-z0-9]{4}-?[a-z0-9]{4})$/i
 
 // How a code is WRITTEN: a new one already is; an old 8-character one gets its hyphen.
 export function paperCode(token: string): string {

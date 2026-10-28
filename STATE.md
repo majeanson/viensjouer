@@ -118,3 +118,7 @@ rencontre could land on the board as an event).
 - **Dire merci**: one message after a rencontre (30 days max), manual, from the host page. It goes into the thread (every family sees it) and by email to the yes-families with an address (`encounters.thanked_at`). No cron, nothing sent unasked.
 - **Installable**: `public/manifest.webmanifest`, PNG icons (any, maskable, apple-touch, favicon) and a link-preview image drawn by `scripts/make-icons.mjs`, iOS meta tags, safe-area padding, `theme-color`, and `X-Robots-Tag: noindex`. `public/sw.js` is a pass-through (caches nothing, so it cannot go stale); it only makes Chrome treat the app as installable. « Mon compte » has an install card: a button where the browser offers one, the two iOS taps otherwise.
 - **Places**: `GET /api/places` (this household's own places, most used first). « Où » completes from them (a standard `datalist`); picking one brings its map link and address back, never over something already typed.
+
+## In progress (2026-10-27 night): faces, icons, message board, 2026 layout
+
+Done so far: the icon set (`components/Icon.tsx`, in front of labels, headings and fold summaries), the server for faces (`/api/avatar`, `/api/profile`, migration 0012) and for the message board (pin, delete, own messages; migration 0013). Next: the face picker, the board component, bottom tab bar, meta rows with icons, screenshots, e2e.

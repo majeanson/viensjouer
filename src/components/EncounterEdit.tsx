@@ -5,6 +5,7 @@ import { useLang, useT } from '../i18n'
 import { endFromTime, fromLocalInput, toLocalInput, toLocalTime } from '../lib/format'
 import { clientDiff, isPrivate, showValue, type Snap } from '../lib/changes'
 import type { Encounter } from '../lib/types'
+import { Icon } from './Icon'
 
 // « Modifier la rencontre » — change the title, time, place, address, note (and the gift idea for a
 // birthday). While you edit, a preview lists exactly what the families will be shown as changed, and an
@@ -82,16 +83,16 @@ export function EncounterEdit({
 
   return (
     <form ref={setForm} className="card" onSubmit={submit} onInput={() => setTick((n) => n + 1)}>
-      <h3>{t.edit.title}</h3>
+      <h3><Icon name="edit" />{t.edit.title}</h3>
       {e.series_id && <p className="muted small">{t.edit.seriesOnly}</p>}
-      <label className="field"><span>{t.encounters.titleField}</span><input className="input" name="title" required maxLength={120} defaultValue={e.title} /></label>
-      <label className="field"><span>{t.encounters.when}</span><input className="input" name="startsAt" type="datetime-local" required defaultValue={toLocalInput(e.starts_at)} /></label>
-      <label className="field"><span>{t.encounters.until}</span><input className="input" name="endsAt" type="time" defaultValue={e.ends_at ? toLocalTime(e.ends_at) : ''} /><span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.untilHint}</span></label>
-      <label className="field"><span>{t.encounters.place}</span><input className="input" name="place" maxLength={120} defaultValue={e.place ?? ''} /></label>
-      <label className="field"><span>{t.encounters.mapUrl}</span><input className="input" name="mapUrl" type="url" autoComplete="off" maxLength={300} defaultValue={e.map_url ?? ''} /></label>
-      {e.kind !== 'park' && <label className="field"><span>{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" defaultValue={e.address ?? ''} /></label>}
-      <label className="field"><span>{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} defaultValue={e.note ?? ''} /></label>
-      {e.kind === 'birthday' && <label className="field"><span>{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} defaultValue={gift ?? ''} /></label>}
+      <label className="field"><span><Icon name="edit" />{t.encounters.titleField}</span><input className="input" name="title" required maxLength={120} defaultValue={e.title} /></label>
+      <label className="field"><span><Icon name="calendar" />{t.encounters.when}</span><input className="input" name="startsAt" type="datetime-local" required defaultValue={toLocalInput(e.starts_at)} /></label>
+      <label className="field"><span><Icon name="clock" />{t.encounters.until}</span><input className="input" name="endsAt" type="time" defaultValue={e.ends_at ? toLocalTime(e.ends_at) : ''} /><span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.untilHint}</span></label>
+      <label className="field"><span><Icon name="pin" />{t.encounters.place}</span><input className="input" name="place" maxLength={120} defaultValue={e.place ?? ''} /></label>
+      <label className="field"><span><Icon name="map" />{t.encounters.mapUrl}</span><input className="input" name="mapUrl" type="url" autoComplete="off" maxLength={300} defaultValue={e.map_url ?? ''} /></label>
+      {e.kind !== 'park' && <label className="field"><span><Icon name="home" />{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" defaultValue={e.address ?? ''} /></label>}
+      <label className="field"><span><Icon name="note" />{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} defaultValue={e.note ?? ''} /></label>
+      {e.kind === 'birthday' && <label className="field"><span><Icon name="gift" />{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} defaultValue={gift ?? ''} /></label>}
 
       <label className="check"><input type="checkbox" name="showGuests" defaultChecked={guestsWas.current} /><span>{t.roster.showToggle}</span></label>
       <div className="changes-preview" aria-live="polite">

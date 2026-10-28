@@ -5,6 +5,7 @@ import { K } from '../lib/query'
 import { useT } from '../i18n'
 import { Why } from './Why'
 import type { HomeCard as HomeCardData } from '../lib/types'
+import { Icon } from './Icon'
 
 // « Chez nous » — what the other parent is too polite to ask, written once and shown on
 // every invitation to a home rencontre.
@@ -39,7 +40,7 @@ export function HomeCardForm({ bare = false }: { bare?: boolean }) {
   }
   return (
     <section style={{ marginTop: bare ? 0 : '1.5rem' }}>
-      {!bare && <h2>{t.kinds.home.title}</h2>}
+      {!bare && <h2><Icon name="home" />{t.kinds.home.title}</h2>}
       <p className="muted small">{t.kinds.home.hint}</p>
       <Why k="homeCard" />
       <form className="card" onSubmit={submit} onChange={() => setSaved(false)} key={JSON.stringify(c ?? null)}>
@@ -55,7 +56,7 @@ export function HomeCardForm({ bare = false }: { bare?: boolean }) {
             <option value="free">{t.kinds.home.screens.free}</option>
           </select>
         </label>
-        <label className="field"><span>{t.kinds.home.note}</span><textarea className="input" name="note" maxLength={400} defaultValue={c?.note} placeholder={t.kinds.home.notePlaceholder} /></label>
+        <label className="field"><span><Icon name="note" />{t.kinds.home.note}</span><textarea className="input" name="note" maxLength={400} defaultValue={c?.note} placeholder={t.kinds.home.notePlaceholder} /></label>
         {err && <div className="notice notice--err">{err}</div>}
         {saved && <div className="notice">{t.kinds.home.saved}</div>}
         <button className="btn btn--primary" disabled={save.isPending}>{t.families.save}</button>
@@ -69,7 +70,7 @@ export function HomeCardView({ card }: { card: HomeCardData }) {
   const t = useT()
   return (
     <div className="card">
-      <h3>{t.kinds.home.beforeYouCome}</h3>
+      <h3><Icon name="home" />{t.kinds.home.beforeYouCome}</h3>
       <div className="cluster" style={{ marginBottom: card.note ? '0.5rem' : 0 }}>
         {card.dog && <span className="chip">{t.kinds.home.dog}</span>}
         {card.pool && <span className="chip">{t.kinds.home.pool}</span>}

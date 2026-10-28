@@ -8,6 +8,7 @@ import { Face } from '../components/Face'
 import { Why } from '../components/Why'
 import { useDeferredRemove } from '../lib/toast'
 import type { Child } from '../lib/types'
+import { Icon } from '../components/Icon'
 
 // The same six colours the server hands out in turn (functions/api/children.ts).
 const COLOURS = ['#f2a03d', '#5b9a8b', '#c76b6b', '#7c83c9', '#b98b3a', '#4f8fbf']
@@ -69,10 +70,10 @@ export function Children() {
       </div>
       {editing ? (
         <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
-          <label className="field"><span>{t.children.firstName}</span><input className="input" name="firstName" required maxLength={40} defaultValue={cur?.first_name} autoFocus /></label>
-          <label className="field"><span>{t.children.birthdate}</span><input className="input" name="birthdate" type="date" defaultValue={cur?.birthdate ?? ''} /><Why k="childBirthdate" /></label>
+          <label className="field"><span><Icon name="smile" />{t.children.firstName}</span><input className="input" name="firstName" required maxLength={40} defaultValue={cur?.first_name} autoFocus /></label>
+          <label className="field"><span><Icon name="cake" />{t.children.birthdate}</span><input className="input" name="birthdate" type="date" defaultValue={cur?.birthdate ?? ''} /><Why k="childBirthdate" /></label>
           <div className="field">
-            <span>{t.children.colour}</span>
+            <span><Icon name="palette" />{t.children.colour}</span>
             <div className="cluster" role="radiogroup" aria-label={t.children.colour}>
               {COLOURS.map((col, i) => (
                 <label key={col} className="swatch" style={{ background: col }}>

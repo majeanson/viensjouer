@@ -5,6 +5,7 @@ import { K } from '../lib/query'
 import { useT } from '../i18n'
 import { Why } from './Why'
 import type { Family, Group } from '../lib/types'
+import { Icon } from './Icon'
 
 // « Qui inviter ? » — the families as checkboxes, with the host's groups on top as one-tap
 // shortcuts, and « Nouvelle famille » INLINE: a first-time host has an empty book, and must
@@ -84,10 +85,10 @@ export function FamilyPicker({ families, groups, selected, onChange }: { familie
 
       {adding ? (
         <form onSubmit={addFamily} className="card" style={{ marginTop: '0.5rem', background: 'var(--paper)' }}>
-          <h3>{t.families.add}</h3>
-          <label className="field"><span>{t.families.childFirstName}</span><input className="input" name="childFirstName" maxLength={40} autoComplete="off" /></label>
-          <label className="field"><span>{t.families.parentName}</span><input className="input" name="parentName" maxLength={60} autoComplete="off" /></label>
-          <label className="field"><span>{t.families.email}</span><input className="input" name="email" type="email" autoComplete="off" /><Why k="friendEmail" /></label>
+          <h3><Icon name="users" />{t.families.add}</h3>
+          <label className="field"><span><Icon name="smile" />{t.families.childFirstName}</span><input className="input" name="childFirstName" maxLength={40} autoComplete="off" /></label>
+          <label className="field"><span><Icon name="user" />{t.families.parentName}</span><input className="input" name="parentName" maxLength={60} autoComplete="off" /></label>
+          <label className="field"><span><Icon name="mail" />{t.families.email}</span><input className="input" name="email" type="email" autoComplete="off" /><Why k="friendEmail" /></label>
           <p className="muted small">{t.share.noEmailHint}</p>
           {err && <div className="notice notice--err">{err}</div>}
           <div className="cluster">

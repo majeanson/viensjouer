@@ -8,6 +8,7 @@ import { WhyMany } from '../components/WhyMany'
 import { Groups } from '../components/Groups'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
+import { Icon } from '../components/Icon'
 
 interface Linked {
   linkId: string
@@ -83,13 +84,13 @@ export function Friends() {
 
       {editing && (
         <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
-          <label className="field"><span>{t.families.childFirstName}</span><input className="input" name="childFirstName" required maxLength={40} defaultValue={cur?.child_first_name} autoFocus /></label>
-          <label className="field"><span>{t.families.parentName}</span><input className="input" name="parentName" required maxLength={60} defaultValue={cur?.parent_name} /></label>
-          <label className="field"><span>{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /></label>
-          <label className="field"><span>{t.families.birthdate}</span><input className="input" name="childBirthdate" type="date" defaultValue={cur?.child_birthdate ?? ''} /></label>
-          <label className="field"><span>{t.families.phone}</span><input className="input" name="phone" type="tel" defaultValue={cur?.phone ?? ''} /></label>
-          <label className="field"><span>{t.families.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={cur?.allergies ?? ''} /></label>
-          <label className="field"><span>{t.families.notes}</span><input className="input" name="notes" maxLength={1000} defaultValue={cur?.notes ?? ''} /></label>
+          <label className="field"><span><Icon name="smile" />{t.families.childFirstName}</span><input className="input" name="childFirstName" required maxLength={40} defaultValue={cur?.child_first_name} autoFocus /></label>
+          <label className="field"><span><Icon name="user" />{t.families.parentName}</span><input className="input" name="parentName" required maxLength={60} defaultValue={cur?.parent_name} /></label>
+          <label className="field"><span><Icon name="mail" />{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /></label>
+          <label className="field"><span><Icon name="cake" />{t.families.birthdate}</span><input className="input" name="childBirthdate" type="date" defaultValue={cur?.child_birthdate ?? ''} /></label>
+          <label className="field"><span><Icon name="phone" />{t.families.phone}</span><input className="input" name="phone" type="tel" defaultValue={cur?.phone ?? ''} /></label>
+          <label className="field"><span><Icon name="alert" />{t.families.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={cur?.allergies ?? ''} /></label>
+          <label className="field"><span><Icon name="note" />{t.families.notes}</span><input className="input" name="notes" maxLength={1000} defaultValue={cur?.notes ?? ''} /></label>
           <WhyMany
             items={[
               [t.families.email, 'friendEmail'],
@@ -135,7 +136,7 @@ export function Friends() {
 
       {others.length > 0 && (
         <section style={{ marginTop: '1.25rem' }}>
-          <h2>{t.friends.othersTitle}</h2>
+          <h2><Icon name="users" />{t.friends.othersTitle}</h2>
           <p className="muted small">{t.friends.othersHint}</p>
           {others.map((l) => (
             <div key={l.linkId} className="card row">
@@ -147,7 +148,7 @@ export function Friends() {
       )}
 
       <details className="fold" style={{ marginTop: '1.25rem' }}>
-        <summary><span>{t.friends.groupsFold}{groups.length > 0 ? ` (${groups.length})` : ''}</span></summary>
+        <summary><span><Icon name="tag" />{t.friends.groupsFold}{groups.length > 0 ? ` (${groups.length})` : ''}</span></summary>
         <div><Groups families={q.data?.families ?? []} /></div>
       </details>
     </>

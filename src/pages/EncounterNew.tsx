@@ -12,6 +12,7 @@ import { FamilyPicker } from '../components/FamilyPicker'
 import { HomeCardForm } from '../components/HomeCard'
 import { Windows } from './Windows'
 import type { Child, Encounter, Family, Group, Invitation, Kind } from '../lib/types'
+import { Icon } from '../components/Icon'
 
 type Scope = 'friend' | 'family'
 // A birthday starts as « the friend only », everything else as « the whole family ».
@@ -159,7 +160,7 @@ export function EncounterNew() {
           <div className="card">
             {children.length > 1 && (
               <>
-                <h3>{t.encounters.whoInvites}</h3>
+                <h3><Icon name="smile" />{t.encounters.whoInvites}</h3>
                 <div className="seg" style={{ marginBottom: '0.75rem' }}>
                   {children.map((c) => (
                     <button type="button" key={c.id} className={`btn ${chosen === c.id ? 'btn--on' : ''}`} onClick={() => setChildId(c.id)}>{c.first_name}</button>
@@ -167,7 +168,7 @@ export function EncounterNew() {
                 </div>
               </>
             )}
-            <h3>{t.encounters.whichKind}</h3>
+            <h3><Icon name="sparkle" />{t.encounters.whichKind}</h3>
             <div className="seg">
               {KINDS.map((k) => (
                 <button type="button" key={k} className={`btn ${kind === k ? 'btn--on' : ''}`} onClick={() => chooseKind(k)}>{t.encounters.kind[k]}</button>
@@ -176,9 +177,9 @@ export function EncounterNew() {
           </div>
 
           <div className="card">
-            <h3>{t.encounters.invite}</h3>
+            <h3><Icon name="users" />{t.encounters.invite}</h3>
             <FamilyPicker families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
-            <h3 style={{ marginTop: '1rem' }}>{t.scope.label}</h3>
+            <h3 style={{ marginTop: '1rem' }}><Icon name="users" />{t.scope.label}</h3>
             <div className="seg" role="radiogroup" aria-label={t.scope.label}>
               {(['friend', 'family'] as Scope[]).map((x) => (
                 <button type="button" key={x} role="radio" aria-checked={scope === x} className={`btn ${scope === x ? 'btn--on' : ''}`} onClick={() => { setScope(x); setScopeTouched(true) }}>{t.scope[x]}</button>
@@ -189,7 +190,7 @@ export function EncounterNew() {
 
           <div className="card" key={prev?.id ?? 'fresh'}>
             <div className="field">
-              <span>{t.encounters.when}</span>
+              <span><Icon name="calendar" />{t.encounters.when}</span>
               <div className="quick">
                 {quick.map(([label, at]) => (
                   <button type="button" key={label} className="btn btn--small" onClick={() => setStart(toLocalInput(at))}>{label}</button>
@@ -197,7 +198,7 @@ export function EncounterNew() {
               </div>
               <input className="input" name="startsAt" type="datetime-local" required value={start} onChange={(e) => setStart(e.target.value)} aria-label={t.encounters.when} />
             </div>
-            <label className="field"><span>{t.encounters.place}</span><input
+            <label className="field"><span><Icon name="pin" />{t.encounters.place}</span><input
               className="input"
               name="place"
               maxLength={120}
@@ -218,32 +219,32 @@ export function EncounterNew() {
                 setReused(did)
               }}
             /><datalist id="past-places">{(placesQ.data?.places ?? []).map((p) => <option key={p.place} value={p.place} />)}</datalist>{reused && <span className="small muted" style={{ fontWeight: 400 }}>{t.form.reused}</span>}</label>
-            <label className="field"><span>{t.encounters.titleField}</span><input className="input" name="title" maxLength={120} defaultValue={prev?.title ?? ''} placeholder={`${t.form.autoTitle[kind]}, ${dayHour(fromLocalInput(start) ?? nextSaturdayTen(), lang)}`} /><span className="small muted" style={{ fontWeight: 400 }}>{t.form.titleAuto}</span></label>
+            <label className="field"><span><Icon name="edit" />{t.encounters.titleField}</span><input className="input" name="title" maxLength={120} defaultValue={prev?.title ?? ''} placeholder={`${t.form.autoTitle[kind]}, ${dayHour(fromLocalInput(start) ?? nextSaturdayTen(), lang)}`} /><span className="small muted" style={{ fontWeight: 400 }}>{t.form.titleAuto}</span></label>
 
             <details className="why" open={moreOpen} style={{ marginTop: '0.5rem' }}>
               <summary>{t.form.more} <span className="muted">· {t.form.moreHint}</span></summary>
               <div style={{ marginTop: '0.75rem' }}>
-                <label className="field"><span>{t.encounters.until}</span><input className="input" name="endsAt" type="time" defaultValue={prevEnd} /><span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.untilHint}</span></label>
+                <label className="field"><span><Icon name="clock" />{t.encounters.until}</span><input className="input" name="endsAt" type="time" defaultValue={prevEnd} /><span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.untilHint}</span></label>
                 <label className="field">
-                  <span>{t.encounters.repeat}</span>
+                  <span><Icon name="repeat" />{t.encounters.repeat}</span>
                   <select className="input" name="freq" value={freq} onChange={(e) => setFreq(e.target.value as Frequency)}>
                     {FREQUENCIES.map((x) => <option key={x} value={x}>{t.encounters.freq[x]}</option>)}
                   </select>
                 </label>
                 {freq !== 'once' && (
                   <label className="field">
-                    <span>{t.encounters.repeatCount}</span>
+                    <span><Icon name="repeat" />{t.encounters.repeatCount}</span>
                     <select className="input" name="count" defaultValue="4">
                       {Array.from({ length: MAX_OCCURRENCES - 1 }, (_, i) => i + 2).map((n) => <option key={n} value={n}>{n}</option>)}
                     </select>
                     <span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.repeatHint}</span>
                   </label>
                 )}
-                {health.data?.photos && <label className="field"><span>{t.cover.field}</span><input className="input" type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)} /></label>}
-                <label className="field"><span>{t.encounters.mapUrl}</span><input className="input" name="mapUrl" type="url" autoComplete="off" maxLength={300} defaultValue={prev?.map_url ?? ''} placeholder="https://maps.app.goo.gl/…" /></label>
-                {kind !== 'park' && <label className="field"><span>{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" defaultValue={prev?.address ?? ''} /></label>}
-                {kind === 'birthday' && <label className="field"><span>{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} defaultValue={prev?.details?.gift ?? ''} placeholder={t.kinds.birthday.giftPlaceholder} /></label>}
-                <label className="field"><span>{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} defaultValue={prev?.note ?? ''} placeholder={t.encounters.notePlaceholder} /></label>
+                {health.data?.photos && <label className="field"><span><Icon name="image" />{t.cover.field}</span><input className="input" type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)} /></label>}
+                <label className="field"><span><Icon name="map" />{t.encounters.mapUrl}</span><input className="input" name="mapUrl" type="url" autoComplete="off" maxLength={300} defaultValue={prev?.map_url ?? ''} placeholder="https://maps.app.goo.gl/…" /></label>
+                {kind !== 'park' && <label className="field"><span><Icon name="home" />{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" defaultValue={prev?.address ?? ''} /></label>}
+                {kind === 'birthday' && <label className="field"><span><Icon name="gift" />{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} defaultValue={prev?.details?.gift ?? ''} placeholder={t.kinds.birthday.giftPlaceholder} /></label>}
+                <label className="field"><span><Icon name="note" />{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} defaultValue={prev?.note ?? ''} placeholder={t.encounters.notePlaceholder} /></label>
                 <WhyMany
                   items={[
                     ...(health.data?.photos ? ([[t.cover.field, 'cover']] as [string, 'cover'][]) : []),

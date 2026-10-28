@@ -10,6 +10,7 @@ import { linkFor, linkLabel } from '../lib/link'
 import { FamilyPicker } from '../components/FamilyPicker'
 import { useDeferredRemove } from '../lib/toast'
 import type { Child, Family, Group, OpenWindow } from '../lib/types'
+import { Icon } from '../components/Icon'
 
 const wlink = (token: string) => linkFor(token, 'w')
 const wlabel = (token: string) => linkLabel(token, 'w')
@@ -97,16 +98,16 @@ export function Windows({ embedded = false }: { embedded?: boolean }) {
 
       {adding && (
         <form className="card" onSubmit={submit}>
-          <h3>{t.encounters.whoInvites}</h3>
+          <h3><Icon name="smile" />{t.encounters.whoInvites}</h3>
           <div className="seg" style={{ marginBottom: '0.75rem' }}>
             {children.map((c) => (
               <button type="button" key={c.id} className={`btn ${pickedChild === c.id ? 'btn--on' : ''}`} onClick={() => setChildId(c.id)}>{c.first_name}</button>
             ))}
           </div>
-          <label className="field"><span>{t.windows.from}</span><input className="input" name="startsAt" type="datetime-local" required defaultValue={toLocalInput(defaultStart)} /></label>
-          <label className="field"><span>{t.windows.to}</span><input className="input" name="endsAt" type="datetime-local" required defaultValue={toLocalInput(defaultStart + 3 * 3600)} /></label>
-          <label className="field"><span>{t.encounters.note}</span><input className="input" name="note" maxLength={500} placeholder={t.windows.notePlaceholder} /></label>
-          <h3>{t.encounters.invite}</h3>
+          <label className="field"><span><Icon name="calendar" />{t.windows.from}</span><input className="input" name="startsAt" type="datetime-local" required defaultValue={toLocalInput(defaultStart)} /></label>
+          <label className="field"><span><Icon name="clock" />{t.windows.to}</span><input className="input" name="endsAt" type="datetime-local" required defaultValue={toLocalInput(defaultStart + 3 * 3600)} /></label>
+          <label className="field"><span><Icon name="note" />{t.encounters.note}</span><input className="input" name="note" maxLength={500} placeholder={t.windows.notePlaceholder} /></label>
+          <h3><Icon name="users" />{t.encounters.invite}</h3>
           <FamilyPicker families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
           <div className="cluster" style={{ marginTop: '0.75rem' }}>
             <button className="btn btn--primary" disabled={create.isPending || picked.size === 0 || !pickedChild}>{t.windows.create}</button>

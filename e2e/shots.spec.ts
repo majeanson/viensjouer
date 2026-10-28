@@ -61,11 +61,8 @@ const SCREENS: [string, string][] = [
   ['encounters', '/rencontres'],
   ['new', '/rencontres/nouvelle'],
   ['detail', '/rencontres/e2'],
-  ['calendar', '/calendrier'],
-  ['windows', '/fenetres'],
-  ['circle', '/cercle'],
   ['children', '/enfants'],
-  ['families', '/familles'],
+  ['friends', '/amis'],
   ['account', '/compte'],
   ['privacy', '/confidentialite'],
 ]

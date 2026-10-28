@@ -5,6 +5,7 @@ import { api, isStatus } from '../lib/api'
 import { useLang, useT } from '../i18n'
 import { whenLong } from '../lib/format'
 import { Header } from '../components/Header'
+import { Icon } from '../components/Icon'
 
 interface Offer {
   alive: boolean
@@ -59,7 +60,7 @@ export function WindowReply() {
           {done && <div className="notice">{t.reply.saved}</div>}
           {you.reply && !done && <p className="muted small">{t.reply.yourReply} : <strong>{you.reply === 'yes' ? t.windows.yes : t.windows.no}</strong></p>}
           <h3>{t.windows.question}</h3>
-          <label className="field"><span>{t.reply.note}</span><input id="wnote" className="input" maxLength={500} defaultValue={you.replyNote ?? ''} placeholder={t.windows.notePlaceholderReply} /></label>
+          <label className="field"><span><Icon name="note" />{t.reply.note}</span><input id="wnote" className="input" maxLength={500} defaultValue={you.replyNote ?? ''} placeholder={t.windows.notePlaceholderReply} /></label>
           {err && <div className="notice notice--err">{err}</div>}
           <div className="stack">
             <button className="btn btn--yes btn--big" disabled={post.isPending} onClick={answer('yes')}>{t.windows.yes}</button>

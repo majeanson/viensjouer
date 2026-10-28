@@ -49,7 +49,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
     const now = nowSec()
     const [inv, msgs, rel, sou, chg, brg] = await ctx.env.DB.batch([
       ctx.env.DB.prepare(`${INVITE_SELECT} WHERE i.encounter_id = ? ORDER BY i.created_at`).bind(id),
-      ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at FROM encounter_messages WHERE encounter_id = ? ORDER BY created_at').bind(id),
+      ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at, pinned FROM encounter_messages WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(id),
       ctx.env.DB.prepare('SELECT r.invitation_id, r.nap, r.ate, r.mood, r.note, r.expires_at FROM relais r JOIN invitations i ON i.id = r.invitation_id WHERE i.encounter_id = ? AND r.expires_at > ?').bind(id, now),
       ctx.env.DB.prepare('SELECT id, author_kind, author_label, created_at FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(id),
       ctx.env.DB.prepare('SELECT field, old_value, new_value, created_at FROM encounter_changes WHERE encounter_id = ? ORDER BY created_at DESC LIMIT 30').bind(id),

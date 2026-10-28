@@ -15,6 +15,7 @@ import { Why } from '../components/Why'
 import { kidsComing } from '../lib/scope'
 import { useDeferredRemove, useToast } from '../lib/toast'
 import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
+import { Icon } from '../components/Icon'
 
 interface Detail {
   encounter: Encounter & { details: Record<string, string>; hereOpen: boolean }
@@ -212,7 +213,7 @@ export function EncounterDetail() {
             thank.mutate(String(new FormData(ev.currentTarget).get('text') ?? ''))
           }}
         >
-          <h3>{t.thanks.title}</h3>
+          <h3><Icon name="heart" />{t.thanks.title}</h3>
           <p className="muted small">{t.thanks.hint}</p>
           <textarea className="input" name="text" maxLength={500} defaultValue={t.thanks.default} aria-label={t.thanks.title} />
           <button className="btn btn--primary" style={{ marginTop: '0.5rem' }} disabled={thank.isPending}>{t.thanks.send}</button>
@@ -230,7 +231,7 @@ export function EncounterDetail() {
           )}
 
           <div className="card" aria-label={t.roster.title}>
-            <h3>{t.roster.title}</h3>
+            <h3><Icon name="users" />{t.roster.title}</h3>
             <p className="muted small" style={{ margin: '0 0 0.4rem' }}>{e.show_guests === false ? null : t.roster.public}</p>
             {invitations.length === 0 && <p className="muted small" style={{ margin: 0 }}>{t.roster.empty}</p>}
             {groups.filter(([, list]) => list.length > 0).map(([label, list, kind]) => (
@@ -243,7 +244,7 @@ export function EncounterDetail() {
           </div>
 
           <div className="card">
-            <h3>{t.encounters.links}</h3>
+            <h3><Icon name="share" />{t.encounters.links}</h3>
             {invitations.map((i) => (
               <div key={i.id} className="linkrow">
                 <div className="row">
@@ -280,10 +281,10 @@ export function EncounterDetail() {
                   <form className="card" onSubmit={(ev) => submitRelais(ev, i.id)}>
                     <p className="muted small">{t.kinds.relais.hint}</p>
                     <Why k="relais" />
-                    <label className="field"><span>{t.kinds.relais.nap}</span><input className="input" name="nap" maxLength={120} defaultValue={relaisOf(i.id)?.nap ?? ''} placeholder={t.kinds.relais.napPlaceholder} /></label>
-                    <label className="field"><span>{t.kinds.relais.ate}</span><input className="input" name="ate" maxLength={160} defaultValue={relaisOf(i.id)?.ate ?? ''} placeholder={t.kinds.relais.atePlaceholder} /></label>
-                    <label className="field"><span>{t.kinds.relais.mood}</span><input className="input" name="mood" maxLength={60} defaultValue={relaisOf(i.id)?.mood ?? ''} placeholder={t.kinds.relais.moodPlaceholder} /></label>
-                    <label className="field"><span>{t.kinds.relais.note}</span><input className="input" name="note" maxLength={400} defaultValue={relaisOf(i.id)?.note ?? ''} /></label>
+                    <label className="field"><span><Icon name="moon" />{t.kinds.relais.nap}</span><input className="input" name="nap" maxLength={120} defaultValue={relaisOf(i.id)?.nap ?? ''} placeholder={t.kinds.relais.napPlaceholder} /></label>
+                    <label className="field"><span><Icon name="bag" />{t.kinds.relais.ate}</span><input className="input" name="ate" maxLength={160} defaultValue={relaisOf(i.id)?.ate ?? ''} placeholder={t.kinds.relais.atePlaceholder} /></label>
+                    <label className="field"><span><Icon name="smile" />{t.kinds.relais.mood}</span><input className="input" name="mood" maxLength={60} defaultValue={relaisOf(i.id)?.mood ?? ''} placeholder={t.kinds.relais.moodPlaceholder} /></label>
+                    <label className="field"><span><Icon name="note" />{t.kinds.relais.note}</span><input className="input" name="note" maxLength={400} defaultValue={relaisOf(i.id)?.note ?? ''} /></label>
                     <div className="cluster">
                       <button className="btn btn--primary" disabled={relaisSave.isPending}>{t.kinds.relais.send}</button>
                       {relaisOf(i.id) && <button type="button" className="btn btn--ghost btn--danger" onClick={() => relaisDel.mutate(i.id)}>{t.kinds.relais.remove}</button>}
@@ -306,7 +307,7 @@ export function EncounterDetail() {
 
         <div>
           <details className="fold">
-            <summary><span>{t.bring.title}{bring.length > 0 ? ` (${bring.length})` : ''}</span></summary>
+            <summary><span><Icon name="bag" />{t.bring.title}{bring.length > 0 ? ` (${bring.length})` : ''}</span></summary>
             <div>
               <p className="muted small">{t.bring.hint}</p>
               {bring.map((b) => (
@@ -333,7 +334,7 @@ export function EncounterDetail() {
           </details>
           {(health.data?.photos || souvenirs.length > 0) && (
             <details className="fold">
-              <summary><span>{t.souvenirs.title}{souvenirs.length > 0 ? ` (${souvenirs.length})` : ''}</span></summary>
+              <summary><span><Icon name="camera" />{t.souvenirs.title}{souvenirs.length > 0 ? ` (${souvenirs.length})` : ''}</span></summary>
               <div>
                 <p className="muted small">{t.souvenirs.hint}</p>
                 <Why k="photos" />
@@ -352,7 +353,7 @@ export function EncounterDetail() {
           )}
 
           <details className="fold">
-            <summary><span>{t.encounters.thread}{messages.length > 0 ? ` (${messages.length})` : ''}</span></summary>
+            <summary><span><Icon name="message" />{t.encounters.thread}{messages.length > 0 ? ` (${messages.length})` : ''}</span></summary>
             <div>
               {messages.map((m) => (
                 <div key={m.id} className={`msg ${m.author_kind === 'host' ? 'msg--host' : ''}`}><b>{m.author_label}</b>{m.text}</div>
@@ -366,7 +367,7 @@ export function EncounterDetail() {
 
           {changes.length > 0 && (
             <details className="fold">
-              <summary><span>{t.edit.history}</span></summary>
+              <summary><span><Icon name="history" />{t.edit.history}</span></summary>
               <div>
                 <ul className="small" style={{ margin: 0 }}>
                   {changes.map((c, n) => {

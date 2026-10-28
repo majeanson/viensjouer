@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
+import { Icon } from './Icon'
 
 // « L'autre parent » — a one-use link that adds a second parent (own email and password) to
 // this household. Hidden in a trial: a sandbox is swept after a day.
@@ -29,7 +30,7 @@ export function ParentInvite() {
   }
   return (
     <section style={{ marginTop: '1.5rem' }}>
-      <h2>{t.parent.title}</h2>
+      <h2><Icon name="users" />{t.parent.title}</h2>
       <p className="muted small">{t.parent.hint}</p>
       {err && <div className="notice notice--err">{err}</div>}
       {(q.data?.invites ?? []).map((i) => (

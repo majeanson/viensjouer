@@ -6,6 +6,8 @@ import { newId } from './ids'
 
 export const MAX_PHOTO_BYTES = 3 * 1024 * 1024
 export const MAX_PHOTOS_PER_ENCOUNTER = 12
+// A face is a small square JPEG (the browser sends ~256 px); this is the cap, not the target.
+export const MAX_AVATAR_BYTES = 400 * 1024
 
 export const photosEnabled = (env: Env): boolean => !!env.PHOTOS
 
@@ -23,13 +25,14 @@ export type StoreResult = { ok: true; id: string } | { ok: false; status: 400 | 
 type Taken = { ok: true; bytes: Uint8Array; type: 'image/jpeg' | 'image/png' | 'image/webp' } | { ok: false; status: 400 | 413 | 429 | 503; message: string }
 
 // The body as an image: capped, non-empty, and typed by its own first bytes.
-async function takeImage(env: Env, request: Request): Promise<Taken> {
+async function takeImage(env: Env, request: Request, max = MAX_PHOTO_BYTES): Promise<Taken> {
   if (!env.PHOTOS) return { ok: false, status: 503, message: 'Les photos ne sont pas branchées.' }
   const declared = Number(request.headers.get('content-length') ?? 0)
-  if (declared > MAX_PHOTO_BYTES) return { ok: false, status: 413, message: 'Photo trop lourde (3 Mo au plus).' }
+  const tooBig = { ok: false as const, status: 413 as const, message: max < MAX_PHOTO_BYTES ? 'Photo trop lourde (400 Ko au plus).' : 'Photo trop lourde (3 Mo au plus).' }
+  if (declared > max) return tooBig
   const bytes = new Uint8Array(await request.arrayBuffer())
   if (bytes.length === 0) return { ok: false, status: 400, message: 'Photo vide.' }
-  if (bytes.length > MAX_PHOTO_BYTES) return { ok: false, status: 413, message: 'Photo trop lourde (3 Mo au plus).' }
+  if (bytes.length > max) return tooBig
   const type = sniffImage(bytes)
   if (!type) return { ok: false, status: 400, message: 'Seulement des photos JPEG, PNG ou WebP.' }
   return { ok: true, bytes, type }
@@ -88,4 +91,22 @@ export async function serveSouvenir(env: Env, key: string): Promise<Response> {
       'x-content-type-options': 'nosniff',
     },
   })
+}
+
+// A face: stored under the household, the old one's blob freed. The caller has authorised the person and
+// says which row (child or parent) carries the key.
+export async function storeAvatar(env: Env, request: Request, householdId: string, oldKey: string | null, saveKey: (key: string) => Promise<void>): Promise<{ ok: true; id: string } | Exclude<StoreResult, { ok: true }>> {
+  const img = await takeImage(env, request, MAX_AVATAR_BYTES)
+  if (!img.ok) return img
+  const id = newId()
+  const key = `avatars/${householdId}/${id}`
+  await env.PHOTOS!.put(key, img.bytes, { httpMetadata: { contentType: img.type } })
+  try {
+    await saveKey(key)
+  } catch (err) {
+    await env.PHOTOS!.delete(key).catch(() => {})
+    throw err
+  }
+  if (oldKey) await env.PHOTOS!.delete(oldKey).catch(() => {})
+  return { ok: true, id }
 }

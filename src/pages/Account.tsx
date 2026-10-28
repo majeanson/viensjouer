@@ -8,6 +8,7 @@ import { ParentInvite } from '../components/ParentInvite'
 import { HomeCardForm } from '../components/HomeCard'
 import { useInstall } from '../lib/install'
 import { CalendarFeed } from '../components/CalendarFeed'
+import { Icon } from '../components/Icon'
 
 // « Mon compte » — what is kept (link), a download of everything, and « tout effacer ».
 export function Account() {
@@ -39,7 +40,7 @@ export function Account() {
       <p className="muted small">{me.email}</p>
       {!install.installed && (install.canPrompt || install.ios) && (
         <div className="card">
-          <h2>{t.install.title}</h2>
+          <h2><Icon name="download" />{t.install.title}</h2>
           <p className="muted small">{install.ios ? t.install.ios : t.install.hint}</p>
           {install.canPrompt && <button className="btn btn--primary" onClick={() => void install.install()}>{t.install.button}</button>}
         </div>
@@ -48,19 +49,19 @@ export function Account() {
       <ParentInvite />
       <HomeCardForm />
       <div className="card" style={{ marginTop: '1.5rem' }}>
-        <h2>{t.privacy.title}</h2>
+        <h2><Icon name="shield" />{t.privacy.title}</h2>
         <p className="muted small">{t.account.keptHint}</p>
         <Link to="/confidentialite" className="btn">{t.privacy.title}</Link>
       </div>
       <div className="card">
-        <h2>{t.account.exportTitle}</h2>
+        <h2><Icon name="download" />{t.account.exportTitle}</h2>
         <p className="muted small">{t.account.exportHint}</p>
         <a className="btn" href="/api/export" download>{t.account.exportBtn}</a>
       </div>
       <form className="card" onSubmit={erase}>
-        <h2>{t.account.deleteTitle}</h2>
+        <h2><Icon name="trash" />{t.account.deleteTitle}</h2>
         {me.demo ? <p className="muted small">{t.account.demoNote}</p> : <p className="muted small">{t.account.deleteHint}</p>}
-        {!me.demo && <label className="field"><span>{t.account.password}</span><input className="input" name="password" type="password" required autoComplete="current-password" /></label>}
+        {!me.demo && <label className="field"><span><Icon name="lock" />{t.account.password}</span><input className="input" name="password" type="password" required autoComplete="current-password" /></label>}
         <label className="check"><input type="checkbox" required /><span>{t.account.confirm}</span></label>
         {err && <div className="notice notice--err">{err}</div>}
         <button className="btn btn--danger" disabled={busy}>{busy ? t.auth.working : t.account.deleteBtn}</button>

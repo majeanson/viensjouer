@@ -3,6 +3,7 @@ import { lockedOut, lookupMiss } from '../../_lib/guessLimit'
 import { badRequest, ok, readJson, str, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { newId, normalizeLinkCode, nowSec } from '../../_lib/ids'
+import { MAX_MESSAGES, canDeleteOwn } from '../../_lib/board'
 import { addressFor, coverId, isReply, linkAlive, type EncounterRow, type Reply } from '../../_lib/encounters'
 import { REMIND_LEAD_SEC } from '../../_lib/reminders'
 import { headcount, hereAllowed, homeCardOrNull, parseDetails, souvenirsVisible, type Scope } from '../../_lib/kinds'
@@ -21,7 +22,7 @@ interface Resolved {
   encounter: EncounterRow & { household_id: string }
   series_id: string | null
   family: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null }
-  host: { child_first_name: string; parent_name: string; household_name: string; tz: string }
+  host: { child_first_name: string; parent_name: string; household_name: string; tz: string; childPhoto: string | null; parentPhoto: string | null }
 }
 
 async function resolve(env: Env, raw: string | undefined): Promise<Resolved | null> {
@@ -32,7 +33,8 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
     `SELECT i.id AS inv_id, i.friend_family_id, i.reply, i.reply_note, i.remind_at,
             e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.map_url, e.cover_key, e.show_guests, e.note, e.status, e.details, e.here_at, i.adults, i.kids, i.scope,
             f.parent_name, f.email, f.phone, f.child_first_name, f.allergies,
-            c.first_name AS host_child, h.name AS household_name, h.tz,
+            c.first_name AS host_child, c.photo_key AS host_child_photo,
+            (SELECT photo_key FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent_photo, h.name AS household_name, h.tz,
             (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent
        FROM invitations i
        JOIN encounters e ON e.id = i.encounter_id
@@ -72,7 +74,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
       allergies: row.allergies as string | null,
     },
     series_id: row.series_id as string | null,
-    host: { child_first_name: row.host_child as string, parent_name: (row.host_parent as string | null) ?? '', household_name: row.household_name as string, tz: row.tz as string },
+    host: { child_first_name: row.host_child as string, parent_name: (row.host_parent as string | null) ?? '', household_name: row.household_name as string, tz: row.tz as string, childPhoto: coverId(row.host_child_photo as string | null), parentPhoto: coverId(row.host_parent_photo as string | null) },
   }
 }
 
@@ -81,7 +83,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const r = await resolve(ctx.env, ctx.params.token as string | undefined)
   if (!r) return lookupMiss(ctx.env, ctx.request)
   const alive = linkAlive(r.encounter, nowSec())
-  const { results: messages } = await ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at FROM encounter_messages WHERE encounter_id = ? ORDER BY created_at')
+  const { results: messages } = await ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at, pinned, invitation_id FROM encounter_messages WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at')
     .bind(r.encounter.id)
     .all()
   // The other upcoming occurrences of the same weekly series for THIS family, each with
@@ -144,12 +146,12 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     photos: photosEnabled(ctx.env),
     host: r.host,
     you: { ...r.family, reply: r.invitation.reply, replyNote: r.invitation.reply_note, remind: r.invitation.remind_at !== null, adults: r.invitation.adults, kids: r.invitation.kids, scope: r.invitation.scope },
-    messages,
+    messages: messages.map(({ invitation_id, ...m }) => ({ ...m, mine: invitation_id === r.invitation.id })),
     series: seriesRows,
   })
 }
 
-type Body = { reply?: string; note?: string | null; parentName?: string; email?: string; phone?: string; allergies?: string; message?: string; remind?: boolean; adults?: number; kids?: number }
+type Body = { deleteMessage?: string; reply?: string; note?: string | null; parentName?: string; email?: string; phone?: string; allergies?: string; message?: string; remind?: boolean; adults?: number; kids?: number }
 
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if ((await overAuthLimit(ctx.env, ctx.request)) || (await lockedOut(ctx.env, ctx.request))) return tooManyRequests()
@@ -203,16 +205,23 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       ).bind(parentName, email, phone, allergies !== undefined ? 1 : 0, allergies ?? null, ts, r.invitation.friend_family_id),
     )
   }
+  if (body.deleteMessage) {
+    const m = await ctx.env.DB.prepare('SELECT id, invitation_id FROM encounter_messages WHERE id = ? AND encounter_id = ? AND deleted_at IS NULL').bind(body.deleteMessage, r.encounter.id).first<{ id: string; invitation_id: string | null }>()
+    if (m && canDeleteOwn(m, r.invitation.id)) stmts.push(ctx.env.DB.prepare('UPDATE encounter_messages SET deleted_at = ?, pinned = 0 WHERE id = ?').bind(ts, m.id))
+  }
   const message = str(body.message, 1000)
   if (message) {
+    const n = await ctx.env.DB.prepare('SELECT COUNT(*) AS n FROM encounter_messages WHERE encounter_id = ? AND deleted_at IS NULL').bind(r.encounter.id).first<{ n: number }>()
+    if ((n?.n ?? 0) >= MAX_MESSAGES) return badRequest('Le tableau est plein.')
     stmts.push(
-      ctx.env.DB.prepare('INSERT INTO encounter_messages (id, encounter_id, author_kind, author_label, text, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(
+      ctx.env.DB.prepare('INSERT INTO encounter_messages (id, encounter_id, author_kind, author_label, text, created_at, invitation_id) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(
         newId(),
         r.encounter.id,
         'guest',
         parentName ?? r.family.parent_name,
         message,
         ts,
+        r.invitation.id,
       ),
     )
   }

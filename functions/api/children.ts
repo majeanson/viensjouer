@@ -1,6 +1,7 @@
 import { badRequest, created, notFound, ok, readJson, str } from '../_lib/json'
 import { authed } from '../_lib/route'
 import { newId, nowSec } from '../_lib/ids'
+import { coverId } from '../_lib/encounters'
 
 // The household's children. GET list · POST create · PATCH edit · DELETE (soft).
 // A child's rencontres survive the soft delete (soft ref), they just lose their face.
@@ -11,6 +12,7 @@ export interface ChildRow {
   birthdate: string | null
   colour: string
   position: number
+  photo?: string | null
 }
 
 const COLOURS = ['#f2a03d', '#5b9a8b', '#c76b6b', '#7c83c9', '#b98b3a', '#4f8fbf']
@@ -18,11 +20,11 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export const onRequestGet = authed(async (ctx, actor) => {
   const { results } = await ctx.env.DB.prepare(
-    'SELECT id, first_name, birthdate, colour, position FROM children WHERE household_id = ? AND deleted_at IS NULL ORDER BY position, created_at',
+    'SELECT id, first_name, birthdate, colour, position, photo_key FROM children WHERE household_id = ? AND deleted_at IS NULL ORDER BY position, created_at',
   )
     .bind(actor.householdId)
-    .all<ChildRow>()
-  return ok({ children: results })
+    .all<ChildRow & { photo_key: string | null }>()
+  return ok({ children: results.map(({ photo_key, ...c }) => ({ ...c, photo: coverId(photo_key) })) })
 })
 
 export const onRequestPost = authed(async (ctx, actor) => {

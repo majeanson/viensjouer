@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
+import { Icon } from './Icon'
 
 // « Mon calendrier » — one secret link that puts every rencontre into Google Agenda, Apple Calendrier or
 // Outlook and keeps it up to date (a time moved, a rencontre cancelled). The link holds the host's own
@@ -37,7 +38,7 @@ export function CalendarFeed() {
   }
   return (
     <div className="card">
-      <h2>{t.calfeed.title}</h2>
+      <h2><Icon name="calendar" />{t.calfeed.title}</h2>
       <p className="muted small">{t.calfeed.hint}</p>
       {err && <div className="notice notice--err">{err}</div>}
       {!token ? (

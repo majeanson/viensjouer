@@ -197,3 +197,9 @@ button, a, summary, label, select { touch-action: manipulation; }
 .shell { padding-left: max(var(--gutter), env(safe-area-inset-left)); padding-right: max(var(--gutter), env(safe-area-inset-right)); padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
 .toasts { bottom: calc(0.75rem + env(safe-area-inset-bottom)); }
 @media (display-mode: standalone) { body { overscroll-behavior-y: none; } }
+
+/* Icons: a quiet anchor in front of concepts, questions and inputs (components/Icon.tsx). */
+.ico { flex: none; width: 1.1em; height: 1.1em; vertical-align: -0.2em; margin-right: 0.45em; color: var(--muted); }
+h2 .ico, h3 .ico, summary .ico { color: var(--accent); }
+.btn .ico, .linkbtn .ico, .tool .ico, .chip .ico { margin-right: 0.4em; color: inherit; }
+.btn--icon .ico, .tool--icon .ico { margin-right: 0; }

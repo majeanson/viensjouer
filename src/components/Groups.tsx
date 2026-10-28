@@ -6,6 +6,7 @@ import { useT } from '../i18n'
 import { FamilyPicker } from './FamilyPicker'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
+import { Icon } from './Icon'
 
 // Groups — the host's private shortcuts (« La garderie »). Lives under the friend-families
 // list: a group is just a named set of those families.
@@ -44,7 +45,7 @@ export function Groups({ families }: { families: Family[] }) {
 
   return (
     <section style={{ marginTop: '1.5rem' }}>
-      <h2>{t.groups.title}</h2>
+      <h2><Icon name="tag" />{t.groups.title}</h2>
       <p className="muted small">{t.groups.hint}</p>
       {err && <div className="notice notice--err">{err}</div>}
       {q.data && groups.length === 0 && !editing && <p className="muted">{t.groups.empty}</p>}
@@ -61,7 +62,7 @@ export function Groups({ families }: { families: Family[] }) {
       </div>
       {editing ? (
         <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
-          <label className="field"><span>{t.groups.name}</span><input className="input" name="name" required maxLength={60} defaultValue={cur?.name} placeholder={t.groups.namePlaceholder} autoFocus /></label>
+          <label className="field"><span><Icon name="tag" />{t.groups.name}</span><input className="input" name="name" required maxLength={60} defaultValue={cur?.name} placeholder={t.groups.namePlaceholder} autoFocus /></label>
           <FamilyPicker families={families} groups={[]} selected={picked} onChange={setPicked} />
           <div className="cluster" style={{ marginTop: '0.75rem' }}>
             <button className="btn btn--primary" disabled={save.isPending}>{t.families.save}</button>

@@ -4,6 +4,7 @@ import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
 import { Header } from '../components/Header'
+import { Icon } from '../components/Icon'
 
 // « Mot de passe oublié » (/oubli) and its other half (/reinitialiser?t=<token>): one
 // file, two small forms. The request always says « si un compte existe… » so the page
@@ -34,7 +35,7 @@ export function Forgot() {
         <div className="notice">{t.auth.forgotSent}</div>
       ) : (
         <form className="card" onSubmit={submit}>
-          <label className="field"><span>{t.auth.email}</span><input className="input" name="email" type="email" required autoComplete="email" /></label>
+          <label className="field"><span><Icon name="mail" />{t.auth.email}</span><input className="input" name="email" type="email" required autoComplete="email" /></label>
           {err && <div className="notice notice--err">{err}</div>}
           <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : t.auth.forgotSend}</button>
         </form>
@@ -71,7 +72,7 @@ export function Reset() {
       <Header />
       <h1>{t.auth.resetTitle}</h1>
       <form className="card" onSubmit={submit}>
-        <label className="field"><span>{t.auth.newPassword}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
+        <label className="field"><span><Icon name="lock" />{t.auth.newPassword}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
         {err && <div className="notice notice--err">{err}</div>}
         <button className="btn btn--primary btn--big" disabled={busy || !token}>{busy ? t.auth.working : t.auth.resetSend}</button>
       </form>

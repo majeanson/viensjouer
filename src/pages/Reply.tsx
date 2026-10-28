@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, api } from '../lib/api'
@@ -61,6 +61,8 @@ function ReplyInner() {
   const [done, setDone] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [claiming, setClaiming] = useState(false)
+  const questionRef = useRef<HTMLElement>(null)
+  const [offscreen, setOffscreen] = useState(false)
   const [queued, setQueued] = useState<ReplyKind | null>(() => readPending(token))
   const { me, refresh } = useAuth()
   const nav = useNavigate()
@@ -72,6 +74,18 @@ function ReplyInner() {
     const id = setTimeout(() => writeSeen(seenKey(token), Math.floor(Date.now() / 1000)), 2500)
     return () => clearTimeout(id)
   }, [loaded, token])
+
+  const questionShown = !!q.data && q.data.alive && q.data.you.reply === null
+  useEffect(() => {
+    const el = questionRef.current
+    if (!el || !questionShown || typeof IntersectionObserver === 'undefined') {
+      setOffscreen(false)
+      return
+    }
+    const io = new IntersectionObserver(([entry]) => setOffscreen(!entry.isIntersecting))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [questionShown])
 
   // A kept answer goes out when the network is back, or the next time this link is opened.
   useEffect(() => {
@@ -162,8 +176,13 @@ function ReplyInner() {
     post.mutate(body, { onSuccess: () => { setDone(true); setJustAnswered(false) } })
   }
 
+  // While the question is still ahead (or behind) the viewport, a slim bar keeps the three answers one tap away.
+  const asking = alive && !answered
+  const barShown = asking && offscreen
+  const calendarAfterYes = alive && answered && (you.reply === 'yes' || you.reply === 'maybe')
+
   return (
-    <div className="shell">
+    <div className={barShown ? 'shell shell--bar' : 'shell'}>
       <Header />
       <OfflineNotice />
 
@@ -203,10 +222,12 @@ function ReplyInner() {
         </dl>
         {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
-        <div className="cluster">
-          <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
-          <a className="linkbtn" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
-        </div>
+        {!calendarAfterYes && (
+          <div className="cluster">
+            <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
+            <a className="linkbtn" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
+          </div>
+        )}
         {changes.length > 0 && (
           <details className="why" style={{ marginTop: '0.75rem' }}>
             <summary>{t.edit.history}</summary>
@@ -232,6 +253,12 @@ function ReplyInner() {
             <button className="btn btn--ghost" onClick={() => setEditing(true)}>{t.reply.change}</button>
           </div>
           <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.reply.hostKnows(host.parent_name || host.household_name)}</p>
+          {calendarAfterYes && (
+            <div className="cluster" style={{ marginTop: '0.75rem' }}>
+              <a className="btn btn--primary" href={`/api/r/${token}/ics`} download="rencontre.ics"><Icon name="calendar" />{t.reply.calendar}</a>
+              <a className="linkbtn" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
+            </div>
+          )}
           <details className="why" key={String(justAnswered)} open={justAnswered && you.reply === 'yes' && (e.kind === 'birthday' || you.scope === 'family')} style={{ marginTop: '0.75rem' }}>
             <summary>{t.reply.extras}</summary>
             <form onSubmit={saveExtras} style={{ marginTop: '0.75rem' }}>
@@ -261,7 +288,7 @@ function ReplyInner() {
           </details>
         </div>
       ) : (
-        <section className="card">
+        <section className="card" ref={questionRef}>
           <h3><Icon name="help" />{t.reply.question}</h3>
           <div className="stack">
             <button type="button" className="btn btn--big btn--yes" disabled={post.isPending} onClick={() => answer('yes')}><Icon name="check" />{t.reply.yes}</button>
@@ -395,6 +422,14 @@ function ReplyInner() {
           <button className="btn btn--ghost" onClick={() => setClaiming(true)}>{t.reply.create}</button>
         )}
       </footer>
+
+      {barShown && (
+        <div className="answerbar" role="group" aria-label={t.reply.question}>
+          <button type="button" className="btn btn--yes answerbar__yes" aria-label={t.reply.yesShort} disabled={post.isPending} onClick={() => answer('yes')}><Icon name="check" />{t.reply.yesShort}</button>
+          <button type="button" className="btn" aria-label={t.reply.maybeShort} disabled={post.isPending} onClick={() => answer('maybe')}>{t.reply.maybe}</button>
+          <button type="button" className="btn" aria-label={t.reply.noShort} disabled={post.isPending} onClick={() => answer('no')}>{t.reply.noShort}</button>
+        </div>
+      )}
     </div>
   )
 }

@@ -119,6 +119,9 @@ export const EN: Dict = {
     cancelSeries: 'Cancel the whole series',
   },
   reply: {
+    yesShort: 'Yes',
+    maybeShort: 'Maybe',
+    noShort: 'No',
     queued: 'Your answer is kept on this device. It goes out as soon as the network is back.',
     dead: 'This link leads nowhere, the get-together may be past or cancelled.',
     invites: (host: string, child: string) => `${host} invites ${child}`,

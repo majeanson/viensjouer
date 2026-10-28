@@ -120,6 +120,9 @@ export const FR = {
     cancelSeries: 'Annuler toute la série',
   },
   reply: {
+    yesShort: 'Oui',
+    maybeShort: 'Peut-être',
+    noShort: 'Non',
     queued: 'Ta réponse est gardée sur cet appareil. Elle partira dès que le réseau revient.',
     dead: 'Ce lien ne mène nulle part, la rencontre est peut-être passée ou annulée.',
     invites: (host: string, child: string) => `${host} invite ${child}`,

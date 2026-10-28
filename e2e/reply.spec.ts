@@ -357,3 +357,24 @@ test('a kept answer stays kept when the server is busy (5xx), and goes out on th
   await page.evaluate(() => window.dispatchEvent(new Event('online')))
   await expect.poll(() => posts.length, { timeout: 10_000 }).toBe(1)
 })
+
+test('the answer bar follows a phone until the question is on screen, answers in one tap, and the calendar moves under the yes', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 480 }) // short enough that the question starts below the fold
+  const posts = await stub(page, card())
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
+  await expect(page.locator('.answerbar')).toBeVisible()
+  // the question card scrolled into view: the bar gets out of the way
+  await page.getByRole('heading', { name: 'Vous venez ?' }).scrollIntoViewIfNeeded()
+  await expect(page.locator('.answerbar')).toHaveCount(0)
+  // up again: back
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await expect(page.locator('.answerbar')).toBeVisible()
+  await page.locator('.answerbar').getByRole('button', { name: 'Oui', exact: true }).click()
+  await expect.poll(() => posts.length).toBe(1)
+  expect(posts[0]).toEqual({ reply: 'yes' })
+  // answered: no bar, and ONE calendar button, primary, under the confirmation
+  await expect(page.locator('.answerbar')).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Ajouter à mon calendrier' })).toHaveCount(1)
+  await expect(page.locator('.card .btn--primary', { hasText: 'Ajouter à mon calendrier' })).toBeVisible()
+})

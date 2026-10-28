@@ -348,3 +348,11 @@ main:focus { outline: none; }
   :root[data-theme='dark'] { --muted: #d8ccb8; --line: #8a7f70; }
   .btn:hover:not(:disabled) { border-color: var(--ink); }
 }
+
+/* The reply page: while the question is out of view, three answers stay one tap away (phones; a desktop shows the question at once). */
+.answerbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-nav); display: flex; gap: 0.5rem; padding: 0.6rem var(--gutter) calc(0.6rem + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(60, 40, 10, 0.08); }
+.answerbar .btn { flex: 1 1 0; }
+.answerbar .answerbar__yes { flex: 2 1 0; }
+.shell--bar { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+@media (min-width: 761px) { .answerbar { display: none; } }
+@media (prefers-reduced-motion: no-preference) { .answerbar { animation: slide-up 0.28s var(--ease) backwards; } }

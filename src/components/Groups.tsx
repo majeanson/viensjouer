@@ -4,6 +4,7 @@ import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useT } from '../i18n'
 import { FamilyPicker } from './FamilyPicker'
+import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
 
 // Groups — the host's private shortcuts (« La garderie »). Lives under the friend-families
@@ -25,9 +26,9 @@ export function Groups({ families }: { families: Family[] }) {
     },
     onError: (e) => setErr(e.message),
   })
-  const remove = useMutation({ mutationFn: (id: string) => api('groups', { method: 'DELETE', body: { id } }), onSuccess: () => void refresh(), onError: (e) => setErr(e.message) })
+  const rm = useDeferredRemove()
 
-  const groups = q.data?.groups ?? []
+  const groups = rm.visible(q.data?.groups ?? [])
   const cur = editing && editing !== 'new' ? editing : null
   const open = (g: Group | 'new') => {
     setEditing(g)
@@ -53,7 +54,7 @@ export function Groups({ families }: { families: Family[] }) {
             <span><strong>{g.name}</strong><br /><span className="muted small">{g.families.map(nameOf).filter(Boolean).join(', ') || '—'}</span></span>
             <span className="cluster">
               <button className="btn btn--ghost" onClick={() => open(g)}>{t.encounters.edit}</button>
-              <button className="btn btn--ghost btn--danger" onClick={() => confirm(t.groups.removeConfirm) && remove.mutate(g.id)}>{t.families.remove}</button>
+              <button className="btn btn--ghost btn--danger" onClick={() => rm.remove(g.id, t.undo.removed, async () => { await api('groups', { method: 'DELETE', body: { id: g.id } }); void refresh() })}>{t.families.remove}</button>
             </span>
           </div>
         ))}

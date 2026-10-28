@@ -139,14 +139,18 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (body.reply !== undefined) {
     if (!isReply(body.reply)) return badRequest('Réponse inconnue.')
     stmts.push(
-      ctx.env.DB.prepare('UPDATE invitations SET reply = ?, reply_note = ?, reply_at = ?, updated_at = ? WHERE id = ?').bind(
+      ctx.env.DB.prepare('UPDATE invitations SET reply = ?, reply_note = CASE WHEN ? THEN ? ELSE reply_note END, reply_at = ?, updated_at = ? WHERE id = ?').bind(
         body.reply,
+        body.note !== undefined ? 1 : 0,
         str(body.note, 500),
         ts,
         ts,
         r.invitation.id,
       ),
     )
+  } else if (body.note !== undefined && r.invitation.reply) {
+    // The one-tap answer is saved first; the note comes later, on its own.
+    stmts.push(ctx.env.DB.prepare('UPDATE invitations SET reply_note = ?, updated_at = ? WHERE id = ?').bind(str(body.note, 500), ts, r.invitation.id))
   }
   // The head-count: how many children come (a whole-family invitation only) and, for a birthday,
   // how many adults stay. A friend-only invitation is one child, so no number is stored.

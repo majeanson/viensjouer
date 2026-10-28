@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
@@ -8,6 +8,7 @@ import { useLang, useT } from '../i18n'
 import { fromLocalInput, toLocalInput, whenLong } from '../lib/format'
 import { linkFor, linkLabel } from '../lib/link'
 import { FamilyPicker } from '../components/FamilyPicker'
+import { useDeferredRemove } from '../lib/toast'
 import type { Child, Family, Group, OpenWindow } from '../lib/types'
 
 const wlink = (token: string) => linkFor(token, 'w')
@@ -15,16 +16,18 @@ const wlabel = (token: string) => linkLabel(token, 'w')
 
 // « Une fenêtre ouverte » — we are free Sunday afternoon: offer it to chosen families, each
 // answers « on se voit ! » from a link, the host turns a yes into a rencontre. It dies at its end.
-export function Windows() {
+export function Windows({ embedded = false }: { embedded?: boolean }) {
   const t = useT()
   const { lang } = useLang()
   const { me } = useAuth()
   const qc = useQueryClient()
+  const nav = useNavigate()
   const wins = useQuery({ queryKey: K.windows, queryFn: () => api<{ windows: OpenWindow[] }>('windows'), refetchInterval: 30_000 })
   const kids = useQuery({ queryKey: K.children, queryFn: () => api<{ children: Child[] }>('children') })
   const fams = useQuery({ queryKey: K.families, queryFn: () => api<{ families: Family[] }>('families') })
   const grp = useQuery({ queryKey: K.groups, queryFn: () => api<{ groups: Group[] }>('groups') })
-  const [adding, setAdding] = useState(false)
+  const rm = useDeferredRemove()
+  const [adding, setAdding] = useState(embedded)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [childId, setChildId] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
@@ -38,10 +41,11 @@ export function Windows() {
       setPicked(new Set())
       setErr(null)
       void refresh()
+      void qc.invalidateQueries({ queryKey: K.calendar })
+      if (embedded) nav('/rencontres')
     },
     onError: (e) => setErr(e.message),
   })
-  const remove = useMutation({ mutationFn: (id: string) => api('windows', { method: 'DELETE', body: { id } }), onSuccess: () => void refresh(), onError: (e) => setErr(e.message) })
   const send = useMutation({ mutationFn: (targetId: string) => api('windows', { method: 'PUT', body: { targetId } }), onError: (e) => setErr(e.message) })
 
   const children = kids.data?.children ?? []
@@ -79,11 +83,15 @@ export function Windows() {
 
   return (
     <>
-      <div className="row">
-        <h1>{t.windows.title}</h1>
-        {!adding && <button className="btn btn--primary" onClick={() => setAdding(true)}>{t.windows.new}</button>}
-      </div>
-      <p className="small"><Link to="/rencontres">← {t.nav.home}</Link></p>
+      {!embedded && (
+        <>
+          <div className="row">
+            <h1>{t.windows.title}</h1>
+            {!adding && <button className="btn btn--primary" onClick={() => setAdding(true)}>{t.windows.new}</button>}
+          </div>
+          <p className="small"><Link to="/rencontres">← {t.nav.home}</Link></p>
+        </>
+      )}
       <p className="muted small">{t.windows.hint}</p>
       {err && <div className="notice notice--err">{err}</div>}
 
@@ -108,13 +116,13 @@ export function Windows() {
       )}
 
       {wins.data && wins.data.windows.length === 0 && !adding && <p className="muted">{t.windows.empty}</p>}
-      {(wins.data?.windows ?? []).map((w) => {
+      {rm.visible(wins.data?.windows ?? []).map((w) => {
         const over = w.ends_at <= now
         return (
           <div key={w.id} className="card" style={over ? { opacity: 0.6 } : undefined}>
             <div className="row">
               <span className="cluster"><strong>{whenLong(w.starts_at, lang)}</strong></span>
-              <button className="btn btn--ghost btn--danger" onClick={() => confirm(t.windows.removeConfirm) && remove.mutate(w.id)}>{t.encounters.delete}</button>
+              <button className="btn btn--ghost btn--danger" onClick={() => rm.remove(w.id, t.undo.removed, async () => { await api('windows', { method: 'DELETE', body: { id: w.id } }); void refresh() })}>{t.encounters.delete}</button>
             </div>
             {over && <p className="muted small">{t.windows.over}</p>}
             {w.note && <p className="muted small">« {w.note} »</p>}

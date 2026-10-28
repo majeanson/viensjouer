@@ -47,12 +47,18 @@ test('the invited parent sees the plan and the home card, then answers yes', asy
   // The address is NOT shown before a yes.
   await expect(page.getByText(/L’adresse s’affiche/)).toBeVisible()
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  // one tap: the answer is already saved, with nothing else sent
+  await expect.poll(() => posts.length).toBe(1)
+  expect(posts[0]).toEqual({ reply: 'yes' })
+  // the details are an optional second step
+  await expect(page.getByText('Ajouter mes coordonnées (facultatif)')).toBeVisible()
   await page.getByLabel('Votre prénom').fill('Julie')
   await page.locator('input[name=email]').fill('julie@example.com')
   await page.getByLabel('Me rappeler la veille par courriel').check()
-  await page.getByRole('button', { name: 'Répondre', exact: true }).click()
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
   await expect(page.getByText('Réponse envoyée. Merci !')).toBeVisible()
-  expect(posts[0]).toMatchObject({ reply: 'yes', remind: true, parentName: 'Julie', email: 'julie@example.com' })
+  expect(posts[1]).toMatchObject({ remind: true, parentName: 'Julie', email: 'julie@example.com' })
+  expect(posts[1]).not.toHaveProperty('reply')
 })
 
 test('a birthday asks how many come, only once the answer is yes', async ({ page }) => {
@@ -63,9 +69,10 @@ test('a birthday asks how many come, only once the answer is yes', async ({ page
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   await page.getByLabel('Adultes qui restent').fill('2')
   await page.getByLabel('Enfants qui viennent').fill('3')
-  await page.getByRole('button', { name: 'Répondre', exact: true }).click()
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
   await expect(page.getByText('Réponse envoyée. Merci !')).toBeVisible()
-  expect(posts[0]).toMatchObject({ reply: 'yes', adults: 2, kids: 3 })
+  expect(posts[0]).toEqual({ reply: 'yes' })
+  expect(posts[1]).toMatchObject({ adults: 2, kids: 3 })
 })
 
 test('English toggle, and the paper spelling works in any case', async ({ page }) => {
@@ -121,15 +128,15 @@ test('every optional field on the reply page has a « Pourquoi ? » that says wh
   await page.goto(`/${CODE}`)
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   // Collapsed by default so the form stays light; one tap opens the reason.
+  // ONE « Pourquoi ? » for the group; it names every field and what you lose by skipping it.
   const whys = page.getByText('Pourquoi ?')
-  await expect(whys).toHaveCount(4)
+  await expect(whys).toHaveCount(1)
   await expect(page.getByText(/Sans ça : pas de rappel/)).toBeHidden()
-  await whys.nth(0).click()
+  await whys.click()
   await expect(page.getByText(/Sans ça : pas de rappel/)).toBeVisible()
-  await whys.nth(1).click()
   await expect(page.getByText(/l’appli ne s’en sert pas/)).toBeVisible()
-  await whys.nth(2).click()
   await expect(page.getByText(/Sans ça : l’hôte n’a aucune alerte/)).toBeVisible()
+  await expect(page.getByText(/Sans ça : il ne sait pas combien/)).toBeVisible()
 })
 
 test('the header with the language switch is there on every public page', async ({ page }) => {
@@ -156,10 +163,10 @@ test('friend only (a paid birthday): the card names the child and never asks abo
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   await expect(page.getByLabel('Enfants qui viennent')).toHaveCount(0)
   await expect(page.getByLabel('Adultes qui restent')).toBeVisible()
-  await page.getByRole('button', { name: 'Répondre', exact: true }).click()
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
   await expect(page.getByText('Réponse envoyée. Merci !')).toBeVisible()
-  expect(posts[0]).toMatchObject({ reply: 'yes', adults: 1 })
-  expect(posts[0]).not.toHaveProperty('kids')
+  expect(posts[1]).toMatchObject({ adults: 1 })
+  expect(posts[1]).not.toHaveProperty('kids')
 })
 
 test('the shared page says what it is, the facts, who it is for and what happens next', async ({ page }) => {
@@ -178,7 +185,6 @@ test('the shared page says what it is, the facts, who it is for and what happens
   await expect(page.getByText(/ne demande aucun compte/)).toBeVisible()
   // after the answer the page says the host already knows, and step one is done
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
-  await page.getByRole('button', { name: 'Répondre', exact: true }).click()
   await expect(page.getByText('Marc voit ta réponse. Tu peux la changer jusqu’à la rencontre.')).toBeVisible()
   await expect(page.locator('.steps li.done')).toHaveCount(2)
 })

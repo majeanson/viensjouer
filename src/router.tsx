@@ -5,14 +5,12 @@ import { Encounters } from './pages/Encounters'
 import { EncounterNew } from './pages/EncounterNew'
 import { EncounterDetail } from './pages/EncounterDetail'
 import { Children } from './pages/Children'
-import { Families } from './pages/Families'
+import { Friends } from './pages/Friends'
 import { Reply } from './pages/Reply'
-import { Circle } from './pages/Circle'
 import { Join } from './pages/Join'
 import { Keep } from './pages/Keep'
 import { Privacy } from './pages/Privacy'
 import { Account } from './pages/Account'
-import { Calendar } from './pages/Calendar'
 import { Windows } from './pages/Windows'
 import { WindowReply } from './pages/WindowReply'
 import { Forgot, Reset } from './pages/Forgot'
@@ -43,17 +41,18 @@ export function AppRoutes() {
       <Route path="/rencontres/nouvelle" element={<Private><EncounterNew /></Private>} />
       <Route path="/rencontres/:id" element={<Private><EncounterDetail /></Private>} />
       <Route path="/enfants" element={<Private><Children /></Private>} />
-      <Route path="/calendrier" element={<Private><Calendar /></Private>} />
+      <Route path="/calendrier" element={<Navigate to="/rencontres" replace />} />
       <Route path="/fenetres" element={<Private><Windows /></Private>} />
       <Route path="/w/:token" element={<WindowReply />} />
-      <Route path="/cercle" element={<Private><Circle /></Private>} />
+      <Route path="/amis" element={<Private><Friends /></Private>} />
+      <Route path="/cercle" element={<Navigate to="/amis" replace />} />
       <Route path="/confidentialite" element={<Privacy />} />
       <Route path="/compte" element={<Private><Account /></Private>} />
       <Route path="/garder" element={<Keep />} />
       <Route path="/rejoindre" element={<Join />} />
       <Route path="/oubli" element={<Forgot />} />
       <Route path="/reinitialiser" element={<Reset />} />
-      <Route path="/familles" element={<Private><Families /></Private>} />
+      <Route path="/familles" element={<Navigate to="/amis" replace />} />
       <Route path="/:token" element={<CodeOrHome />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

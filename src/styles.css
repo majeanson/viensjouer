@@ -156,3 +156,32 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .changed { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.05rem 0.4rem; border-radius: 4px; background: var(--accent); color: var(--accent-ink); vertical-align: middle; }
 .was { display: block; color: var(--muted); font-size: 0.8rem; text-decoration: line-through; margin-top: 0.1rem; }
 .notice--changed { background: color-mix(in srgb, var(--accent) 22%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); align-items: flex-start; }
+
+/* The undo bar (src/lib/toast.tsx). */
+.toasts { position: fixed; left: 0; right: 0; bottom: 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; padding: 0 var(--gutter); z-index: 50; pointer-events: none; }
+.toast { pointer-events: auto; display: flex; gap: 1rem; align-items: center; justify-content: space-between; min-width: min(22rem, 100%); max-width: 100%; background: var(--ink); color: var(--bg); border-radius: var(--radius); padding: 0.6rem 0.9rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); }
+.toast .linkbtn { color: inherit; font-weight: 700; }
+
+/* The host's card on a wide screen: the plan and the families left, the talk and the photos right. */
+.shell:has(.cols) { max-width: 1040px; }
+.cols { display: block; }
+@media (min-width: 900px) { .cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; } }
+
+/* Who is coming. */
+.roster__row { display: flex; gap: 0.6rem; padding: 0.4rem 0; border-top: 1px solid var(--line); align-items: baseline; }
+.roster__row:first-of-type { border-top: 0; }
+.roster__row > strong { flex: 0 0 8.5rem; }
+.roster__names { color: var(--ink); }
+
+/* A fold: one summary line, the rest on demand. */
+.fold { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); margin-bottom: 0.75rem; }
+.fold > summary { cursor: pointer; padding: 0.75rem 1rem; font-weight: 650; list-style: none; display: flex; justify-content: space-between; gap: 0.5rem; }
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary::after { content: '+'; color: var(--muted); }
+.fold[open] > summary::after { content: '−'; }
+.fold > div { padding: 0 1rem 1rem; }
+.more > summary { cursor: pointer; list-style: none; display: inline; color: var(--ink); text-decoration: underline; font-size: 0.9rem; }
+.more > summary::-webkit-details-marker { display: none; }
+.more[open] { flex: 1 1 100%; }
+.more > div { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.quick { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.5rem; }

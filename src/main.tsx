@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { AppRoutes } from './router'
 import { AuthProvider } from './lib/auth'
+import { ToastProvider } from './lib/toast'
 import { queryClient } from './lib/query'
 import { LangContext, readLang, writeLang, type Lang } from './i18n'
 import './styles.css'
@@ -20,7 +21,9 @@ function Root() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
-            <AppRoutes />
+            <ToastProvider>
+              <AppRoutes />
+            </ToastProvider>
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>

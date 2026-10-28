@@ -66,6 +66,11 @@ export function EncounterEdit({
   function submit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault()
     setErr(null)
+    const endRaw = String((ev.currentTarget.elements.namedItem('endsAt') as HTMLInputElement | null)?.value ?? '')
+    if (endRaw && read(ev.currentTarget).snap.ends_at === null) {
+      setErr(t.form.endAfter)
+      return
+    }
     const notify = canNotify && (ev.currentTarget.elements.namedItem('notify') as HTMLInputElement | null)?.checked === true
     save.mutate({ ...read(ev.currentTarget).body, notify })
   }

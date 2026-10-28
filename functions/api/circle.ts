@@ -68,6 +68,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
         .filter((l) => l.my_child === c.id)
         .map((l) => ({
           linkId: l.id,
+          otherHousehold: l.other_household,
           childName: l.other_child_name,
           childBirthdate: l.other_child_birthdate,
           parentName: l.other_parent,

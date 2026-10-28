@@ -80,6 +80,7 @@ test('repeat is a frequency (once, every week, every 2 weeks, every month), with
     return j({ encounter: { id: 'e1', child_id: 'c1', kind: 'park', title: 'P', starts_at: 1, ends_at: null, place: null, address: null, note: null, status: 'proposed', details: {}, hereOpen: false }, invitations: [], messages: [], relais: [], souvenirs: [] })
   })
   await page.goto('/rencontres/nouvelle')
+  await page.getByText('Plus d’options').click()
   const freq = page.getByLabel('Répéter')
   await expect(freq.locator('option')).toHaveText(['Une seule fois', 'Chaque semaine', 'Aux 2 semaines', 'Chaque mois'])
   await expect(page.getByLabel('Nombre de rencontres')).toHaveCount(0)
@@ -121,12 +122,12 @@ test('a family with no email gets a ready-to-send message with the short link', 
     return j({})
   })
   await page.goto('/rencontres/e1')
-  // the short, writable link is shown for each family
+  // one calm line per family; the short link and the hint sit under « Plus d'options »
+  await page.getByText('Plus d’options').first().click()
   await expect(page.getByText(/\/lune-miel$/)).toBeVisible()
-  // no email: the share message is the primary action and says what to do
   await expect(page.getByText(/Pas de courriel : envoie ce message par texto/)).toHaveCount(1)
-  await expect(page.getByRole('button', { name: 'Partager le lien' })).toHaveCount(1)
-  await page.getByRole('button', { name: 'Partager le lien' }).click()
+  await expect(page.getByRole('button', { name: 'Partager le lien' })).toHaveCount(2)
+  await page.getByRole('button', { name: 'Partager le lien' }).first().click()
   const text = await page.evaluate(() => navigator.clipboard.readText())
   expect(text).toContain('Salut Julie !')
   expect(text).toContain('Marc organise « Au parc Lafontaine »')

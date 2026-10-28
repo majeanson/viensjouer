@@ -11,6 +11,7 @@ import { useAuth } from '../lib/auth'
 import { HomeCardView } from '../components/HomeCard'
 import { PhotoGrid } from '../components/PhotoGrid'
 import { Why } from '../components/Why'
+import { WhyMany } from '../components/WhyMany'
 import type { Encounter, HomeCard, Message, Reply as ReplyKind } from '../lib/types'
 import { Header } from '../components/Header'
 
@@ -45,7 +46,7 @@ function ReplyInner() {
   const { lang } = useLang()
   const qc = useQueryClient()
   const q = useQuery({ queryKey: K.reply(token), queryFn: () => api<Card>(`r/${token}`), retry: false, refetchInterval: 30_000 })
-  const [reply, setReply] = useState<ReplyKind | null>(null)
+  const [justAnswered, setJustAnswered] = useState(false)
   const [editing, setEditing] = useState(false)
   const [done, setDone] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -65,7 +66,7 @@ function ReplyInner() {
     mutationFn: (body: Record<string, unknown>) => api(`r/${token}/claim`, { method: 'POST', body }),
     onSuccess: async () => {
       await refresh()
-      nav('/cercle', { replace: true })
+      nav('/amis', { replace: true })
     },
     onError: (e) => setErr(e.message),
   })
@@ -93,23 +94,26 @@ function ReplyInner() {
         {!isPrivate(c.field) && <small className="was">{t.edit.before} : {showValue(c.field, c.old_value, lang, t.edit.status, t.edit.empty)}</small>}
       </>
     ) : null
-  const chosen = reply ?? you.reply
   const answered = you.reply !== null && !editing
 
-  function submit(ev: FormEvent<HTMLFormElement>) {
+  // ONE TAP: the answer is saved at once. Everything else is optional and comes after.
+  function answer(r: ReplyKind) {
+    post.mutate({ reply: r }, { onSuccess: () => { setEditing(false); setDone(false); setJustAnswered(true) } })
+  }
+
+  function saveExtras(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault()
-    if (!chosen) return
     const f = new FormData(ev.currentTarget)
-    const body: Record<string, unknown> = { reply: chosen, note: f.get('note') || null, remind: f.get('remind') === 'on' }
+    const body: Record<string, unknown> = { note: String(f.get('note') ?? '').trim() || null, remind: f.get('remind') === 'on' }
     for (const k of ['parentName', 'email', 'phone', 'allergies'] as const) {
       const v = String(f.get(k) ?? '').trim()
       if (v) body[k] = v
     }
-    if (chosen === 'yes') {
+    if (you.reply === 'yes') {
       if (e.kind === 'birthday') body.adults = Number(f.get('adults') ?? 1)
       if (you.scope === 'family') body.kids = Number(f.get('kids') ?? 1)
     }
-    post.mutate(body, { onSuccess: () => { setDone(true); setEditing(false) } })
+    post.mutate(body, { onSuccess: () => { setDone(true); setJustAnswered(false) } })
   }
 
   function sendMsg(ev: FormEvent<HTMLFormElement>) {
@@ -202,34 +206,47 @@ function ReplyInner() {
             <button className="btn btn--ghost" onClick={() => setEditing(true)}>{t.reply.change}</button>
           </div>
           <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.reply.hostKnows(host.parent_name || host.household_name)}</p>
+          <details className="why" key={String(justAnswered)} open={justAnswered && you.reply === 'yes' && (e.kind === 'birthday' || you.scope === 'family')} style={{ marginTop: '0.75rem' }}>
+            <summary>{t.reply.extras}</summary>
+            <form onSubmit={saveExtras} style={{ marginTop: '0.75rem' }}>
+              <label className="field"><span>{t.reply.note}</span><input className="input" name="note" maxLength={500} placeholder={t.reply.notePlaceholder} defaultValue={you.replyNote ?? ''} /></label>
+              <label className="field"><span>{t.reply.parentName}</span><input className="input" name="parentName" maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
+              <label className="field"><span>{t.reply.email}</span><input className="input" name="email" type="email" defaultValue={you.email ?? ''} autoComplete="email" /></label>
+              <label className="field"><span>{t.reply.phone}</span><input className="input" name="phone" type="tel" defaultValue={you.phone ?? ''} autoComplete="tel" /></label>
+              <label className="field"><span>{t.reply.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={you.allergies ?? ''} /></label>
+              {you.reply === 'yes' && (you.scope === 'family' || e.kind === 'birthday') && (
+                <div className="cluster" style={{ marginBottom: '0.75rem' }}>
+                  {you.scope === 'family' && <label className="field" style={{ flex: 1 }}><span>{t.scope.kidsLabel}</span><input className="input" name="kids" type="number" min={0} max={20} defaultValue={you.kids ?? 1} /></label>}
+                  {e.kind === 'birthday' && <label className="field" style={{ flex: 1 }}><span>{t.kinds.birthday.adults}</span><input className="input" name="adults" type="number" min={0} max={20} defaultValue={you.adults ?? 1} /></label>}
+                </div>
+              )}
+              <label className="check"><input type="checkbox" name="remind" defaultChecked={you.remind} /><span>{t.reply.remind}</span></label>
+              <WhyMany
+                items={[
+                  [t.reply.email, 'replyEmail'],
+                  [t.reply.phone, 'replyPhone'],
+                  [t.reply.allergies, 'replyAllergies'],
+                  ...(you.reply === 'yes' && (you.scope === 'family' || e.kind === 'birthday') ? ([[t.scope.kidsLabel, 'headcount']] as [string, 'headcount'][]) : []),
+                ]}
+              />
+              {err && <div className="notice notice--err">{err}</div>}
+              <button className="btn btn--primary" disabled={post.isPending} style={{ marginTop: '0.75rem' }}>{t.reply.saveExtras}</button>
+            </form>
+          </details>
         </div>
       ) : (
-        <form className="card" onSubmit={submit}>
+        <section className="card">
           <h3>{t.reply.question}</h3>
           <div className="stack">
-            <button type="button" className={`btn btn--big ${chosen === 'yes' ? 'btn--yes' : ''}`} onClick={() => setReply('yes')}>{t.reply.yes}</button>
+            <button type="button" className="btn btn--big btn--yes" disabled={post.isPending} onClick={() => answer('yes')}>{t.reply.yes}</button>
             <div className="seg">
-              <button type="button" className={`btn ${chosen === 'maybe' ? 'btn--on' : ''}`} onClick={() => setReply('maybe')}>{t.reply.maybe}</button>
-              <button type="button" className={`btn ${chosen === 'no' ? 'btn--on' : ''}`} onClick={() => setReply('no')}>{t.reply.no}</button>
+              <button type="button" className="btn" disabled={post.isPending} onClick={() => answer('maybe')}>{t.reply.maybe}</button>
+              <button type="button" className="btn" disabled={post.isPending} onClick={() => answer('no')}>{t.reply.no}</button>
             </div>
           </div>
-          <label className="field" style={{ marginTop: '0.75rem' }}><span>{t.reply.note}</span><input className="input" name="note" maxLength={500} placeholder={t.reply.notePlaceholder} defaultValue={you.replyNote ?? ''} /></label>
-          <h3 style={{ marginTop: '1rem' }}>{t.reply.you}</h3>
-          <p className="muted small">{t.reply.youHint}</p>
-          <label className="field"><span>{t.reply.parentName}</span><input className="input" name="parentName" maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
-          <label className="field"><span>{t.reply.email}</span><input className="input" name="email" type="email" defaultValue={you.email ?? ''} autoComplete="email" /><Why k="replyEmail" /></label>
-          <label className="field"><span>{t.reply.phone}</span><input className="input" name="phone" type="tel" defaultValue={you.phone ?? ''} autoComplete="tel" /><Why k="replyPhone" /></label>
-          <label className="field"><span>{t.reply.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={you.allergies ?? ''} /><Why k="replyAllergies" /></label>
-          {chosen === 'yes' && (you.scope === 'family' || e.kind === 'birthday') && (
-            <div className="cluster" style={{ marginBottom: '0.75rem' }}>
-              {you.scope === 'family' && <label className="field" style={{ flex: 1 }}><span>{t.scope.kidsLabel}</span><input className="input" name="kids" type="number" min={0} max={20} defaultValue={you.kids ?? 1} /><Why k="headcount" /></label>}
-              {e.kind === 'birthday' && <label className="field" style={{ flex: 1 }}><span>{t.kinds.birthday.adults}</span><input className="input" name="adults" type="number" min={0} max={20} defaultValue={you.adults ?? 1} /></label>}
-            </div>
-          )}
-          <label className="check"><input type="checkbox" name="remind" defaultChecked={you.remind} /><span>{t.reply.remind}</span></label>
-          {err && <div className="notice notice--err">{err}</div>}
-          <button className="btn btn--primary btn--big" disabled={!chosen || post.isPending}>{t.reply.send}</button>
-        </form>
+          {err && <div className="notice notice--err" style={{ marginTop: '0.75rem' }}>{err}</div>}
+          <p className="muted small" style={{ margin: '0.75rem 0 0' }}>{t.reply.oneTap}</p>
+        </section>
       )}
 
       {souvenirsOpen && (photos || souvenirs.length > 0) && (

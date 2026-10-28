@@ -6,8 +6,7 @@ import { useLang, useT } from '../i18n'
 import { ageLabel } from '../lib/format'
 import { Face } from '../components/Face'
 import { Why } from '../components/Why'
-import { HomeCardForm } from '../components/HomeCard'
-import { ParentInvite } from '../components/ParentInvite'
+import { useDeferredRemove } from '../lib/toast'
 import type { Child } from '../lib/types'
 
 // The same six colours the server hands out in turn (functions/api/children.ts).
@@ -33,11 +32,7 @@ export function Children() {
     },
     onError: (e) => setErr(e.message),
   })
-  const remove = useMutation({
-    mutationFn: (id: string) => api('children', { method: 'DELETE', body: { id } }),
-    onSuccess: () => void invalidate(),
-    onError: (e) => setErr(e.message),
-  })
+  const rm = useDeferredRemove()
 
   const cur = editing && editing !== 'new' ? editing : null
 
@@ -54,7 +49,7 @@ export function Children() {
     save.mutate(body)
   }
 
-  const kids = q.data?.children ?? []
+  const kids = rm.visible(q.data?.children ?? [])
   return (
     <>
       <h1>{t.children.title}</h1>
@@ -67,7 +62,7 @@ export function Children() {
             <span className="cluster"><Face name={c.first_name} colour={c.colour} /><strong>{c.first_name}</strong><span className="muted small">{ageLabel(c.birthdate, lang)}</span></span>
             <span className="cluster">
               <button className="btn btn--ghost" onClick={() => setEditing(c)}>{t.children.edit}</button>
-              <button className="btn btn--ghost btn--danger" onClick={() => confirm(t.children.removeConfirm) && remove.mutate(c.id)}>{t.children.remove}</button>
+              <button className="btn btn--ghost btn--danger" onClick={() => rm.remove(c.id, t.undo.removed, async () => { await api('children', { method: 'DELETE', body: { id: c.id } }); void invalidate() })}>{t.children.remove}</button>
             </span>
           </div>
         ))}
@@ -94,8 +89,6 @@ export function Children() {
       ) : (
         <button className="btn btn--primary" style={{ marginTop: '0.75rem' }} onClick={() => setEditing('new')}>{t.children.add}</button>
       )}
-      <HomeCardForm />
-      <ParentInvite />
     </>
   )
 }

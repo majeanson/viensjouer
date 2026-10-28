@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
+import { ParentInvite } from '../components/ParentInvite'
+import { HomeCardForm } from '../components/HomeCard'
 
 // « Mon compte » — what is kept (link), a download of everything, and « tout effacer ».
 export function Account() {
@@ -32,7 +34,9 @@ export function Account() {
     <>
       <h1>{t.account.title}</h1>
       <p className="muted small">{me.email}</p>
-      <div className="card">
+      <ParentInvite />
+      <HomeCardForm />
+      <div className="card" style={{ marginTop: '1.5rem' }}>
         <h2>{t.privacy.title}</h2>
         <p className="muted small">{t.account.keptHint}</p>
         <Link to="/confidentialite" className="btn">{t.privacy.title}</Link>

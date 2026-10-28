@@ -45,7 +45,7 @@ export function PhotoGrid({
         {items.map((p) => (
           <figure key={p.id} className="photo">
             <a href={src(p.id)} target="_blank" rel="noopener"><img src={src(p.id)} alt={p.author_label ? `${t.souvenirs.by} ${p.author_label}` : t.souvenirs.title} loading="lazy" /></a>
-            {onDelete && <button type="button" className="photo__x" aria-label={t.souvenirs.remove} onClick={() => confirm(t.souvenirs.removeConfirm) && onDelete(p.id)}>×</button>}
+            {onDelete && <button type="button" className="photo__x" aria-label={t.souvenirs.remove} onClick={() => onDelete(p.id)}>×</button>}
           </figure>
         ))}
       </div>

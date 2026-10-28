@@ -8,7 +8,7 @@ import type { HomeCard as HomeCardData } from '../lib/types'
 
 // « Chez nous » — what the other parent is too polite to ask, written once and shown on
 // every invitation to a home rencontre.
-export function HomeCardForm() {
+export function HomeCardForm({ bare = false }: { bare?: boolean }) {
   const t = useT()
   const qc = useQueryClient()
   const q = useQuery({ queryKey: K.homeCard, queryFn: () => api<{ card: HomeCardData | null }>('home-card') })
@@ -38,8 +38,8 @@ export function HomeCardForm() {
     })
   }
   return (
-    <section style={{ marginTop: '1.5rem' }}>
-      <h2>{t.kinds.home.title}</h2>
+    <section style={{ marginTop: bare ? 0 : '1.5rem' }}>
+      {!bare && <h2>{t.kinds.home.title}</h2>}
       <p className="muted small">{t.kinds.home.hint}</p>
       <Why k="homeCard" />
       <form className="card" onSubmit={submit} onChange={() => setSaved(false)} key={JSON.stringify(c ?? null)}>

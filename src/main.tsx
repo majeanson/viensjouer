@@ -15,6 +15,10 @@ function Root() {
   // (a blank beat beats a flash of French); switching later keeps the page and swaps the words when ready.
   const [en, setEn] = useState<Dict | null>(null)
   const [booted, setBooted] = useState(lang === 'fr')
+  // The page's own language follows the visitor's (screen readers pick their voice from it), also on first load.
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
   useEffect(() => {
     if (lang !== 'en' || en) return
     let live = true

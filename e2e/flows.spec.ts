@@ -480,3 +480,14 @@ test('going offline says so, and coming back clears it', async ({ page }) => {
   await page.evaluate(() => dispatchEvent(new Event('online')))
   await expect(page.getByText('Hors ligne')).toHaveCount(0)
 })
+
+test('the page language attribute follows the device, and the toggle', async ({ browser }) => {
+  const ctx = await browser.newContext({ locale: 'en-CA' })
+  const page = await ctx.newPage()
+  await host(page)
+  await page.goto('/rencontres')
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await page.getByRole('button', { name: 'FR (français)' }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
+  await ctx.close()
+})

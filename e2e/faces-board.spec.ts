@@ -250,7 +250,8 @@ test('inputs, questions and concepts carry an icon, and icons are decorative', a
 test('the new screens hold up at 320px in the dark', async ({ browser }) => {
   const ctx = await browser.newContext({ viewport: { width: 320, height: 640 }, colorScheme: 'dark', locale: 'fr-CA' })
   const page = await ctx.newPage()
-  await host(page, { 'GET encounters': (_c, url) => (url.searchParams.get('id') ? { json: detail([msg('m1', 'guest', 'Julie', 'x'.repeat(300), 100)]) } : undefined) })
+  // a long name on purpose: the header must not overflow whatever font the machine has
+  await host(page, { 'GET encounters': (_c, url) => (url.searchParams.get('id') ? { json: detail([msg('m1', 'guest', 'Julie', 'x'.repeat(300), 100)]) } : undefined) }, { me: { displayName: 'Marc-Antoine Jeanson-Tremblay' } })
   for (const path of ['/rencontres', '/rencontres/e1', '/enfants', '/compte', '/amis']) {
     await page.goto(path)
     await expect(page.locator('h1').first()).toBeVisible()

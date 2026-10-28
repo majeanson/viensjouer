@@ -31,7 +31,7 @@ export function Header() {
         <button className="tool tool--icon" aria-label={t.common.theme} onClick={() => applyTheme(readTheme() === 'dark' ? 'light' : 'dark')}><Icon name="sun" /></button>
         {me.signedIn && (
           <details className="menu">
-            <summary className="tool"><Face name={me.displayName ?? '·'} colour="var(--ink)" src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null} size="sm" /><span className="tool__name">{me.displayName ?? t.account.title}</span></summary>
+            <summary className="tool" aria-label={me.displayName ?? t.account.title}><Face name={me.displayName ?? '·'} colour="var(--ink)" src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null} size="sm" /><span className="tool__name">{me.displayName ?? t.account.title}</span></summary>
             <div className="menu__panel">
               <span className="muted small">{me.email}</span>
               <Link to="/compte" onClick={close}>{t.account.title}</Link>

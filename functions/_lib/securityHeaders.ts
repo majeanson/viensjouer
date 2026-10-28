@@ -1,14 +1,14 @@
-// Security headers on every response. The SPA loads nothing cross-origin except Google
-// Fonts, so the policy is tight from day one. `script-src` keeps 'unsafe-inline' because
+// Security headers on every response. The SPA loads nothing cross-origin (fonts are the system's,
+// every picture is served by our own /api), so the policy is tight and the privacy page can say « no other third party ». `script-src` keeps 'unsafe-inline' because
 // Cloudflare's edge injects inline scripts (its RUM beacon) into the shell — a strict
 // policy would break the door intermittently, in production only (Babillard learned this
 // over a week of report-only logs; no need to learn it twice).
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob: https:",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
+  "img-src 'self' data: blob:",
   "connect-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",

@@ -157,3 +157,4 @@ Two read-only audits produced a ranked list; it is worked through in order, one 
 - **A link holder cannot replace the family's email** on the book entry: a reply only fills a blank (`COALESCE(email, ?)`).
 - **Sessions**: `POST /api/password` (asks the current password, bumps `session_version`) and `DELETE /api/sessions` (« Me déconnecter partout ») on the account page. An ordinary logout still only clears this device's cookie; the 60-day cookie is revoked by either of these or a reset.
 - The lockout guard in `structure.test.ts` now also covers the calendar feed and the link preview.
+- **CSP is what the app uses**: Google Fonts origins and `img-src https:` dropped (nothing loaded them; every picture is our own `/api`). `securityHeaders.test.ts` pins the list, both delivery paths and « no third party ».

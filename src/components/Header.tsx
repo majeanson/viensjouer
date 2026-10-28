@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useLang, useT } from '../i18n'
-import { applyTheme, readTheme } from '../lib/theme'
+import { OS_DARK, applyChoice, nextChoice, readChoice, resolveTheme, type ThemeChoice } from '../lib/theme'
 import { Face } from './Face'
 import { Icon } from './Icon'
 
@@ -13,7 +13,7 @@ export function Header() {
   const { me, signOut } = useAuth()
   const { lang, setLang } = useLang()
   const t = useT()
-  const [theme, setTheme] = useState(readTheme)
+  const [choice, setChoice] = useState<ThemeChoice>(readChoice)
   const menu = useRef<HTMLDetailsElement>(null)
   const close = () => {
     if (menu.current) menu.current.open = false
@@ -37,10 +37,18 @@ export function Header() {
     }
   }, [])
   const flip = () => {
-    const next = theme === 'dark' ? 'light' : 'dark'
-    applyTheme(next)
-    setTheme(next)
+    const next = nextChoice(choice)
+    applyChoice(next)
+    setChoice(next)
   }
+  // On « auto » the app follows the device as it changes (dusk, a schedule), without a reload.
+  useEffect(() => {
+    if (choice !== 'auto') return
+    const mq = matchMedia(OS_DARK)
+    const follow = () => applyChoice('auto')
+    mq.addEventListener('change', follow)
+    return () => mq.removeEventListener('change', follow)
+  }, [choice])
   return (
     <header className="head">
       <Link to={me.signedIn ? '/rencontres' : '/'} className="brand"><i aria-hidden="true" />{t.appName}</Link>
@@ -53,7 +61,7 @@ export function Header() {
         >
           {lang === 'fr' ? 'EN' : 'FR'}
         </button>
-        <button className="tool tool--icon" aria-label={theme === 'dark' ? t.common.themeToLight : t.common.themeToDark} onClick={flip}><Icon name={theme === 'dark' ? 'sun' : 'moon'} /></button>
+        <button className="tool tool--icon" aria-label={t.common.themeNow[choice]} title={t.common.themeNow[choice]} onClick={flip}><Icon name={choice === 'auto' ? 'monitor' : resolveTheme(choice) === 'dark' ? 'moon' : 'sun'} /></button>
         {me.signedIn && (
           <details className="menu" ref={menu}>
             <summary className="tool" aria-label={me.displayName ?? t.account.title}><Face name={me.displayName ?? '·'} colour="var(--host)" src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null} size="sm" /><span className="tool__name">{me.displayName ?? t.account.title}</span></summary>

@@ -378,3 +378,30 @@ test('the answer bar follows a phone until the question is on screen, answers in
   await expect(page.getByRole('link', { name: 'Ajouter à mon calendrier' })).toHaveCount(1)
   await expect(page.locator('.card .btn--primary', { hasText: 'Ajouter à mon calendrier' })).toBeVisible()
 })
+
+test.describe('the theme button', () => {
+  test.use({ colorScheme: 'dark' })
+  test('cycles auto, light, dark, auto; on auto it follows the device live and remembers nothing', async ({ page }) => {
+    await stub(page, card())
+    await page.goto(`/${CODE}`)
+    const theme = () => page.evaluate(() => document.documentElement.dataset.theme ?? '')
+    const stored = () => page.evaluate(() => localStorage.getItem('vj-theme'))
+    const button = page.locator('.tool--icon')
+    await expect(button).toHaveAttribute('aria-label', /automatique/)
+    expect(await theme()).toBe('dark') // the device is dark
+    expect(await stored()).toBeNull()
+    await page.emulateMedia({ colorScheme: 'light' }) // dusk becomes dawn: no reload
+    await expect.poll(theme).toBe('')
+    await button.click() // auto -> light
+    await expect(button).toHaveAttribute('aria-label', /clair/)
+    expect(await stored()).toBe('light')
+    await button.click() // light -> dark
+    await expect(button).toHaveAttribute('aria-label', /sombre/)
+    expect(await theme()).toBe('dark')
+    expect(await stored()).toBe('dark')
+    await button.click() // dark -> auto (the device is light now)
+    await expect(button).toHaveAttribute('aria-label', /automatique/)
+    expect(await stored()).toBeNull()
+    expect(await theme()).toBe('')
+  })
+})

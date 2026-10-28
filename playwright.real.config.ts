@@ -8,5 +8,5 @@ export default defineConfig({
   retries: 0,
   timeout: 90_000,
   reporter: [['list']],
-  use: { baseURL: process.env.REAL_URL ?? 'http://127.0.0.1:8790', locale: 'fr-CA', trace: 'retain-on-failure' },
+  use: { baseURL: process.env.REAL_URL ?? 'http://127.0.0.1:8790', locale: 'fr-CA', reducedMotion: 'reduce', trace: 'retain-on-failure' },
 })

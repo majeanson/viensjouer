@@ -15,6 +15,6 @@ export default defineConfig({
   retries: 0,
   forbidOnly: !!process.env.CI,
   reporter: [['list']],
-  use: { baseURL: `http://localhost:${PORT}`, ...devices['iPhone 13'], defaultBrowserType: 'chromium', locale: 'fr-CA' },
+  use: { baseURL: `http://localhost:${PORT}`, ...devices['iPhone 13'], defaultBrowserType: 'chromium', locale: 'fr-CA', reducedMotion: 'reduce' },
   webServer: { command: `npx vite --port ${PORT} --strictPort`, port: PORT, reuseExistingServer: false, timeout: 60_000 },
 })

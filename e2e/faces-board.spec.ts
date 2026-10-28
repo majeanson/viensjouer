@@ -308,3 +308,15 @@ test('the host reminder is a plain checkbox in my profile, off unless asked for,
   await box.click()
   await expect.poll(() => calls.filter((c) => c.method === 'PATCH' && c.path === 'profile').map((c) => c.body)).toEqual([{ remindHost: true }])
 })
+
+test('small motion: pages settle in for those who allow motion, and stand still for those who ask for less', async ({ browser }) => {
+  for (const [reducedMotion, expected] of [['no-preference', 'rise'], ['reduce', 'none']] as const) {
+    const ctx = await browser.newContext({ reducedMotion, locale: 'fr-CA' })
+    const page = await ctx.newPage()
+    await host(page)
+    await page.goto('/compte')
+    const name = await page.locator('main > *').first().evaluate((el) => getComputedStyle(el).animationName)
+    expect(name).toBe(expected)
+    await ctx.close()
+  }
+})

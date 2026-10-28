@@ -164,7 +164,7 @@ textarea.input { min-height: 5rem; resize: vertical; }
 
 /* The undo bar (src/lib/toast.tsx). */
 .toasts { position: fixed; left: 0; right: 0; bottom: 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; padding: 0 var(--gutter); z-index: 50; pointer-events: none; }
-.toast { pointer-events: auto; display: flex; gap: 1rem; align-items: center; justify-content: space-between; min-width: min(22rem, 100%); max-width: 100%; background: var(--ink); color: var(--bg); border-radius: var(--radius); padding: 0.6rem 0.9rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); }
+.toast { pointer-events: auto; display: flex; gap: 1rem; align-items: center; justify-content: space-between; min-width: min(22rem, 100%); max-width: 100%; background: var(--ink); color: var(--paper); border-radius: var(--radius); padding: 0.6rem 0.9rem; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); }
 .toast .linkbtn { color: inherit; font-weight: 700; }
 
 /* The host's card on a wide screen: the plan and the families left, the talk and the photos right. */
@@ -278,3 +278,56 @@ h2 .ico, h3 .ico, summary .ico { color: var(--accent); }
 .skip { position: absolute; left: 0.5rem; top: -4rem; z-index: 100; background: var(--ink); color: var(--paper); padding: 0.6rem 0.9rem; border-radius: var(--radius); text-decoration: none; font-weight: 600; }
 .skip:focus { top: 0.5rem; }
 main:focus { outline: none; }
+
+/* ---- small motion and polish ----------------------------------------------------------------------
+   Everything that moves is inside `no-preference`: someone who asks for less motion gets the still page. */
+:root { --ease: cubic-bezier(0.2, 0.7, 0.2, 1); --shadow: 0 1px 2px rgba(60, 40, 10, 0.06), 0 4px 14px rgba(60, 40, 10, 0.05); }
+:root[data-theme='dark'] { --shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+.card, .fold { box-shadow: var(--shadow); }
+.card { border-radius: 12px; }
+.fold { border-radius: 12px; }
+.btn, .input, .nav a, .tool { border-radius: 10px; }
+.input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.btn--primary { box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent); }
+.chip { border-radius: 999px; }
+.face { box-shadow: 0 0 0 2px var(--card); }
+.faces .face + .face { box-shadow: 0 0 0 3px var(--card); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .tool, .card--tap, .nav a, .chip, .linkbtn, .input, .swatch { transition: transform 0.16s var(--ease), background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s, filter 0.2s; }
+  .btn:active:not(:disabled), .tool:active { transform: scale(0.97); }
+  .card--tap:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(60, 40, 10, 0.08), 0 10px 24px rgba(60, 40, 10, 0.08); }
+  .card--tap:active { transform: translateY(0) scale(0.99); }
+  .swatch:hover { transform: scale(1.08); }
+
+  /* A page settles in: its blocks rise one after the other, a few at most. */
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  main > * { animation: rise 0.38s var(--ease) backwards; }
+  main > :nth-child(2) { animation-delay: 0.04s; }
+  main > :nth-child(3) { animation-delay: 0.08s; }
+  main > :nth-child(4) { animation-delay: 0.12s; }
+  main > :nth-child(n + 5) { animation-delay: 0.16s; }
+
+  /* What appears on its own arrives softly. */
+  @keyframes pop { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+  .chip, .notice, .changed { animation: pop 0.24s var(--ease) backwards; }
+  @keyframes slide-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .toast { animation: slide-up 0.28s var(--ease) backwards; }
+  .menu__panel { animation: pop 0.16s var(--ease) backwards; transform-origin: top right; }
+  .bmsg, .roster__row, .linkrow { animation: rise 0.3s var(--ease) backwards; }
+
+  /* Folds: the plus turns, the content unrolls. */
+  .fold > summary::after { display: inline-block; transition: transform 0.22s var(--ease); }
+  .fold[open] > summary::after { transform: rotate(180deg); }
+  .fold[open] > div, .why[open] p, .more[open] > div { animation: rise 0.26s var(--ease) backwards; }
+
+  /* The bottom tabs: the active icon lifts a little. */
+  .nav a .ico { transition: transform 0.2s var(--ease), color 0.2s; }
+  .nav a.active .ico { transform: translateY(-1px) scale(1.12); }
+  @media (min-width: 761px) { .nav a { transition: border-color 0.2s, color 0.2s; } }
+
+  /* A yes answer is a small celebration, not a score: the button breathes once. */
+  @keyframes breathe { 50% { transform: scale(1.04); } }
+  .btn--yes, .btn--on { animation: breathe 0.35s var(--ease); }
+  .brand i { animation: breathe 2.8s ease-in-out 1; }
+}

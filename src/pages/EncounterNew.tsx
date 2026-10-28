@@ -111,6 +111,18 @@ export function EncounterNew() {
         </div>
       </div>
       <div className="card">
+        <h3>{t.scope.label}</h3>
+        <div className="seg" role="radiogroup" aria-label={t.scope.label}>
+          {(['friend', 'family'] as Scope[]).map((x) => (
+            <button type="button" key={x} role="radio" aria-checked={scope === x} className={`btn ${scope === x ? 'btn--on' : ''}`} onClick={() => { setScope(x); setScopeTouched(true) }}>{t.scope[x]}</button>
+          ))}
+        </div>
+        <p className="muted small" style={{ margin: '0.5rem 0 1rem' }}>{scope === 'friend' ? t.scope.friendHint : t.scope.familyHint}</p>
+        <h3>{t.encounters.invite}</h3>
+        <p className="muted small">{t.encounters.inviteHint}</p>
+        <FamilyPicker families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
+      </div>
+      <div className="card">
         <label className="field"><span>{t.encounters.titleField}</span><input className="input" name="title" required maxLength={120} placeholder={t.encounters.titlePlaceholder[kind]} /></label>
         <label className="field"><span>{t.encounters.when}</span><input className="input" name="startsAt" type="datetime-local" required defaultValue={toLocalInput(nextSaturdayTen())} /></label>
         <label className="field"><span>{t.encounters.until}</span><input className="input" name="endsAt" type="datetime-local" /></label>
@@ -125,19 +137,6 @@ export function EncounterNew() {
         {kind !== 'park' && <label className="field"><span>{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" /><Why k="address" /></label>}
         {kind === 'birthday' && <label className="field"><span>{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} placeholder={t.kinds.birthday.giftPlaceholder} /><Why k="gift" /></label>}
         <label className="field"><span>{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} placeholder={t.encounters.notePlaceholder} /></label>
-      </div>
-      <div className="card">
-        <h3>{t.scope.label}</h3>
-        <div className="seg" role="radiogroup" aria-label={t.scope.label}>
-          {(['friend', 'family'] as Scope[]).map((x) => (
-            <button type="button" key={x} role="radio" aria-checked={scope === x} className={`btn ${scope === x ? 'btn--on' : ''}`} onClick={() => { setScope(x); setScopeTouched(true) }}>{t.scope[x]}</button>
-          ))}
-        </div>
-        <p className="muted small" style={{ margin: '0.5rem 0 1rem' }}>{scope === 'friend' ? t.scope.friendHint : t.scope.familyHint}</p>
-        <h3>{t.encounters.invite}</h3>
-        <p className="muted small">{t.encounters.inviteHint}</p>
-        <FamilyPicker families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
-        {fams.data && fams.data.families.length === 0 && <p><Link to="/familles">{t.families.add}</Link></p>}
       </div>
       <div className="cluster">
         <button className="btn btn--primary btn--big" disabled={create.isPending || !chosen}>{t.encounters.create}</button>

@@ -99,6 +99,20 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   expect((await guest.request.get(`/api/r/${code}/avatar/child`)).status()).toBe(200)
   expect((await guest.request.get(`/api/r/${code}/avatar/parent`)).status()).toBe(200)
 
+  // -- the link preview: what a messaging app shows when the link is texted
+  const unfurl = async (path: string, lang = 'fr-CA') => (await guest.request.get(path, { headers: { accept: 'text/html', 'accept-language': lang } })).text()
+  const page = await unfurl(`/${code}`)
+  expect(page).toContain('property="og:title" content="Noé invite Léa"')
+  expect(page).toContain('<title>Noé invite Léa · Viens jouer</title>')
+  expect(page).toMatch(new RegExp(`property="og:image" content="[^"]*/api/r/${code}/cover\\?v=`))
+  // (locally wrangler presents the route's host, so only the shape of the address is asserted)
+  expect(page).toMatch(new RegExp(`property="og:url" content="https?://[^"]+/${code}"`))
+  expect(page).not.toContain('Camille') // the card tells what the page tells, never more
+  expect(await unfurl(`/${code}`, 'en-CA')).toContain('content="Noé invites Léa"')
+  // a wrong code gets the plain card, and a crawler cannot tell it from a missing page
+  expect(await unfurl('/zzzz-yyyy')).toContain('property="og:title" content="Viens jouer"')
+  expect(await unfurl('/rencontres')).toContain('property="og:title" content="Viens jouer"')
+
   const erase = await host.request.delete('/api/household', { data: {}, headers: { 'x-csrf-token': csrf } })
   expect(erase.status(), await erase.text()).toBe(200)
   expect((await (await host.request.get('/api/auth/me')).json()).signedIn).toBe(false)

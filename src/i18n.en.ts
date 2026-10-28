@@ -255,7 +255,7 @@ export const EN: Dict = {
       ['My calendar', 'A secret link to your get-togethers, which you can change or switch off.'],
     ] as [string, string][],
     sharedTitle: 'Who sees what',
-    shared: ['Each family sees only what concerns it: its get-togethers, its invitations, and the first names of the children coming to the same get-togethers (the host can turn that off).', 'A reply link shows the address only after a “yes”.', 'Nothing is public, nothing is searchable, there is no map of families.', 'A trial without an account is erased after 24 hours.'],
+    shared: ['Each family sees only what concerns it: its get-togethers, its invitations, and the first names of the children coming to the same get-togethers (the host can turn that off).', 'A reply link shows the address only after a “yes”.', 'When a link is texted, the preview shows only the title, date, place and picture: what the page already shows to whoever holds the link.', 'Nothing is public, nothing is searchable, there is no map of families.', 'A trial without an account is erased after 24 hours.'],
     link: 'What we keep',
     purposeTitle: 'What it is for',
     purpose: 'Viens jouer does one thing: helps parents of toddlers organize get-togethers, at the park, at home, at a party, and answer them without an account. No ads, no selling data, no public profile, no map of families.',

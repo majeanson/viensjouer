@@ -8,6 +8,7 @@ import { forbidden, notFound, serverError } from '../functions/_lib/json'
 import { withSecurityHeaders } from '../functions/_lib/securityHeaders'
 import { sendDueReminders } from '../functions/_lib/reminders'
 import { csrfExempt, matchRoute, type RouteMod } from './routes'
+import { previewFor, withPreview } from './preview'
 
 type WorkerEnv = Env & { ASSETS: Fetcher }
 
@@ -42,6 +43,15 @@ const app = {
       // index.html under a .js URL boots blank forever.
       if (path.startsWith('assets/') && res.headers.get('content-type')?.includes('text/html')) {
         return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain' } })
+      }
+      // An invitation link carries its own preview card (title, date, cover) for the apps that unfurl links.
+      if (res.headers.get('content-type')?.includes('text/html')) {
+        try {
+          const preview = await previewFor(request, env, path)
+          if (preview) return withPreview(res, preview)
+        } catch (err) {
+          console.error('[preview]', err)
+        }
       }
       return res
     }

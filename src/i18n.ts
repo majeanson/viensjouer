@@ -256,7 +256,7 @@ export const FR = {
       ['Mon calendrier', 'Un lien secret vers tes rencontres, que tu peux changer ou couper.'],
     ] as [string, string][],
     sharedTitle: 'Qui voit quoi',
-    shared: ['Chaque famille ne voit que ce qui la concerne : ses rencontres, ses invitations, et les prénoms des enfants qui viennent aux mêmes rencontres (l’hôte peut le désactiver).', 'Un lien de réponse ne montre l’adresse qu’après un « oui ».', 'Rien n’est public, rien ne se cherche, aucune carte de familles.', 'Un essai sans compte s’efface après 24 heures.'],
+    shared: ['Chaque famille ne voit que ce qui la concerne : ses rencontres, ses invitations, et les prénoms des enfants qui viennent aux mêmes rencontres (l’hôte peut le désactiver).', 'Un lien de réponse ne montre l’adresse qu’après un « oui ».', 'Quand un lien est texté, l’aperçu montre seulement le titre, la date, le lieu et l’image : ce que la page montre déjà à qui a le lien.', 'Rien n’est public, rien ne se cherche, aucune carte de familles.', 'Un essai sans compte s’efface après 24 heures.'],
     link: 'Ce qu’on garde',
     purposeTitle: 'À quoi ça sert',
     purpose: 'Viens jouer sert à une seule chose : aider les parents de tout-petits à organiser des rencontres, au parc, chez soi, à une fête, et à y répondre sans compte. Pas de publicité, pas de vente de données, pas de profil public, pas de carte des familles.',

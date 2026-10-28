@@ -1,7 +1,7 @@
 name: CI & Deploy
 
-# typecheck · test · build on every push; a green run on main applies D1 migrations and
-# deploys the Worker. Needs CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID as repo secrets.
+# typecheck · test · build, and the real walk (Worker + local D1), on every push; a green run on main applies D1
+# migrations and deploys the Worker. Needs CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID as repo secrets.
 
 on:
   push:
@@ -47,7 +47,8 @@ jobs:
       - run: npm run e2e:ci
 
   # The real walk: the built app on the real Worker with a real local D1/R2, a host and an invited parent in two
-  # browsers. Signal only, like e2e: it proves the stack agrees with itself, which no stubbed test can.
+  # browsers, a stranger household that must not see the first, sign-out-everywhere and erasure. It GATES the deploy:
+  # it is the only test that runs the SQL, so a cross-household leak or a broken migration fails here, not in production.
   real:
     name: Real walk (Worker + D1, no stubs)
     runs-on: ubuntu-latest
@@ -63,7 +64,7 @@ jobs:
 
   deploy:
     name: Deploy to Cloudflare
-    needs: [ci]
+    needs: [ci, real]
     if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:

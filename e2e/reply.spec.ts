@@ -320,3 +320,20 @@ test('a failed read says so out loud and tries again on a tap; an expired link d
   await expect(page.getByRole('alert')).toBeVisible()
   await expect(page.getByRole('alert').getByRole('button')).toHaveCount(0)
 })
+
+test('a tap on Oui with no network is kept on the device and sent when the network returns', async ({ page }) => {
+  const posts = await stub(page, card())
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
+  // The network drops for writes only (a refusal from the server would be a different thing: that is shown, not kept).
+  const down = (r: import('@playwright/test').Route) => (r.request().method() === 'POST' ? r.abort('internetdisconnected') : r.fallback())
+  await page.route('**/api/r/**', down)
+  await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  await expect(page.getByText(/gardée sur cet appareil/)).toBeVisible()
+  expect(posts).toEqual([])
+  await page.unroute('**/api/r/**', down)
+  await page.evaluate(() => window.dispatchEvent(new Event('online')))
+  await expect.poll(() => posts.length, { timeout: 10_000 }).toBe(1)
+  expect(posts[0]).toEqual({ reply: 'yes' })
+  await expect(page.getByText(/gardée sur cet appareil/)).toBeHidden()
+})

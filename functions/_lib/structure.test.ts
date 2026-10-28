@@ -114,3 +114,11 @@ describe('workflows', () => {
     for (const s of scripts) expect(s).not.toMatch(/\$\{\{/)
   })
 })
+
+describe('the deploy gate', () => {
+  it('waits for the real walk (the only test that runs the SQL), not just the unit tests', () => {
+    const ci = read('.github/workflows/ci.yml')
+    expect(ci).toMatch(/deploy:[\s\S]*?needs: \[ci, real\]/)
+    expect(ci).toMatch(/real:[\s\S]*?npm run e2e:real/)
+  })
+})

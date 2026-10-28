@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '../lib/api'
+import { ApiError, api } from '../lib/api'
+import { clearPending, readPending, writePending } from '../lib/pendingAnswer'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { timeOnly, whenDay, whenShort } from '../lib/format'
@@ -60,6 +61,7 @@ function ReplyInner() {
   const [done, setDone] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [claiming, setClaiming] = useState(false)
+  const [queued, setQueued] = useState<ReplyKind | null>(() => readPending(token))
   const { me, refresh } = useAuth()
   const nav = useNavigate()
   // When this device last opened this link: what was edited AFTER that is marked as new.
@@ -70,6 +72,20 @@ function ReplyInner() {
     const id = setTimeout(() => writeSeen(seenKey(token), Math.floor(Date.now() / 1000)), 2500)
     return () => clearTimeout(id)
   }, [loaded, token])
+
+  // A kept answer goes out when the network is back, or the next time this link is opened.
+  useEffect(() => {
+    const flush = () => {
+      const p = readPending(token)
+      if (!p) return
+      api(`r/${token}`, { method: 'POST', body: { reply: p } })
+        .then(() => { clearPending(token); setQueued(null); setJustAnswered(true); void qc.invalidateQueries({ queryKey: K.reply(token) }) })
+        .catch((e) => { if (e instanceof ApiError) { clearPending(token); setQueued(null) } })
+    }
+    flush()
+    window.addEventListener('online', flush)
+    return () => window.removeEventListener('online', flush)
+  }, [token, qc])
 
   const claim = useMutation({
     mutationFn: (body: Record<string, unknown>) => api(`r/${token}/claim`, { method: 'POST', body }),
@@ -117,7 +133,14 @@ function ReplyInner() {
 
   // ONE TAP: the answer is saved at once. Everything else is optional and comes after.
   function answer(r: ReplyKind) {
-    post.mutate({ reply: r }, { onSuccess: () => { setEditing(false); setDone(false); setJustAnswered(true) } })
+    post.mutate(
+      { reply: r },
+      {
+        onSuccess: () => { clearPending(token); setQueued(null); setEditing(false); setDone(false); setJustAnswered(true) },
+        // No network (not a refusal from the server): keep the answer on this device, it is sent when the network returns.
+        onError: (e) => { if (!(e instanceof ApiError) && writePending(token, r)) { setQueued(r); setErr(null) } },
+      },
+    )
   }
 
   function saveExtras(ev: FormEvent<HTMLFormElement>) {
@@ -243,6 +266,7 @@ function ReplyInner() {
               <button type="button" className="btn" disabled={post.isPending} onClick={() => answer('no')}><Icon name="x" />{t.reply.no}</button>
             </div>
           </div>
+          {queued && <div className="notice" role="status" style={{ marginTop: '0.75rem' }}>{t.reply.queued}</div>}
           {err && <div className="notice notice--err" style={{ marginTop: '0.75rem' }}>{err}</div>}
           <p className="muted small" style={{ margin: '0.75rem 0 0' }}>{t.reply.oneTap}</p>
         </section>

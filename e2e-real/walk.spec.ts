@@ -124,6 +124,24 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   expect(Array.isArray((await hist.json()).past)).toBe(true)
   expect((await host.request.patch('/api/profile', { data: { remindHost: true }, headers: { 'x-csrf-token': csrf } })).status()).toBe(200)
 
+  // -- tenant isolation on the real database: a second household can neither read nor change the first one's rencontre
+  const strangerCtx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'fr-CA' })
+  const stranger = await strangerCtx.newPage()
+  await stranger.goto('/')
+  await stranger.getByRole('button', { name: 'Essayer sans compte' }).click()
+  await expect(stranger).toHaveURL(/\/rencontres$/)
+  const sCsrf = (await strangerCtx.cookies()).find((c) => c.name === 'vj_csrf')?.value ?? ''
+  const h = { 'x-csrf-token': sCsrf }
+  expect((await stranger.request.get(`/api/encounters?id=${encounterId}`)).status()).toBe(404)
+  expect((await stranger.request.patch('/api/encounters', { data: { id: encounterId, title: 'pris' }, headers: h })).status()).toBe(404)
+  expect((await stranger.request.delete('/api/encounters', { data: { id: encounterId }, headers: h })).status()).toBe(404)
+  expect(JSON.stringify(await (await stranger.request.get('/api/export')).json())).not.toContain('On arrive vers 14 h')
+  const strangerFams = JSON.stringify(await (await stranger.request.get('/api/families')).json())
+  for (const f of fams.families) expect(strangerFams).not.toContain(f.id)
+  // and the first one is untouched by all of it
+  expect((await host.request.get(`/api/encounters?id=${encounterId}`)).status()).toBe(200)
+  await strangerCtx.close()
+
   // -- « Me déconnecter partout »: a copy of this session (another device) dies, this one stays signed in
   const other = await browser.newContext({ storageState: await hostCtx.storageState() })
   expect((await (await other.request.get('/api/auth/me')).json()).signedIn).toBe(true)

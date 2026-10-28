@@ -51,11 +51,11 @@ export async function deleteHouseholds(env: Env, ids: string[]): Promise<void> {
   const marks = ids.map(() => '?').join(',')
   if (env.PHOTOS) {
     const { results: keys } = await env.DB.prepare(`SELECT s.media_key FROM souvenirs s JOIN encounters e ON e.id = s.encounter_id WHERE e.household_id IN (${marks})`).bind(...ids).all<{ media_key: string }>()
-    await Promise.all(keys.map((k) => env.PHOTOS!.delete(k.media_key).catch(() => {})))
+    await Promise.all(keys.map((k) => env.PHOTOS!.delete(k.media_key).catch((e) => console.error('[r2] delete failed', e))))
     const { results: covers } = await env.DB.prepare(`SELECT cover_key FROM encounters WHERE household_id IN (${marks}) AND cover_key IS NOT NULL`).bind(...ids).all<{ cover_key: string }>()
-    await Promise.all(covers.map((c) => env.PHOTOS!.delete(c.cover_key).catch(() => {})))
+    await Promise.all(covers.map((c) => env.PHOTOS!.delete(c.cover_key).catch((e) => console.error('[r2] delete failed', e))))
     const { results: faces } = await env.DB.prepare(`SELECT photo_key FROM children WHERE household_id IN (${marks}) AND photo_key IS NOT NULL UNION ALL SELECT photo_key FROM parents WHERE household_id IN (${marks}) AND photo_key IS NOT NULL`).bind(...ids, ...ids).all<{ photo_key: string }>()
-    await Promise.all(faces.map((f) => env.PHOTOS!.delete(f.photo_key).catch(() => {})))
+    await Promise.all(faces.map((f) => env.PHOTOS!.delete(f.photo_key).catch((e) => console.error('[r2] delete failed', e))))
   }
   // The `?` list is repeated where a statement mentions the ids twice (child_links).
   const stmts = SWEEP_ORDER.map((s) => {

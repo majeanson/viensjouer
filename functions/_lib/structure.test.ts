@@ -94,3 +94,23 @@ describe('the code lockout', () => {
     }
   })
 })
+
+describe('workflows', () => {
+  const wfDir = '.github/workflows'
+  const wfs = readdirSync(wfDir).filter((f) => f.endsWith('.yml'))
+  const name = (src: string) => src.match(/^name:\s*(.+)$/m)?.[1]?.trim().replace(/^['"]|['"]$/g, '')
+
+  it('reports a red scheduled run: every scheduled workflow is listed in scheduled-red.yml', () => {
+    const watcher = read(`${wfDir}/scheduled-red.yml`)
+    for (const f of wfs.filter((f) => f !== 'scheduled-red.yml' && /^\s*schedule:/m.test(read(`${wfDir}/${f}`)))) {
+      expect(watcher, `${f} runs on a schedule but scheduled-red.yml does not watch it`).toContain(`'${name(read(`${wfDir}/${f}`))}'`)
+    }
+  })
+
+  it('never puts attacker-shaped text from the triggering run inside a run: script', () => {
+    const src = read(`${wfDir}/scheduled-red.yml`)
+    const scripts = [...src.matchAll(/run: \|\n((?:[ ]{10,}.*\n?)+)/g)].map((m) => m[1])
+    expect(scripts.length).toBeGreaterThan(0)
+    for (const s of scripts) expect(s).not.toMatch(/\$\{\{/)
+  })
+})

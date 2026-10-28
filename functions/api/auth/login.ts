@@ -3,6 +3,7 @@ import { badRequest, readJson, serverError, tooManyRequests, unauthorized } from
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { signInAs, sessionCookies } from '../../_lib/auth'
 import { verifyPassword } from '../../_lib/password'
+import { requestLang } from '../../_lib/lang'
 import { EMAIL_RE } from './signup'
 
 // An unknown email and a wrong password get the SAME answer: this door says nothing
@@ -17,6 +18,8 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const row = await ctx.env.DB.prepare('SELECT password_hash FROM parents WHERE email = ?').bind(email).first<{ password_hash: string }>()
   if (!row || !(await verifyPassword(body?.password ?? '', row.password_hash))) return unauthorized('Courriel ou mot de passe invalide.')
 
+  const lang = requestLang(ctx.request)
+  if (lang) await ctx.env.DB.prepare('UPDATE parents SET lang = ? WHERE email = ?').bind(lang, email).run()
   try {
     const { session, csrf } = await signInAs(ctx.env, email)
     const headers = new Headers({ 'content-type': 'application/json; charset=utf-8' })

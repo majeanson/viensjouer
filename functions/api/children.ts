@@ -1,4 +1,5 @@
-import { badRequest, created, notFound, ok, readJson, str } from '../_lib/json'
+import { badRequest, conflict, created, notFound, ok, readJson, str } from '../_lib/json'
+import { FULL, roomFor } from '../_lib/ceilings'
 import { authed } from '../_lib/route'
 import { newId, nowSec } from '../_lib/ids'
 import { coverId } from '../_lib/encounters'
@@ -33,6 +34,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   if (!firstName) return badRequest('Le prénom est requis.')
   const birthdate = str(body?.birthdate, 10)
   if (birthdate && !DATE_RE.test(birthdate)) return badRequest('Date invalide.')
+  if ((await roomFor(ctx.env, 'children', actor.householdId)) < 1) return conflict(FULL.children)
   const count = await ctx.env.DB.prepare('SELECT COUNT(*) AS n FROM children WHERE household_id = ? AND deleted_at IS NULL').bind(actor.householdId).first<{ n: number }>()
   const n = count?.n ?? 0
   const colour = str(body?.colour, 9) ?? COLOURS[n % COLOURS.length]

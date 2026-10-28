@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { changeLinesFr, diffEncounter, type Snapshot } from './changes'
+import { changeLines, diffEncounter, type Snapshot } from './changes'
 
 const base: Snapshot = { title: 'Au parc', starts_at: 1_800_000_000, ends_at: null, place: 'Parc Lafontaine', address: null, map_url: null, note: null, gift: null, status: 'proposed' }
 
@@ -28,9 +28,9 @@ describe('diffEncounter', () => {
   })
 })
 
-describe('changeLinesFr', () => {
+describe('changeLines', () => {
   it('writes one readable line per change and keeps the address out of the text', () => {
-    const lines = changeLinesFr(
+    const lines = changeLines(
       [
         { field: 'place', old: 'Parc', new: 'Chez nous' },
         { field: 'address', old: null, new: null },
@@ -41,8 +41,23 @@ describe('changeLinesFr', () => {
     expect(lines).toEqual(['Lieu : Parc → Chez nous', 'Adresse : mise à jour, à voir sur la page', 'Statut : proposée → annulée'])
   })
   it('formats times in the household zone', () => {
-    const [l] = changeLinesFr([{ field: 'starts_at', old: String(1_793_000_000), new: String(1_793_003_600) }], 'America/Toronto')
+    const [l] = changeLines([{ field: 'starts_at', old: String(1_793_000_000), new: String(1_793_003_600) }], 'America/Toronto')
     expect(l).toMatch(/^Début : .+ → .+$/)
     expect(l).not.toMatch(/179300/)
+  })
+})
+
+describe('changeLines in English', () => {
+  it('speaks the reader’s language and still keeps the address out', () => {
+    const lines = changeLines(
+      [
+        { field: 'place', old: 'Parc', new: 'Chez nous' },
+        { field: 'address', old: null, new: null },
+        { field: 'status', old: 'proposed', new: 'cancelled' },
+      ],
+      'America/Toronto',
+      'en',
+    )
+    expect(lines).toEqual(['Place : Parc → Chez nous', 'Address : updated, see the page', 'Status : proposed → cancelled'])
   })
 })

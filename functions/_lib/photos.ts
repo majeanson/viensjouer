@@ -3,6 +3,7 @@
 // the cap, the type check and the key shape.
 import type { Env } from './env'
 import { newId } from './ids'
+import { FULL, roomFor } from './ceilings'
 
 export const MAX_PHOTO_BYTES = 3 * 1024 * 1024
 export const MAX_PHOTOS_PER_ENCOUNTER = 12
@@ -61,6 +62,8 @@ export async function storeSouvenir(env: Env, request: Request, encounterId: str
   const img = await takeImage(env, request)
   if (!img.ok) return img
   const { bytes, type } = img
+  const owner = await env.DB.prepare('SELECT household_id FROM encounters WHERE id = ?').bind(encounterId).first<{ household_id: string }>()
+  if (owner && (await roomFor(env, 'photos', owner.household_id)) < 1) return { ok: false, status: 429, message: FULL.photos }
   const count = await env.DB.prepare('SELECT COUNT(*) AS n FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL').bind(encounterId).first<{ n: number }>()
   if ((count?.n ?? 0) >= MAX_PHOTOS_PER_ENCOUNTER) return { ok: false, status: 429, message: 'Déjà douze photos pour cette rencontre.' }
   const id = newId()

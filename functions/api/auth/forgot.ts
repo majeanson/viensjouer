@@ -2,6 +2,8 @@ import type { Env } from '../../_lib/env'
 import { badRequest, ok, readJson, serviceUnavailable, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { mailEnabled, sendMail } from '../../_lib/mail'
+import { mailLang } from '../../_lib/lang'
+import { resetMail } from '../../_lib/mailCopy'
 import { newId, nowSec, sha256Hex } from '../../_lib/ids'
 import { EMAIL_RE } from './signup'
 
@@ -31,12 +33,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     .run()
   const link = `${new URL(ctx.request.url).origin}/reinitialiser?t=${encodeURIComponent(token)}`
   try {
-    await sendMail(ctx.env, {
-      to: email,
-      subject: 'Viens jouer — un nouveau mot de passe',
-      text: `Quelqu'un (toi, on espère) a demandé un nouveau mot de passe pour Viens jouer.\n\nOuvre ce lien dans les 30 prochaines minutes pour en choisir un :\n${link}\n\nSi ce n'était pas toi, ignore ce courriel — rien ne change.`,
-      html: `<p>Quelqu'un (toi, on espère) a demandé un nouveau mot de passe pour Viens jouer.</p><p><a href="${link}">Choisir un nouveau mot de passe</a> — le lien est bon 30 minutes.</p><p>Si ce n'était pas toi, ignore ce courriel : rien ne change.</p>`,
-    })
+    await sendMail(ctx.env, { to: email, ...resetMail(mailLang(null, ctx.request), { link }) })
   } catch (err) {
     console.error('[mail] reset', err)
   }

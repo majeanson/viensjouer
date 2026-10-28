@@ -4,7 +4,9 @@
 // ahead and not cancelled, get one email; `reminded_at` is stamped first so a slow send
 // can never double up. Mail unwired → the cron does nothing, loudly in the log once.
 import type { Env } from './env'
-import { escapeHtml, mailEnabled, sendMail } from './mail'
+import { mailEnabled, sendMail } from './mail'
+import { mailLang } from './lang'
+import { hostReminderMail, reminderMail } from './mailCopy'
 import { nowSec, paperCode, whenLong } from './ids'
 
 interface Due {
@@ -17,6 +19,7 @@ interface Due {
   place: string | null
   tz: string
   host_child: string
+  lang: string | null
 }
 
 export const REMIND_LEAD_SEC = 24 * 3600
@@ -28,7 +31,7 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
   }
   const now = nowSec()
   const { results } = await env.DB.prepare(
-    `SELECT i.id, i.token, f.email, f.parent_name, e.title, e.starts_at, e.place, h.tz, c.first_name AS host_child
+    `SELECT i.id, i.token, f.email, f.lang, f.parent_name, e.title, e.starts_at, e.place, h.tz, c.first_name AS host_child
        FROM invitations i
        JOIN encounters e ON e.id = i.encounter_id
        JOIN friend_families f ON f.id = i.friend_family_id
@@ -46,15 +49,11 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
     // order sends it every hour until the cron dies.
     const stamped = await env.DB.prepare('UPDATE invitations SET reminded_at = ? WHERE id = ? AND reminded_at IS NULL').bind(now, d.id).run()
     if (!stamped.meta.changes || !d.email) continue
-    const when = whenLong(d.starts_at, 'fr', d.tz)
+    const lang = mailLang(d.lang)
+    const when = whenLong(d.starts_at, lang, d.tz)
     const link = `${origin}/${paperCode(d.token)}`
     try {
-      await sendMail(env, {
-        to: d.email,
-        subject: `Demain : ${d.title}`,
-        text: `Bonjour ${d.parent_name},\n\nPetit rappel : ${d.title} avec ${d.host_child}, ${when}${d.place ? ` — ${d.place}` : ''}.\n\nLa page de la rencontre : ${link}\n\n— Viens jouer`,
-        html: `<p>Bonjour ${escapeHtml(d.parent_name)},</p><p>Petit rappel : <strong>${escapeHtml(d.title)}</strong> avec ${escapeHtml(d.host_child)}, ${escapeHtml(when)}${d.place ? ` — ${escapeHtml(d.place)}` : ''}.</p><p><a href="${link}">La page de la rencontre</a></p><p>— Viens jouer</p>`,
-      })
+      await sendMail(env, { to: d.email, ...reminderMail(lang, { parent: d.parent_name, title: d.title, hostChild: d.host_child, when, place: d.place, link }) })
       sent++
     } catch (err) {
       console.error('[reminders] send', d.id, err)
@@ -66,6 +65,7 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
 interface HostDue {
   id: string
   email: string
+  lang: string | null
   display_name: string
   title: string
   starts_at: number
@@ -80,7 +80,7 @@ export async function sendHostReminders(env: Env, origin: string): Promise<numbe
   if (!mailEnabled(env)) return 0
   const now = nowSec()
   const { results } = await env.DB.prepare(
-    `SELECT e.id, p.email, p.display_name, e.title, e.starts_at, e.place, h.tz, c.first_name AS host_child
+    `SELECT e.id, p.email, p.lang, p.display_name, e.title, e.starts_at, e.place, h.tz, c.first_name AS host_child
        FROM encounters e
        JOIN households h ON h.id = e.household_id
        JOIN children c ON c.id = e.child_id
@@ -104,16 +104,11 @@ export async function sendHostReminders(env: Env, origin: string): Promise<numbe
     )
       .bind(d.id)
       .all<{ child_first_name: string }>()
-    const who = yes.length ? yes.map((y) => y.child_first_name).join(', ') : 'personne n’a encore répondu oui'
-    const when = whenLong(d.starts_at, 'fr', d.tz)
+    const lang = mailLang(d.lang)
+    const when = whenLong(d.starts_at, lang, d.tz)
     const link = `${origin}/rencontres/${d.id}`
     try {
-      await sendMail(env, {
-        to: d.email,
-        subject: `Demain : ${d.title}`,
-        text: `Bonjour ${d.display_name},\n\nPetit rappel : ${d.title} avec ${d.host_child}, ${when}${d.place ? ` — ${d.place}` : ''}.\nQui vient : ${who}.\n\nLa page de la rencontre : ${link}\n\nTu reçois ce courriel parce que tu l’as demandé dans Mon profil. Tu peux le couper là-bas.\n\n— Viens jouer`,
-        html: `<p>Bonjour ${escapeHtml(d.display_name)},</p><p>Petit rappel : <strong>${escapeHtml(d.title)}</strong> avec ${escapeHtml(d.host_child)}, ${escapeHtml(when)}${d.place ? ` — ${escapeHtml(d.place)}` : ''}.<br>Qui vient : ${escapeHtml(who)}.</p><p><a href="${link}">La page de la rencontre</a></p><p class="small">Tu reçois ce courriel parce que tu l’as demandé dans Mon profil. Tu peux le couper là-bas.</p><p>— Viens jouer</p>`,
-      })
+      await sendMail(env, { to: d.email, ...hostReminderMail(lang, { name: d.display_name, title: d.title, hostChild: d.host_child, when, place: d.place, who: yes.map((y) => y.child_first_name), link }) })
       sent++
     } catch (err) {
       console.error('[reminders] host send', d.id, err)

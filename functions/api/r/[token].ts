@@ -1,4 +1,5 @@
 import type { Env } from '../../_lib/env'
+import { requestLang } from '../../_lib/lang'
 import { lockedOut, lookupMiss } from '../../_lib/guessLimit'
 import { badRequest, ok, readJson, str, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
@@ -227,6 +228,9 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     )
   }
   if (!stmts.length) return badRequest('Rien à enregistrer.')
+  // Their device's language, kept so what we email them later (a reminder, an update) speaks it.
+  const lang = requestLang(ctx.request)
+  if (lang) stmts.push(ctx.env.DB.prepare('UPDATE friend_families SET lang = ? WHERE id = ?').bind(lang, r.invitation.friend_family_id))
   await ctx.env.DB.batch(stmts)
   return ok()
 }

@@ -1,4 +1,5 @@
 import type { Env } from '../../_lib/env'
+import { requestLang } from '../../_lib/lang'
 import { badRequest, conflict, forbidden, readJson, serverError, str, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { signInAs, sessionCookies } from '../../_lib/auth'
@@ -42,6 +43,9 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   } catch {
     return conflict('Un compte existe déjà pour ce courriel — connecte-toi.')
   }
+
+  const lang = requestLang(ctx.request)
+  if (lang) await ctx.env.DB.prepare('UPDATE parents SET lang = ? WHERE email = ?').bind(lang, email).run()
 
   try {
     const { session, csrf } = await signInAs(ctx.env, email)

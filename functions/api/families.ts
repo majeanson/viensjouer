@@ -1,4 +1,5 @@
-import { badRequest, created, notFound, ok, readJson, str } from '../_lib/json'
+import { badRequest, conflict, created, notFound, ok, readJson, str } from '../_lib/json'
+import { FULL, roomFor } from '../_lib/ceilings'
 import { authed } from '../_lib/route'
 import { newId, nowSec } from '../_lib/ids'
 
@@ -44,6 +45,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   const parentName = str(body?.parentName, 60)
   const childFirstName = str(body?.childFirstName, 40)
   if (!parentName || !childFirstName) return badRequest('Le prénom du parent et celui de l’enfant sont requis.')
+  if ((await roomFor(ctx.env, 'families', actor.householdId)) < 1) return conflict(FULL.families)
   const id = newId()
   const ts = nowSec()
   await ctx.env.DB.prepare(

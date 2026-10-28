@@ -1,10 +1,13 @@
-import { badRequest, created, notFound, ok, readJson, str } from '../_lib/json'
+import { badRequest, conflict, created, notFound, ok, readJson, str } from '../_lib/json'
+import { FULL, roomFor } from '../_lib/ceilings'
 import { authed } from '../_lib/route'
 import { freshLinkCode, newId, nowSec, paperCode } from '../_lib/ids'
 import { cleanMapUrl, coverId, isKind, type EncounterRow, type Kind, type Reply, type Status } from '../_lib/encounters'
-import { changeLinesFr, diffEncounter, type Change, type Snapshot } from '../_lib/changes'
+import { changeLines, diffEncounter, type Change, type Snapshot } from '../_lib/changes'
 import { REMIND_LEAD_SEC } from '../_lib/reminders'
-import { escapeHtml, mailEnabled, sendMail } from '../_lib/mail'
+import { mailEnabled, sendMail } from '../_lib/mail'
+import { mailLang } from '../_lib/lang'
+import { updateMail } from '../_lib/mailCopy'
 import { isDemoEmail } from '../_lib/demo'
 import { mailRoom, recordMail } from '../_lib/mailBudget'
 import { cleanDetails, defaultScope, hereAllowed, isScope, parseDetails, type Scope } from '../_lib/kinds'
@@ -154,6 +157,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   const endsAt = typeof body?.endsAt === 'number' && body.endsAt > startsAt ? Math.floor(body.endsAt) : null
   const times = seriesTimes(startsAt, body?.startsAtList)
   if (!times) return badRequest('Série invalide (12 occurrences au plus, sur un an).')
+  if ((await roomFor(ctx.env, 'encounters', actor.householdId)) < times.length) return conflict(FULL.encounters)
   const seriesId = times.length > 1 ? newId() : null
   // Who is invited: the friend only (a paid birthday) or the whole family (a park). Defaults by kind.
   const scope: Scope = isScope(body?.scope) ? body.scope : defaultScope(body!.kind as Kind)
@@ -240,31 +244,26 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   if (Array.isArray(body?.invite)) await mintInvitations(ctx.env.DB, actor.householdId, id, body!.invite.filter((v) => typeof v === 'string').slice(0, 40), isScope(body?.scope) ? body.scope : own.default_scope)
   // « Prévenir les familles »: one email to each family that has an address and did not say no.
   let notified = 0
-  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) notified = await notifyChange(ctx.env, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes)
+  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) notified = await notifyChange(ctx.env, ctx.request, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes)
   return ok({ changed: changes.length, notified })
 })
 
-async function notifyChange(env: Parameters<typeof mailEnabled>[0], householdId: string, origin: string, hostName: string, encounterId: string, title: string, changes: Change[]): Promise<number> {
+async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Request, householdId: string, origin: string, hostName: string, encounterId: string, title: string, changes: Change[]): Promise<number> {
   const { results } = await env.DB.prepare(
-    `SELECT i.token, f.email, f.parent_name, h.tz FROM invitations i
+    `SELECT i.token, f.email, f.lang, f.parent_name, h.tz FROM invitations i
        JOIN friend_families f ON f.id = i.friend_family_id
        JOIN encounters e ON e.id = i.encounter_id
        JOIN households h ON h.id = e.household_id
       WHERE i.encounter_id = ? AND f.email IS NOT NULL AND (i.reply IS NULL OR i.reply != 'no') LIMIT 40`,
   )
     .bind(encounterId)
-    .all<{ token: string; email: string; parent_name: string; tz: string }>()
+    .all<{ token: string; email: string; lang: string | null; parent_name: string; tz: string }>()
   let sent = 0
   for (const r of results.slice(0, await mailRoom(env, householdId))) {
-    const lines = changeLinesFr(changes, r.tz)
+    const lang = mailLang(r.lang, request)
     const link = `${origin}/${paperCode(r.token)}`
     try {
-      await sendMail(env, {
-        to: r.email,
-        subject: `Mise à jour : ${title}`,
-        text: `Bonjour ${r.parent_name},\n\n${hostName} a modifié « ${title} » :\n- ${lines.join('\n- ')}\n\nLa page de la rencontre (tu peux y changer ta réponse) :\n${link}\n\n— Viens jouer`,
-        html: `<p>Bonjour ${escapeHtml(r.parent_name)},</p><p>${escapeHtml(hostName)} a modifié <strong>« ${escapeHtml(title)} »</strong> :</p><ul>${lines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul><p><a href="${link}">La page de la rencontre</a> (tu peux y changer ta réponse).</p><p>— Viens jouer</p>`,
-      })
+      await sendMail(env, { to: r.email, ...updateMail(lang, { parent: r.parent_name, host: hostName, title, lines: changeLines(changes, r.tz, lang), link }) })
       sent++
     } catch (err) {
       console.error('[mail] change', err)

@@ -3,6 +3,7 @@
 // optional update email all read the same list.
 import type { Status } from './encounters'
 import { whenLong } from './ids'
+import type { MailLang } from './lang'
 
 export type ChangeField = 'title' | 'starts_at' | 'ends_at' | 'place' | 'address' | 'map_url' | 'note' | 'gift' | 'status'
 export const CHANGE_ORDER: ChangeField[] = ['title', 'starts_at', 'ends_at', 'place', 'address', 'map_url', 'note', 'gift', 'status']
@@ -43,26 +44,26 @@ export function diffEncounter(before: Snapshot, after: Snapshot): Change[] {
   return out
 }
 
-const LABEL_FR: Record<ChangeField, string> = {
-  title: 'Titre',
-  starts_at: 'Début',
-  ends_at: 'Fin',
-  place: 'Lieu',
-  address: 'Adresse',
-  map_url: 'Carte',
-  note: 'À savoir',
-  gift: 'Idée de cadeau',
-  status: 'Statut',
+const LABEL: Record<MailLang, Record<ChangeField, string>> = {
+  fr: { title: 'Titre', starts_at: 'Début', ends_at: 'Fin', place: 'Lieu', address: 'Adresse', map_url: 'Carte', note: 'À savoir', gift: 'Idée de cadeau', status: 'Statut' },
+  en: { title: 'Title', starts_at: 'Start', ends_at: 'End', place: 'Place', address: 'Address', map_url: 'Map', note: 'Good to know', gift: 'Gift idea', status: 'Status' },
 }
-const STATUS_FR: Record<string, string> = { proposed: 'proposée', confirmed: 'confirmée', cancelled: 'annulée' }
+const STATUS: Record<MailLang, Record<string, string>> = {
+  fr: { proposed: 'proposée', confirmed: 'confirmée', cancelled: 'annulée' },
+  en: { proposed: 'proposed', confirmed: 'confirmed', cancelled: 'cancelled' },
+}
 
-// One readable French line per change, for the update email.
-export function changeLinesFr(changes: Change[], tz: string): string[] {
+// One readable line per change, for the update email, in the reader's language.
+export function changeLines(changes: Change[], tz: string, lang: MailLang = 'fr'): string[] {
   const show = (field: ChangeField, v: string | null): string => {
-    if (v === null) return '(rien)'
-    if (field === 'starts_at' || field === 'ends_at') return whenLong(Number(v), 'fr', tz)
-    if (field === 'status') return STATUS_FR[v] ?? v
+    if (v === null) return lang === 'fr' ? '(rien)' : '(nothing)'
+    if (field === 'starts_at' || field === 'ends_at') return whenLong(Number(v), lang, tz)
+    if (field === 'status') return STATUS[lang][v] ?? v
     return v
   }
-  return changes.map((c) => (c.field === 'address' || c.field === 'map_url' ? `${LABEL_FR[c.field]} : mise à jour, à voir sur la page` : `${LABEL_FR[c.field]} : ${show(c.field, c.old)} → ${show(c.field, c.new)}`))
+  return changes.map((c) =>
+    c.field === 'address' || c.field === 'map_url'
+      ? `${LABEL[lang][c.field]} : ${lang === 'fr' ? 'mise à jour, à voir sur la page' : 'updated, see the page'}`
+      : `${LABEL[lang][c.field]} : ${show(c.field, c.old)} → ${show(c.field, c.new)}`,
+  )
 }

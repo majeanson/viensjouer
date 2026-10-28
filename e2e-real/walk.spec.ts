@@ -124,7 +124,17 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   expect(Array.isArray((await hist.json()).past)).toBe(true)
   expect((await host.request.patch('/api/profile', { data: { remindHost: true }, headers: { 'x-csrf-token': csrf } })).status()).toBe(200)
 
-  const erase = await host.request.delete('/api/household', { data: {}, headers: { 'x-csrf-token': csrf } })
+  // -- « Me déconnecter partout »: a copy of this session (another device) dies, this one stays signed in
+  const other = await browser.newContext({ storageState: await hostCtx.storageState() })
+  expect((await (await other.request.get('/api/auth/me')).json()).signedIn).toBe(true)
+  expect((await host.request.delete('/api/sessions', { headers: { 'x-csrf-token': csrf } })).status()).toBe(200)
+  expect((await (await other.request.get('/api/auth/me')).json()).signedIn).toBe(false)
+  expect((await (await host.request.get('/api/auth/me')).json()).signedIn).toBe(true)
+  await other.close()
+  // the sign-out gave this device a fresh CSRF pair
+  const csrf2 = (await hostCtx.cookies()).find((c) => c.name === 'vj_csrf')?.value ?? ''
+
+  const erase = await host.request.delete('/api/household', { data: {}, headers: { 'x-csrf-token': csrf2 } })
   expect(erase.status(), await erase.text()).toBe(200)
   expect((await (await host.request.get('/api/auth/me')).json()).signedIn).toBe(false)
   // everything the invitation pointed at is gone with it

@@ -281,3 +281,23 @@ test('the calendar button is a download AND a link the calendar app keeps up to 
   await expect(page.getByRole('link', { name: 'Ajouter à mon calendrier' })).toHaveAttribute('href', `/api/r/${CODE}/ics`)
   await expect(page.getByRole('link', { name: 'Suivre dans mon calendrier (se met à jour)' })).toHaveAttribute('href', new RegExp(`^webcal://[^/]+/api/r/${CODE}/ics\\?s=1$`))
 })
+
+// The Oui button is the main thing a parent taps; white on the dark theme's light green failed contrast and
+// nothing noticed because axe only ran in the light theme. Both themes, the answer given and not yet.
+test.describe('in the dark theme', () => {
+  test.use({ colorScheme: 'dark' })
+  test('no serious or critical accessibility violation on the reply page, before and after answering', async ({ page }) => {
+    await stub(page, card())
+    await page.goto(`/${CODE}`)
+    await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
+    expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('dark')
+    const scan = async () => {
+      const { violations } = await new AxeBuilder({ page }).analyze()
+      return violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)
+    }
+    expect(await scan()).toEqual([])
+    await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+    await expect(page.getByText(/Ajouter mes coordonnées/)).toBeVisible()
+    expect(await scan()).toEqual([])
+  })
+})

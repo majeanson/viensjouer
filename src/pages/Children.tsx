@@ -10,9 +10,10 @@ import { Why } from '../components/Why'
 import { useDeferredRemove } from '../lib/toast'
 import type { Child } from '../lib/types'
 import { Icon } from '../components/Icon'
+import { PALETTE } from '../lib/palette'
 
 // The same six colours the server hands out in turn (functions/api/children.ts).
-const COLOURS = ['#f2a03d', '#5b9a8b', '#c76b6b', '#7c83c9', '#b98b3a', '#4f8fbf']
+const COLOURS = PALETTE
 
 // Add · edit (name, birthdate, colour) · remove. One form for add and edit, like the
 // families page: `editing` is 'new', a child, or closed.

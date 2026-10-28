@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { PALETTE } from '../lib/palette'
 import { useLang, useT } from '../i18n'
 import { whenShort } from '../lib/format'
 import { Face } from './Face'
@@ -20,7 +21,6 @@ export interface BoardMessage {
   mine?: boolean
 }
 
-const PALETTE = ['#f2a03d', '#5b9a8b', '#c76b6b', '#7c83c9', '#b98b3a', '#4f8fbf']
 const colourOf = (name: string) => PALETTE[[...name].reduce((n, c) => n + c.charCodeAt(0), 0) % PALETTE.length]
 
 const rtf = new Map<Lang, Intl.RelativeTimeFormat>()

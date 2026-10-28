@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useLang, useT } from '../i18n'
@@ -12,9 +13,33 @@ export function Header() {
   const { me, signOut } = useAuth()
   const { lang, setLang } = useLang()
   const t = useT()
-  const close = (e: { currentTarget: Element }) => {
-    const d = e.currentTarget.closest('details')
-    if (d) d.open = false
+  const [theme, setTheme] = useState(readTheme)
+  const menu = useRef<HTMLDetailsElement>(null)
+  const close = () => {
+    if (menu.current) menu.current.open = false
+  }
+  // The account menu is a <details>: it also closes on Escape (focus goes back to its button) and on a press outside it.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && menu.current?.open) {
+        close()
+        menu.current.querySelector('summary')?.focus()
+      }
+    }
+    const onPress = (e: PointerEvent) => {
+      if (menu.current?.open && e.target instanceof Node && !menu.current.contains(e.target)) close()
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('pointerdown', onPress)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('pointerdown', onPress)
+    }
+  }, [])
+  const flip = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    applyTheme(next)
+    setTheme(next)
   }
   return (
     <header className="head">
@@ -28,15 +53,15 @@ export function Header() {
         >
           {lang === 'fr' ? 'EN' : 'FR'}
         </button>
-        <button className="tool tool--icon" aria-label={t.common.theme} onClick={() => applyTheme(readTheme() === 'dark' ? 'light' : 'dark')}><Icon name="sun" /></button>
+        <button className="tool tool--icon" aria-label={theme === 'dark' ? t.common.themeToLight : t.common.themeToDark} onClick={flip}><Icon name={theme === 'dark' ? 'sun' : 'moon'} /></button>
         {me.signedIn && (
-          <details className="menu">
+          <details className="menu" ref={menu}>
             <summary className="tool" aria-label={me.displayName ?? t.account.title}><Face name={me.displayName ?? '·'} colour="var(--host)" src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null} size="sm" /><span className="tool__name">{me.displayName ?? t.account.title}</span></summary>
             <div className="menu__panel">
               <span className="muted small">{me.email}</span>
               <Link to="/compte" onClick={close}>{t.account.title}</Link>
               <Link to="/confidentialite" onClick={close}>{t.privacy.title}</Link>
-              <button onClick={() => void signOut()}>{t.auth.logout}</button>
+              <button onClick={() => { close(); void signOut() }}>{t.auth.logout}</button>
             </div>
           </details>
         )}

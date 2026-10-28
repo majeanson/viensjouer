@@ -10,8 +10,8 @@ import { linkFor, linkLabel } from '../lib/link'
 import { FamilyPicker } from '../components/FamilyPicker'
 import type { Child, Family, Group, OpenWindow } from '../lib/types'
 
-const wlink = (token: string) => linkFor(token).replace(/\/([a-z0-9]{4}-[a-z0-9]{4})$/, '/w/$1')
-const wlabel = (token: string) => linkLabel(token).replace(/\/([a-z0-9]{4}-[a-z0-9]{4})$/, '/w/$1')
+const wlink = (token: string) => linkFor(token, 'w')
+const wlabel = (token: string) => linkLabel(token, 'w')
 
 // « Une fenêtre ouverte » — we are free Sunday afternoon: offer it to chosen families, each
 // answers « on se voit ! » from a link, the host turns a yes into a rencontre. It dies at its end.

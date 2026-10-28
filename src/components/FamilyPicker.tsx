@@ -88,6 +88,7 @@ export function FamilyPicker({ families, groups, selected, onChange }: { familie
           <label className="field"><span>{t.families.childFirstName}</span><input className="input" name="childFirstName" maxLength={40} autoComplete="off" /></label>
           <label className="field"><span>{t.families.parentName}</span><input className="input" name="parentName" maxLength={60} autoComplete="off" /></label>
           <label className="field"><span>{t.families.email}</span><input className="input" name="email" type="email" autoComplete="off" /><Why k="friendEmail" /></label>
+          <p className="muted small">{t.share.noEmailHint}</p>
           {err && <div className="notice notice--err">{err}</div>}
           <div className="cluster">
             <button type="button" className="btn btn--primary" disabled={busy} onClick={(e) => void create((e.currentTarget.closest('form') as HTMLElement))}>{t.families.addAndPick}</button>

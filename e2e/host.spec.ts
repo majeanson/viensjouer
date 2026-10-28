@@ -97,3 +97,39 @@ test('repeat is a frequency (once, every week, every 2 weeks, every month), with
   // every 14 days on the wall clock (a daylight-saving change may make it 14 days ± 1 h)
   for (let i = 1; i < list.length; i++) expect(Math.abs(list[i] - list[i - 1] - 14 * 86400)).toBeLessThanOrEqual(3600)
 })
+
+test('a family with no email gets a ready-to-send message with the short link', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.addInitScript(() => Object.defineProperty(navigator, 'share', { value: undefined }))
+  const soon = Math.floor(Date.now() / 1000) + 86400
+  await page.route('**/api/**', async (r) => {
+    const p = new URL(r.request().url()).pathname.replace('/api/', '')
+    const j = (json: unknown) => r.fulfill({ json })
+    if (p === 'auth/me') return j({ signedIn: true, email: 'm@example.com', displayName: 'Marc', household: null, mail: true, demo: false })
+    if (p === 'health') return j({ ok: true, mail: true, photos: false })
+    if (p === 'families') return j({ families: [] })
+    if (p.startsWith('encounters')) {
+      return j({
+        encounter: { id: 'e1', child_id: 'c1', kind: 'park', title: 'Au parc Lafontaine', starts_at: soon, ends_at: null, place: null, address: null, note: null, status: 'proposed', details: {}, hereOpen: false },
+        invitations: [
+          { id: 'i1', friend_family_id: 'f1', token: 'lune-pain-482', reply: null, reply_note: null, reply_at: null, sent_at: null, parent_name: 'Julie', child_first_name: 'Léa', email: null, allergies: null, adults: null, kids: null, scope: 'family' },
+          { id: 'i2', friend_family_id: 'f2', token: 'ours-miel-731', reply: null, reply_note: null, reply_at: null, sent_at: null, parent_name: 'Paul', child_first_name: 'Max', email: 'paul@example.com', allergies: null, adults: null, kids: null, scope: 'friend' },
+        ],
+        messages: [], relais: [], souvenirs: [],
+      })
+    }
+    return j({})
+  })
+  await page.goto('/rencontres/e1')
+  // the short, writable link is shown for each family
+  await expect(page.getByText(/\/lune-pain-482$/)).toBeVisible()
+  // no email: the share message is the primary action and says what to do
+  await expect(page.getByText(/Pas de courriel : envoie ce message par texto/)).toHaveCount(1)
+  await expect(page.getByRole('button', { name: 'Partager le lien' })).toHaveCount(1)
+  await page.getByRole('button', { name: 'Partager le lien' }).click()
+  const text = await page.evaluate(() => navigator.clipboard.readText())
+  expect(text).toContain('Salut Julie !')
+  expect(text).toContain('Marc organise « Au parc Lafontaine »')
+  expect(text).toContain('Toute la famille est la bienvenue.')
+  expect(text).toContain('/lune-pain-482')
+})

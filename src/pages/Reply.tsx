@@ -4,10 +4,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, isStatus } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
-import { whenLong, whenShort } from '../lib/format'
+import { timeOnly, whenDay, whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
 import { useAuth } from '../lib/auth'
-import { timeOnly } from '../lib/format'
 import { HomeCardView } from '../components/HomeCard'
 import { PhotoGrid } from '../components/PhotoGrid'
 import { Why } from '../components/Why'
@@ -105,21 +104,32 @@ function ReplyInner() {
     <div className="shell">
       <Header />
 
-      <div className="card">
-        <span className="kind">{t.encounters.kind[e.kind]}</span>
-        <h1 style={{ marginTop: '0.5rem' }}>{t.reply.invites(host.child_first_name, you.child_first_name)}</h1>
-        <p className="muted">{t.reply.from(host.parent_name || host.household_name)}</p>
+      <section className="card">
+        <p className="kind" style={{ margin: 0 }}>{t.reply.invitation} · {t.encounters.kind[e.kind]}</p>
+        <h1 style={{ marginTop: '0.25rem' }}>{t.reply.invites(host.child_first_name, you.child_first_name)}</h1>
+        <p className="muted">{t.reply.organizer(host.parent_name || host.household_name, host.child_first_name)}</p>
         <p><strong>{you.scope === 'friend' ? t.scope.youFriend(you.child_first_name) : t.scope.youFamily}</strong></p>
-        <h2>{e.title}</h2>
-        <p><strong>{whenLong(e.starts_at, lang)}</strong>{e.ends_at ? ` → ${whenLong(e.ends_at, lang)}` : ''}</p>
-        {e.place && <p>{e.place}</p>}
-        {e.address ? <p>{e.address}</p> : e.kind !== 'park' && <p className="muted small">{t.reply.addressOnYes}</p>}
-        {e.note && <p className="muted">{e.note}</p>}
-        {e.details?.gift && <p className="muted">{t.kinds.birthday.giftIs} : {e.details.gift}</p>}
+        <dl className="facts">
+          <div><dt>{t.reply.what}</dt><dd>{e.title}</dd></div>
+          <div><dt>{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}</dd></div>
+          {e.place && <div><dt>{t.reply.where}</dt><dd>{e.place}</dd></div>}
+          {e.address ? <div><dt>{t.reply.addressLabel}</dt><dd>{e.address}</dd></div> : e.kind !== 'park' && <div><dt>{t.reply.addressLabel}</dt><dd className="muted">{t.reply.addressOnYes}</dd></div>}
+          {e.note && <div><dt>{t.reply.toKnow}</dt><dd>{e.note}</dd></div>}
+          {e.details?.gift && <div><dt>{t.kinds.birthday.giftIs}</dt><dd>{e.details.gift}</dd></div>}
+        </dl>
         {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
         <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
-      </div>
+      </section>
+
+      <section className="card">
+        <h2>{t.reply.stepsTitle}</h2>
+        <ol className="steps">
+          <li className={answered ? 'done' : 'now'}>{t.reply.step1}</li>
+          <li className={answered ? 'done' : ''}>{t.reply.step2(host.parent_name || host.household_name)}</li>
+          <li className={answered && you.reply === 'yes' ? 'now' : ''}>{t.reply.step3}</li>
+        </ol>
+      </section>
 
       {homeCard && <HomeCardView card={homeCard} />}
       {relais && (
@@ -141,6 +151,7 @@ function ReplyInner() {
             <span><span className="muted small">{t.reply.yourReply}</span><br /><strong className={`chip chip--${you.reply}`}>{t.encounters.reply[you.reply!]}</strong>{you.replyNote && <span className="small"> · « {you.replyNote} »</span>}</span>
             <button className="btn btn--ghost" onClick={() => setEditing(true)}>{t.reply.change}</button>
           </div>
+          <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.reply.hostKnows(host.parent_name || host.household_name)}</p>
         </div>
       ) : (
         <form className="card" onSubmit={submit}>
@@ -215,7 +226,7 @@ function ReplyInner() {
       </div>
 
       <footer className="footer muted small">
-        <p>{t.reply.footer}</p>
+        <p>{t.reply.whatIs}</p>
         <p><Link to="/confidentialite">{t.privacy.link}</Link></p>
         {me.signedIn ? null : claiming ? (
           <form className="card" style={{ textAlign: 'left' }} onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>

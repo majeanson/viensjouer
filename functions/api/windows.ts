@@ -1,6 +1,6 @@
 import { badRequest, created, forbidden, notFound, ok, readJson, serviceUnavailable, str } from '../_lib/json'
 import { authed } from '../_lib/route'
-import { newId, newLinkCode, nowSec, whenLong } from '../_lib/ids'
+import { freshLinkCode, newId, nowSec, paperCode, whenLong } from '../_lib/ids'
 import { escapeHtml, mailEnabled, sendMail } from '../_lib/mail'
 import { isDemoEmail } from '../_lib/demo'
 
@@ -60,9 +60,11 @@ export const onRequestPost = authed(async (ctx, actor) => {
   if (!owned.length) return badRequest('Aucune de ces familles n’est dans ton carnet.')
   const id = newId()
   const ts = nowSec()
+  const codes: string[] = []
+  for (let n = 0; n < owned.length; n++) codes.push(await freshLinkCode(ctx.env.DB, 'window_targets'))
   await ctx.env.DB.batch([
     ctx.env.DB.prepare('INSERT INTO open_windows (id, household_id, child_id, starts_at, ends_at, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, actor.householdId, childId, startsAt, endsAt, str(body?.note, 500), ts),
-    ...owned.map((f) => ctx.env.DB.prepare('INSERT INTO window_targets (id, window_id, friend_family_id, token, created_at) VALUES (?, ?, ?, ?, ?)').bind(newId(), id, f.id, newLinkCode(), ts)),
+    ...owned.map((f, n) => ctx.env.DB.prepare('INSERT INTO window_targets (id, window_id, friend_family_id, token, created_at) VALUES (?, ?, ?, ?, ?)').bind(newId(), id, f.id, codes[n], ts)),
   ])
   return created({ id })
 })
@@ -86,7 +88,7 @@ export const onRequestPut = authed(async (ctx, actor) => {
     .first<{ token: string; email: string | null; parent_name: string; child_first_name: string; starts_at: number; ends_at: number; note: string | null; host_child: string; tz: string }>()
   if (!row) return notFound()
   if (!row.email) return badRequest('Cette famille n’a pas de courriel — copie le lien.')
-  const link = `${new URL(ctx.request.url).origin}/w/${row.token.slice(0, 4)}-${row.token.slice(4)}`
+  const link = `${new URL(ctx.request.url).origin}/w/${paperCode(row.token)}`
   const when = whenLong(row.starts_at, 'fr', row.tz)
   await sendMail(ctx.env, {
     to: row.email,

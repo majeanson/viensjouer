@@ -61,6 +61,23 @@ export function EncounterDetail() {
   const relaisDel = useMutation({ mutationFn: (invitationId: string) => api('relais', { method: 'DELETE', body: { invitationId } }), onSuccess: refresh, onError: fail })
   const photoDel = useMutation({ mutationFn: (pid: string) => api('souvenirs', { method: 'DELETE', body: { id: pid } }), onSuccess: refresh, onError: fail })
 
+  // The ready-to-send message: what the invitation is, who it is for, and the short link. Shared
+  // with the phone's own share sheet (texto, WhatsApp…) or copied when there is none.
+  async function shareMessage(i: Invitation) {
+    const text = t.share.message({ parent: i.parent_name, host: me.displayName ?? '', friend: i.child_first_name, title: e.title, when: whenLong(e.starts_at, lang), scope: i.scope, link: linkFor(i.token) })
+    try {
+      if (navigator.share && /iPhone|Android/i.test(navigator.userAgent)) {
+        await navigator.share({ text })
+        return
+      }
+      await navigator.clipboard.writeText(text)
+      setCopied('s' + i.id)
+      setTimeout(() => setCopied(null), 1500)
+    } catch {
+      prompt(t.share.button, text)
+    }
+  }
+
   async function copy(token: string) {
     const link = linkFor(token)
     try {
@@ -138,13 +155,11 @@ export function EncounterDetail() {
             {i.allergies && <p className="small" style={{ margin: 0 }}>{t.families.allergies} : {i.allergies}</p>}
             {i.reply === 'yes' && <p className="small muted" style={{ margin: 0 }}>{t.kinds.birthday.theyCome(kidsComing(i.scope, i.kids), i.adults ?? 0)}</p>}
             <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
+            {(!i.email || !me.mail) && <p className="muted small" style={{ margin: 0 }}>{t.share.noEmailHint}</p>}
             <div className="cluster">
+              {(!i.email || !me.mail) && <button className="btn btn--primary" onClick={() => void shareMessage(i)}>{copied === 's' + i.id ? t.encounters.copied : t.share.button}</button>}
               <button className="btn" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
-              {me.mail && (i.email ? (
-                <button className="linkbtn" disabled={send.isPending} onClick={() => send.mutate(i.id)}>{i.sent_at ? t.encounters.resend : t.encounters.send}</button>
-              ) : (
-                <span className="muted small">{t.encounters.noEmail}</span>
-              ))}
+              {me.mail && i.email && <button className="linkbtn" disabled={send.isPending} onClick={() => send.mutate(i.id)}>{i.sent_at ? t.encounters.resend : t.encounters.send}</button>}
               <button className="linkbtn" onClick={() => setScope.mutate({ id: i.id, scope: i.scope === 'friend' ? 'family' : 'friend' })}>{i.scope === 'friend' ? t.scope.toFamily : t.scope.toFriend}</button>
               {e.kind === 'home' && <button className="linkbtn" onClick={() => setRelaisFor(relaisFor === i.id ? null : i.id)}>{relaisOf(i.id) ? t.kinds.relais.edit : t.kinds.relais.write}</button>}
               <button className="linkbtn linkbtn--danger" onClick={() => withdraw.mutate(i.id)}>{t.encounters.withdraw}</button>

@@ -159,6 +159,19 @@ export const FR = {
     change: 'Changer',
     footer: 'Envoyé avec Viens jouer, les parents s’organisent pour que les tout-petits se voient.',
     create: 'Créer mon compte pour inviter à mon tour',
+    invitation: 'Invitation',
+    organizer: (host: string, child: string) => `Organisé par ${host}, le parent de ${child}.`,
+    what: 'Quoi',
+    when: 'Quand',
+    where: 'Où',
+    addressLabel: 'Adresse',
+    toKnow: 'À savoir',
+    stepsTitle: 'Comment ça marche',
+    step1: 'Tu dis si vous venez : oui, peut-être ou non. Pas de compte à créer.',
+    step2: (host: string) => `${host} voit ta réponse tout de suite.`,
+    step3: 'Si tu dis oui, l’adresse s’affiche (quand elle est donnée) et tu peux demander un rappel la veille.',
+    hostKnows: (host: string) => `${host} voit ta réponse. Tu peux la changer jusqu’à la rencontre.`,
+    whatIs: 'Viens jouer aide les parents de tout-petits à organiser des rencontres. Répondre est gratuit et ne demande aucun compte.',
     remind: 'Me rappeler la veille par courriel',
     remindNeedsEmail: 'Ajoute ton courriel plus haut pour recevoir le rappel.',
     claimTitle: 'Inviter à votre tour',
@@ -169,6 +182,12 @@ export const FR = {
     claimOpen: 'Ouvrir mon espace',
     seriesTitle: 'Les semaines suivantes',
     seriesHint: 'Cette rencontre revient, répondez à chacune.',
+  },
+  share: {
+    button: 'Partager le lien',
+    noEmailHint: 'Pas de courriel : envoie ce message par texto, ou écris le lien sur un papier.',
+    message: (m: { parent: string; host: string; friend: string; title: string; when: string; scope: 'friend' | 'family'; link: string }) =>
+      `Salut ${m.parent} ! ${m.host} organise « ${m.title} », ${m.when}. ${m.scope === 'friend' ? `L’invitation est pour ${m.friend} seulement.` : 'Toute la famille est la bienvenue.'} Tu réponds ici, sans compte : ${m.link}`,
   },
   scope: {
     label: 'Qui est invité ?',
@@ -345,6 +364,7 @@ export const FR = {
     no: 'Pas cette fois',
     chip: 'Fenêtre ouverte',
     question: 'On se voit ?',
+    explain: (host: string, child: string) => `${host} propose un moment pour que ${child} et son ami se voient. Dis si ça te tente : il pourra ensuite proposer une vraie rencontre. Aucun compte à créer.`,
     offer: (host: string, you: string) => `${host} est libre, et ${you} ?`,
   },
   calendar: {
@@ -516,6 +536,19 @@ export const EN: Dict = {
     change: 'Change',
     footer: 'Sent with Viens jouer, parents get organized so the little ones can see each other.',
     create: 'Create my account to invite in return',
+    invitation: 'Invitation',
+    organizer: (host: string, child: string) => `Organized by ${host}, ${child}’s parent.`,
+    what: 'What',
+    when: 'When',
+    where: 'Where',
+    addressLabel: 'Address',
+    toKnow: 'Good to know',
+    stepsTitle: 'How it works',
+    step1: 'You say whether you are coming: yes, maybe or no. No account to create.',
+    step2: (host: string) => `${host} sees your answer right away.`,
+    step3: 'If you say yes, the address shows (when one is given) and you can ask for a reminder the day before.',
+    hostKnows: (host: string) => `${host} can see your answer. You can change it until the get-together.`,
+    whatIs: 'Viens jouer helps parents of toddlers organize get-togethers. Answering is free and needs no account.',
     remind: 'Remind me the day before by email',
     remindNeedsEmail: 'Add your email above to get the reminder.',
     claimTitle: 'Invite in return',
@@ -526,6 +559,12 @@ export const EN: Dict = {
     claimOpen: 'Open my space',
     seriesTitle: 'The following weeks',
     seriesHint: 'This get-together comes back, answer each one.',
+  },
+  share: {
+    button: 'Share the link',
+    noEmailHint: 'No email: send this message by text, or write the link on a piece of paper.',
+    message: (m: { parent: string; host: string; friend: string; title: string; when: string; scope: 'friend' | 'family'; link: string }) =>
+      `Hi ${m.parent}! ${m.host} is organizing “${m.title}”, ${m.when}. ${m.scope === 'friend' ? `The invitation is for ${m.friend} only.` : 'The whole family is welcome.'} Answer here, no account needed: ${m.link}`,
   },
   scope: {
     label: 'Who is invited?',
@@ -702,6 +741,7 @@ export const EN: Dict = {
     no: 'Not this time',
     chip: 'Open window',
     question: 'Shall we meet?',
+    explain: (host: string, child: string) => `${host} is offering a time for ${child} and their friend to meet. Say if you are up for it: they can then propose a real get-together. No account to create.`,
     offer: (host: string, you: string) => `${host} is free, and ${you}?`,
   },
   calendar: {
@@ -733,7 +773,19 @@ export function readLang(): Lang {
   } catch {
     /* storage blocked */
   }
-  return navigator.language?.toLowerCase().startsWith('en') ? 'en' : 'fr'
+  return pickLang(navigator.languages?.length ? navigator.languages : [navigator.language])
+}
+
+// French first. The device's own preference order decides: the first language it lists that we speak
+// wins, so a phone set to English first gets English, and everything else (French, anything we
+// do not translate) gets French.
+export function pickLang(preferred: readonly (string | undefined)[]): Lang {
+  for (const l of preferred) {
+    const code = (l ?? '').toLowerCase()
+    if (code.startsWith('fr')) return 'fr'
+    if (code.startsWith('en')) return 'en'
+  }
+  return 'fr'
 }
 
 export function writeLang(l: Lang): void {

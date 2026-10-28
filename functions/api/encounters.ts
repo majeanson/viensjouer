@@ -1,6 +1,6 @@
 import { badRequest, created, notFound, ok, readJson, str } from '../_lib/json'
 import { authed } from '../_lib/route'
-import { newId, newLinkCode, nowSec } from '../_lib/ids'
+import { freshLinkCode, newId, nowSec } from '../_lib/ids'
 import { isKind, type EncounterRow, type Kind, type Reply } from '../_lib/encounters'
 import { cleanDetails, defaultScope, hereAllowed, isScope, parseDetails, type Scope } from '../_lib/kinds'
 
@@ -106,13 +106,15 @@ async function mintInvitations(db: D1Database, householdId: string, encounterId:
   const { results: already } = await db.prepare('SELECT friend_family_id FROM invitations WHERE encounter_id = ?').bind(encounterId).all<{ friend_family_id: string }>()
   const skip = new Set(already.map((r) => r.friend_family_id))
   const ts = nowSec()
-  const stmts = owned
-    .filter((r) => !skip.has(r.id))
-    .map((r) =>
+  const stmts: D1PreparedStatement[] = []
+  for (const r of owned.filter((x) => !skip.has(x.id))) {
+    const code = await freshLinkCode(db, 'invitations')
+    stmts.push(
       db
         .prepare('INSERT INTO invitations (id, encounter_id, friend_family_id, token, scope, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-        .bind(newId(), encounterId, r.id, newLinkCode(), scope, ts, ts),
+        .bind(newId(), encounterId, r.id, code, scope, ts, ts),
     )
+  }
   if (stmts.length) await db.batch(stmts)
 }
 

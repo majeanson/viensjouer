@@ -15,6 +15,9 @@ function f(lang: Lang, opts: Intl.DateTimeFormatOptions, key: string): Intl.Date
 export const whenLong = (sec: number, lang: Lang) =>
   f(lang, { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }, 'long').format(new Date(sec * 1000))
 
+export const whenDay = (sec: number, lang: Lang) =>
+  f(lang, { weekday: 'long', day: 'numeric', month: 'long' }, 'day').format(new Date(sec * 1000))
+
 export const whenShort = (sec: number, lang: Lang) =>
   f(lang, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }, 'short').format(new Date(sec * 1000))
 

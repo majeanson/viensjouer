@@ -51,6 +51,7 @@ export function WindowReply() {
         <p><strong>{whenLong(w.starts_at, lang)}</strong> → {whenLong(w.ends_at, lang)}</p>
         {w.note && <p className="muted">« {w.note} »</p>}
       </div>
+      <p className="muted small">{t.windows.explain(host.parent_name || host.household_name, host.child_first_name)}</p>
       {!alive ? (
         <div className="notice">{t.windows.over}</div>
       ) : (

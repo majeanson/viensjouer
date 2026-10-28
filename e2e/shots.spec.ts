@@ -41,12 +41,23 @@ async function stubAll(page: Page) {
     if (p === 'circle') return j({ children: [{ child: kid, linked: [{ linkId: 'l1', childName: 'Léa', childBirthdate: '2023-12-24', parentName: 'Julie', householdName: 'La famille de Julie', lastAt: now - 9 * 86400, nextAt: now + 86400 }] }], book: [{ id: 'f2', parent_name: 'Paul', child_first_name: 'Max' }] })
     if (p === 'calendar') return j({ items: [{ at: now + 86400, type: 'mine', id: 'e1', title: 'Au parc Lafontaine', kind: 'park', place: 'Parc Lafontaine', status: 'proposed' }, { at: now + 3 * 86400, type: 'invited', id: 'e9', title: 'Cabane à sucre', kind: 'park', place: null, token: 'aaaabbbb', reply: null, host: 'Julie' }], birthdays: [{ date: '2026-12-24', name: 'Léa', turns: 3, whose: 'friend' }], today: '2026-10-27' })
     if (p === 'windows') return j({ windows: [{ id: 'w1', child_id: 'c1', starts_at: now + 4 * 86400, ends_at: now + 4 * 86400 + 10800, note: 'Parc ou chez nous', targets: [{ id: 't1', window_id: 'w1', token: 'zzzzyyyy', reply: 'yes', reply_note: null, parent_name: 'Julie', child_first_name: 'Léa', email: 'julie@example.com' }] }] })
+    if (p.startsWith('r/')) {
+      return j({
+        alive: true,
+        encounter: { ...encounters[1], address: null, details: {}, hereAt: null, note: 'Sieste à 13 h, on garde les souliers à l’entrée' },
+        host: { child_first_name: 'Noé', parent_name: 'Marc', household_name: 'Les Jeanson', tz: 'America/Toronto' },
+        you: { parent_name: 'Julie', email: null, phone: null, child_first_name: 'Léa', allergies: null, reply: null, replyNote: null, remind: false, adults: null, kids: null, scope: 'family' },
+        homeCard: { dog: true, pool: false, screens: 'little', nutFree: true, note: 'Le chien est doux' },
+        relais: null, souvenirs: [], souvenirsOpen: false, photos: false, messages: [], series: [],
+      })
+    }
     return j({})
   })
 }
 
 const SCREENS: [string, string][] = [
   ['door', '/'],
+  ['reply', '/lune-pain-482'],
   ['encounters', '/rencontres'],
   ['new', '/rencontres/nouvelle'],
   ['detail', '/rencontres/e2'],
@@ -64,7 +75,7 @@ for (const [name, path] of SCREENS) {
     test(`${name} ${label}`, async ({ page }) => {
       await page.setViewportSize(size)
       await stubAll(page)
-      if (name === 'door') await page.route('**/api/auth/me', (r) => r.fulfill({ json: { signedIn: false } }))
+      if (name === 'door' || name === 'reply') await page.route('**/api/auth/me', (r) => r.fulfill({ json: { signedIn: false } }))
       await page.goto(path)
       await page.waitForTimeout(500)
       await page.screenshot({ path: `screenshots/${name}-${label}.png`, fullPage: true })

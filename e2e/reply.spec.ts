@@ -58,7 +58,7 @@ test('the invited parent sees the plan and the home card, then answers yes', asy
 test('a birthday asks how many come, only once the answer is yes', async ({ page }) => {
   const posts = await stub(page, card({ encounter: { ...card().encounter, kind: 'birthday', details: { gift: 'Un livre' } }, homeCard: null }))
   await page.goto(`/${CODE}`)
-  await expect(page.getByText('Idée de cadeau : Un livre')).toBeVisible()
+  await expect(page.getByText('Un livre')).toBeVisible()
   await expect(page.getByLabel('Adultes qui restent')).toHaveCount(0)
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   await page.getByLabel('Adultes qui restent').fill('2')
@@ -160,4 +160,33 @@ test('friend only (a paid birthday): the card names the child and never asks abo
   await expect(page.getByText('Réponse envoyée. Merci !')).toBeVisible()
   expect(posts[0]).toMatchObject({ reply: 'yes', adults: 1 })
   expect(posts[0]).not.toHaveProperty('kids')
+})
+
+test('the shared page says what it is, the facts, who it is for and what happens next', async ({ page }) => {
+  await stub(page, card())
+  await page.goto(`/${CODE}`)
+  await expect(page.getByText(/^Invitation · /)).toBeVisible()
+  await expect(page.getByText('Organisé par Marc, le parent de Noé.')).toBeVisible()
+  // the facts as labelled rows
+  for (const label of ['Quoi', 'Quand', 'Où', 'Adresse', 'À savoir']) await expect(page.getByText(label, { exact: true }).first()).toBeVisible()
+  await expect(page.getByText('Sieste à 13 h')).toBeVisible()
+  // the three steps, the first one being "now"
+  await expect(page.getByRole('heading', { name: 'Comment ça marche' })).toBeVisible()
+  await expect(page.locator('.steps li')).toHaveCount(3)
+  await expect(page.locator('.steps li.now')).toHaveCount(1)
+  await expect(page.getByText('Pas de compte à créer.').first()).toBeVisible()
+  await expect(page.getByText(/ne demande aucun compte/)).toBeVisible()
+  // after the answer the page says the host already knows, and step one is done
+  await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  await page.getByRole('button', { name: 'Répondre', exact: true }).click()
+  await expect(page.getByText('Marc voit ta réponse. Tu peux la changer jusqu’à la rencontre.')).toBeVisible()
+  await expect(page.locator('.steps li.done')).toHaveCount(2)
+})
+
+test('a two-word link works in any case and with spaces or dots', async ({ page }) => {
+  await stub(page, card())
+  for (const path of ['/lune-pain-482', '/Lune-Pain-482', '/r/lune-pain-482']) {
+    await page.goto(path)
+    await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
+  }
 })

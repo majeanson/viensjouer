@@ -1,6 +1,6 @@
 import { badRequest, forbidden, notFound, ok, readJson, serviceUnavailable, str } from '../_lib/json'
 import { authed } from '../_lib/route'
-import { nowSec, whenLong } from '../_lib/ids'
+import { nowSec, paperCode, whenLong } from '../_lib/ids'
 import { escapeHtml, mailEnabled, sendMail } from '../_lib/mail'
 import { isDemoEmail } from '../_lib/demo'
 import { isScope } from '../_lib/kinds'
@@ -28,7 +28,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   if (!row) return notFound()
   if (!row.email) return badRequest('Cette famille n’a pas de courriel — copie le lien.')
 
-  const link = `${new URL(ctx.request.url).origin}/${row.token.slice(0, 4)}-${row.token.slice(4)}`
+  const link = `${new URL(ctx.request.url).origin}/${paperCode(row.token)}`
   const when = whenLong(row.starts_at, 'fr', row.tz)
   const subject = `${row.host_child} invite ${row.child_first_name} — ${row.title}`
   const text = `Bonjour ${row.parent_name},\n\n${actor.displayName} propose une rencontre : ${row.title}, ${when}. ${row.scope === 'friend' ? `L’invitation est pour ${row.child_first_name} seulement.` : 'Toute la famille est la bienvenue, frères et sœurs inclus.'}\n\nRéponds ici (pas de compte à créer) :\n${link}\n\n— Viens jouer`

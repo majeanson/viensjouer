@@ -5,7 +5,7 @@
 // can never double up. Mail unwired → the cron does nothing, loudly in the log once.
 import type { Env } from './env'
 import { escapeHtml, mailEnabled, sendMail } from './mail'
-import { nowSec, whenLong } from './ids'
+import { nowSec, paperCode, whenLong } from './ids'
 
 interface Due {
   id: string
@@ -47,7 +47,7 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
     const stamped = await env.DB.prepare('UPDATE invitations SET reminded_at = ? WHERE id = ? AND reminded_at IS NULL').bind(now, d.id).run()
     if (!stamped.meta.changes || !d.email) continue
     const when = whenLong(d.starts_at, 'fr', d.tz)
-    const link = `${origin}/${d.token.slice(0, 4)}-${d.token.slice(4)}`
+    const link = `${origin}/${paperCode(d.token)}`
     try {
       await sendMail(env, {
         to: d.email,

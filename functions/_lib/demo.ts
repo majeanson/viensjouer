@@ -8,7 +8,7 @@
 // (reminders skip it: its invitations carry no email).
 import type { Env } from './env'
 import { hashPassword } from './password'
-import { newId, newLinkCode, nowSec } from './ids'
+import { freshLinkCode, newId, nowSec } from './ids'
 
 export const DEMO_TTL_SEC = 24 * 3600
 export const DEMO_CAP = 50
@@ -84,6 +84,9 @@ export async function mintDemo(env: Env): Promise<string> {
     return Math.floor(d.getTime() / 1000)
   })()
   const b = (y: number) => `${new Date().getFullYear() - y}-06-15`
+  const code1 = await freshLinkCode(env.DB, 'invitations')
+  let code2 = await freshLinkCode(env.DB, 'invitations')
+  while (code2 === code1) code2 = await freshLinkCode(env.DB, 'invitations')
   await env.DB.batch([
     env.DB.prepare("INSERT INTO households (id, name, kind, created_at, updated_at) VALUES (?, 'La famille Essai', 'demo', ?, ?)").bind(hh, ts, ts),
     env.DB.prepare('INSERT INTO parents (email, household_id, display_name, password_hash, origin, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(email, hh, 'Camille', await hashPassword(newId(24)), 'signup', ts),
@@ -91,8 +94,8 @@ export async function mintDemo(env: Env): Promise<string> {
     env.DB.prepare('INSERT INTO friend_families (id, household_id, parent_name, child_first_name, child_birthdate, allergies, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(f1, hh, 'Julie', 'Léa', b(3), 'arachides', ts, ts),
     env.DB.prepare('INSERT INTO friend_families (id, household_id, parent_name, child_first_name, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(f2, hh, 'Paul', 'Max', 'Un chien à la maison', ts, ts),
     env.DB.prepare("INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, place, note, created_at, updated_at) VALUES (?, ?, ?, 'park', ?, ?, ?, ?, ?, ?)").bind(enc, hh, child, 'Au parc Lafontaine', saturday, 'Près des jeux d’eau', 'Apporte une collation', ts, ts),
-    env.DB.prepare('INSERT INTO invitations (id, encounter_id, friend_family_id, token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), enc, f1, newLinkCode(), ts, ts),
-    env.DB.prepare('INSERT INTO invitations (id, encounter_id, friend_family_id, token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), enc, f2, newLinkCode(), ts, ts),
+    env.DB.prepare('INSERT INTO invitations (id, encounter_id, friend_family_id, token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), enc, f1, code1, ts, ts),
+    env.DB.prepare('INSERT INTO invitations (id, encounter_id, friend_family_id, token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), enc, f2, code2, ts, ts),
     env.DB.prepare('INSERT INTO home_cards (household_id, details, updated_at) VALUES (?, ?, ?)').bind(hh, JSON.stringify({ dog: false, pool: false, screens: 'little', nutFree: true, note: 'Collation sans noix' }), ts),
   ])
   return email

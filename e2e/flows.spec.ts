@@ -403,3 +403,27 @@ test('« Nouvelle famille » stays closed for a host who already has friends, ev
   await page.getByRole('button', { name: 'Nouvelle famille' }).click()
   await expect(page.getByLabel('Prénom de l’ami')).toBeVisible()
 })
+
+test('English is its own chunk: a French visitor never downloads it, an English-first device gets English at once', async ({ browser }) => {
+  const seen: Record<string, string[]> = { fr: [], en: [] }
+  for (const [name, locale] of [['fr', 'fr-CA'], ['en', 'en-CA']] as const) {
+    const ctx = await browser.newContext({ locale, viewport: { width: 390, height: 844 } })
+    const page = await ctx.newPage()
+    page.on('request', (r) => { if (/i18n\.en/.test(r.url())) seen[name].push(r.url()) })
+    await host(page)
+    await page.goto('/rencontres')
+    if (name === 'en') {
+      await expect(page.getByRole('link', { name: 'Propose a get-together' })).toBeVisible()
+    } else {
+      await expect(page.getByRole('link', { name: 'Proposer une rencontre' })).toBeVisible()
+      expect(seen.fr, 'a French visitor must not download the English chunk').toHaveLength(0)
+      // switching later keeps the page and swaps the words once the chunk is in
+      await page.getByRole('button', { name: 'EN (English)' }).click()
+      await expect(page.getByRole('link', { name: 'Propose a get-together' })).toBeVisible()
+    }
+    await ctx.close()
+  }
+  expect(seen.en.length).toBeGreaterThan(0)
+  // the French visitor only asked for it after pressing EN
+  expect(seen.fr.length).toBeGreaterThan(0)
+})

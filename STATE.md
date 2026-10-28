@@ -138,3 +138,5 @@ Done so far: the icon set (`components/Icon.tsx`, in front of labels, headings a
 - **CI e2e runs in the authoritative shape** (`npm run e2e:ci`: one worker, no retries), as in Babillard and Horizon.
 - Found by CI, fixed: at 320 px with a wider font the header overflowed; the name now gives way to the face, and the 320 px test uses a long name so it cannot pass by luck.
 - Ideas not done: split the English dictionary into its own lazy chunk (the shared chunk is 23 KB gzip), a knip dead-code gate, dynamic link previews per invitation.
+- **English is its own chunk** (`src/i18n.en.ts`, loaded by `main.tsx` only for an English device or after pressing EN): the shared French chunk fell from 23 KB to 15 KB gzip. A first visit in English waits a beat rather than flashing French; switching later keeps the page. Both dictionaries are still held by `Dict` (tsc) and `copyRules.test.ts`.
+- **Knip** gates dead exports (`npm run knip`); **copy rules** gate dead keys, em-dashes and emoji.

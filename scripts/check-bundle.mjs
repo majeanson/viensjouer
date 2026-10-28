@@ -6,7 +6,7 @@
 //   2. every other chunk (one per page, plus what pages share) stays under a smaller cap
 //   3. the stylesheet stays small
 // The caps are RATCHETS, like Horizon's: they come DOWN after a win, never back up. Sizes are gzip, measured
-// from the real build. 2026-10-28: entry 83 KB (it was a single 136 KB file before the pages went lazy).
+// from the real build. 2026-10-28: entry 83 KB (it was a single 136 KB file before the pages went lazy), the biggest shared chunk 15 KB once English became its own 8 KB chunk.
 import { gzipSync } from 'node:zlib'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -14,7 +14,7 @@ import { join } from 'node:path'
 const KB = 1024
 const ASSETS = join('dist', 'assets')
 const ENTRY_GZ = 85 * KB
-const CHUNK_GZ = 24 * KB
+const CHUNK_GZ = 16 * KB
 const CSS_GZ = 5 * KB
 
 const files = readdirSync(ASSETS)

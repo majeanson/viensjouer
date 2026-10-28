@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { EN, FR } from '../../src/i18n'
+import { FR } from '../../src/i18n'
+import { EN } from '../../src/i18n.en'
 
 // Rules about the words on screen, held by the build like Babillard's glossary tests:
 //   - no dead copy: a dictionary key nothing refers to is removed, not left to rot (the refactors that

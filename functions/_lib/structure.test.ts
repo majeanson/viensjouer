@@ -67,3 +67,30 @@ describe('the client', () => {
     expect(dialogs).toEqual([])
   })
 })
+
+describe('what a stranger can aim the sender at', () => {
+  // Signup is open and a friend family's address is free text, so every mail a HOST's action causes must go through
+  // the household's daily budget (mailBudget.ts). The two sends that do not are listed with the reason.
+  const NOT_BUDGETED: Record<string, string> = {
+    'functions/api/auth/forgot.ts': 'only to an address that already has an account, limited per address and per target',
+    'functions/api/test-mail.ts': 'only to the signed-in parent’s own address, a few a day',
+  }
+  it('counts every host-caused email against the household budget', () => {
+    const senders = handlers.filter((f) => /\bsendMail\(/.test(code(f)) && !NOT_BUDGETED[f])
+    expect(senders.length).toBeGreaterThan(0)
+    for (const f of senders) expect(code(f), `${f} sends mail without mailRoom/recordMail`).toMatch(/mailRoom\([\s\S]*recordMail\(/)
+  })
+  it('keeps the budget list honest', () => {
+    for (const f of Object.keys(NOT_BUDGETED)) expect(handlers, f).toContain(f)
+  })
+})
+
+describe('the code lockout', () => {
+  it('guards the secret-in-the-path doors too (the feed and the link preview)', () => {
+    for (const f of ['functions/api/feed.ts', 'worker/preview.ts']) {
+      const src = read(f)
+      expect(src, `${f} must call overAuthLimit`).toMatch(/overAuthLimit\(/)
+      expect(src, `${f} must call lockedOut`).toMatch(/lockedOut\(/)
+    }
+  })
+})

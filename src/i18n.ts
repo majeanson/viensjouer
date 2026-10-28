@@ -268,6 +268,7 @@ export const FR = {
   account: {
     title: 'Mon compte',
     keptHint: 'Ce qu’on garde, où c’est hébergé, à quoi ça sert.',
+    security: { title: 'Sécurité', password: 'Changer mon mot de passe', current: 'Mot de passe actuel', next: 'Nouveau mot de passe (8 caractères minimum)', change: 'Changer', changed: 'Mot de passe changé. Les autres appareils sont déconnectés.', everywhere: 'Me déconnecter partout', everywhereHint: 'Ferme la session de tous tes autres appareils. Celui-ci reste ouvert.', everywhereDone: 'Les autres appareils sont déconnectés.' },
     exportTitle: 'Télécharger mes données',
     exportHint: 'Un fichier avec tes enfants, familles, rencontres et réponses, sans les mots de passe, les liens secrets ni les photos.',
     exportBtn: 'Télécharger',

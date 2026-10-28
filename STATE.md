@@ -148,3 +148,12 @@ Done so far: the icon set (`components/Icon.tsx`, in front of labels, headings a
 - **« M'envoyer un courriel d'essai »** (account page, `POST /api/test-mail`): one sample update email, in the real shape, to the signed-in parent's own address only; refused in a trial, hidden without mail, rate-limited per parent. It lets the host see what families receive before any family receives anything.
 - **« Déjà ensemble »** (Amis, per family, `GET /api/family-history?id=`): the last five past rencontres that family said yes to, opened on demand, dates and places only (never a count or rank), each with « Refaire pareil ».
 - **Rappel de l’hôte** (Mon profil, `parents.remind_host`, migration 0014): off unless ticked. The hourly cron (`sendHostReminders`) sends one email under 24 h before a rencontre: time, place and who said yes. `encounters.host_reminded_at` is stamped first so it never doubles.
+
+## Audit pass (2026-10-28): fresh-eyes review against Babillard and Horizon
+
+Two read-only audits produced a ranked list; it is worked through in order, one commit per step. Done so far:
+
+- **The sender is not a relay** (migration 0015 `mail_sends`, `functions/_lib/mailBudget.ts`): a household can cause at most 60 emails a day (invitation, window, update, thank-you); the cron purges the ledger after two days. A re-send to the same family inside 5 minutes is refused. `structure.test.ts` fails the build if a host-caused `sendMail` skips `mailRoom` / `recordMail`.
+- **A link holder cannot replace the family's email** on the book entry: a reply only fills a blank (`COALESCE(email, ?)`).
+- **Sessions**: `POST /api/password` (asks the current password, bumps `session_version`) and `DELETE /api/sessions` (« Me déconnecter partout ») on the account page. An ordinary logout still only clears this device's cookie; the 60-day cookie is revoked by either of these or a reset.
+- The lockout guard in `structure.test.ts` now also covers the calendar feed and the link preview.

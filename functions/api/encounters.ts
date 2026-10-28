@@ -6,6 +6,7 @@ import { changeLinesFr, diffEncounter, type Change, type Snapshot } from '../_li
 import { REMIND_LEAD_SEC } from '../_lib/reminders'
 import { escapeHtml, mailEnabled, sendMail } from '../_lib/mail'
 import { isDemoEmail } from '../_lib/demo'
+import { mailRoom, recordMail } from '../_lib/mailBudget'
 import { cleanDetails, defaultScope, hereAllowed, isScope, parseDetails, type Scope } from '../_lib/kinds'
 
 // The host side of a rencontre.
@@ -239,11 +240,11 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   if (Array.isArray(body?.invite)) await mintInvitations(ctx.env.DB, actor.householdId, id, body!.invite.filter((v) => typeof v === 'string').slice(0, 40), isScope(body?.scope) ? body.scope : own.default_scope)
   // « Prévenir les familles »: one email to each family that has an address and did not say no.
   let notified = 0
-  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) notified = await notifyChange(ctx.env, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes)
+  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) notified = await notifyChange(ctx.env, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes)
   return ok({ changed: changes.length, notified })
 })
 
-async function notifyChange(env: Parameters<typeof mailEnabled>[0], origin: string, hostName: string, encounterId: string, title: string, changes: Change[]): Promise<number> {
+async function notifyChange(env: Parameters<typeof mailEnabled>[0], householdId: string, origin: string, hostName: string, encounterId: string, title: string, changes: Change[]): Promise<number> {
   const { results } = await env.DB.prepare(
     `SELECT i.token, f.email, f.parent_name, h.tz FROM invitations i
        JOIN friend_families f ON f.id = i.friend_family_id
@@ -254,7 +255,7 @@ async function notifyChange(env: Parameters<typeof mailEnabled>[0], origin: stri
     .bind(encounterId)
     .all<{ token: string; email: string; parent_name: string; tz: string }>()
   let sent = 0
-  for (const r of results) {
+  for (const r of results.slice(0, await mailRoom(env, householdId))) {
     const lines = changeLinesFr(changes, r.tz)
     const link = `${origin}/${paperCode(r.token)}`
     try {
@@ -269,6 +270,7 @@ async function notifyChange(env: Parameters<typeof mailEnabled>[0], origin: stri
       console.error('[mail] change', err)
     }
   }
+  await recordMail(env, householdId, sent)
   return sent
 }
 

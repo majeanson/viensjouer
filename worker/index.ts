@@ -7,6 +7,7 @@ import { verifyCsrf } from '../functions/_lib/auth'
 import { forbidden, notFound, serverError } from '../functions/_lib/json'
 import { withSecurityHeaders } from '../functions/_lib/securityHeaders'
 import { sendDueReminders, sendHostReminders } from '../functions/_lib/reminders'
+import { purgeMailLedger } from '../functions/_lib/mailBudget'
 import { csrfExempt, matchRoute, type RouteMod } from './routes'
 import { previewFor, withPreview } from './preview'
 
@@ -91,6 +92,6 @@ export default {
   },
   // The hourly cron (wrangler.toml [triggers]): the one reminder an invited parent asked for.
   async scheduled(_controller, env, ctx): Promise<void> {
-    ctx.waitUntil(Promise.all([sendDueReminders(env, 'https://jouer.marcportal.com'), sendHostReminders(env, 'https://jouer.marcportal.com')]).then(() => undefined))
+    ctx.waitUntil(Promise.all([sendDueReminders(env, 'https://jouer.marcportal.com'), sendHostReminders(env, 'https://jouer.marcportal.com'), purgeMailLedger(env)]).then(() => undefined))
   },
 } satisfies ExportedHandler<WorkerEnv>

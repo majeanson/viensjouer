@@ -3,6 +3,7 @@ import { authed } from '../_lib/route'
 import { newId, nowSec, paperCode } from '../_lib/ids'
 import { escapeHtml, mailEnabled, sendMail } from '../_lib/mail'
 import { isDemoEmail } from '../_lib/demo'
+import { mailRoom, recordMail } from '../_lib/mailBudget'
 
 // « Dire merci » — once, after a rencontre. The message goes into the thread (so every family sees it on its
 // page, email or not) and, when mail is wired, by email to the families that said yes and have an address.
@@ -35,7 +36,9 @@ export const onRequestPost = authed(async (ctx, actor) => {
       .bind(id)
       .all<{ token: string; email: string; parent_name: string }>()
     const origin = new URL(ctx.request.url).origin
-    for (const r of results) {
+    // The thank-you is in the thread whatever happens; the emails stop at the day's budget.
+    const room = await mailRoom(ctx.env, actor.householdId)
+    for (const r of results.slice(0, room)) {
       const link = `${origin}/${paperCode(r.token)}`
       try {
         await sendMail(ctx.env, {
@@ -49,6 +52,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
         console.error('[mail] thanks', err)
       }
     }
+    await recordMail(ctx.env, actor.householdId, sent)
   }
   return ok({ sent })
 })

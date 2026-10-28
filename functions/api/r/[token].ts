@@ -192,7 +192,8 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     stmts.push(ctx.env.DB.prepare('UPDATE invitations SET remind_at = ?, reminded_at = NULL, updated_at = ? WHERE id = ?').bind(at, ts, r.invitation.id))
   }
   // Their own details, into the host's book. Only the fields they sent; a blank one is
-  // left alone so a reply cannot erase what the host typed.
+  // left alone so a reply cannot erase what the host typed, and an email already in the book is never replaced by a
+  // link holder (the host mails that address; a forwarded link must not be able to redirect it).
   const parentName = str(body.parentName, 60)
   const email = str(body.email, 120)?.toLowerCase() ?? null
   const phone = str(body.phone, 30)
@@ -201,7 +202,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return badRequest('Courriel invalide.')
     stmts.push(
       ctx.env.DB.prepare(
-        'UPDATE friend_families SET parent_name = COALESCE(?, parent_name), email = COALESCE(?, email), phone = COALESCE(?, phone), allergies = CASE WHEN ? THEN ? ELSE allergies END, updated_at = ? WHERE id = ?',
+        'UPDATE friend_families SET parent_name = COALESCE(?, parent_name), email = COALESCE(email, ?), phone = COALESCE(?, phone), allergies = CASE WHEN ? THEN ? ELSE allergies END, updated_at = ? WHERE id = ?',
       ).bind(parentName, email, phone, allergies !== undefined ? 1 : 0, allergies ?? null, ts, r.invitation.friend_family_id),
     )
   }

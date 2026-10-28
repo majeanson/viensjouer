@@ -1,4 +1,5 @@
-import { badRequest, created, forbidden, notFound, ok, readJson, serviceUnavailable, str } from '../_lib/json'
+import { badRequest, created, forbidden, notFound, ok, readJson, serviceUnavailable, str, tooManyRequests } from '../_lib/json'
+import { MAIL_CAP_MESSAGE, mailRoom, recordMail } from '../_lib/mailBudget'
 import { authed } from '../_lib/route'
 import { freshLinkCode, newId, nowSec, paperCode, whenLong } from '../_lib/ids'
 import { escapeHtml, mailEnabled, sendMail } from '../_lib/mail'
@@ -88,6 +89,7 @@ export const onRequestPut = authed(async (ctx, actor) => {
     .first<{ token: string; email: string | null; parent_name: string; child_first_name: string; starts_at: number; ends_at: number; note: string | null; host_child: string; tz: string }>()
   if (!row) return notFound()
   if (!row.email) return badRequest('Cette famille n’a pas de courriel — copie le lien.')
+  if ((await mailRoom(ctx.env, actor.householdId)) < 1) return tooManyRequests(MAIL_CAP_MESSAGE)
   const link = `${new URL(ctx.request.url).origin}/w/${paperCode(row.token)}`
   const when = whenLong(row.starts_at, 'fr', row.tz)
   await sendMail(ctx.env, {
@@ -96,6 +98,7 @@ export const onRequestPut = authed(async (ctx, actor) => {
     text: `Bonjour ${row.parent_name},\n\n${actor.displayName} se demande si ${row.child_first_name} et ${row.host_child} se voient : on est libres ${when}.${row.note ? `\n\n« ${row.note} »` : ''}\n\nRéponds ici (pas de compte) :\n${link}\n\n— Viens jouer`,
     html: `<p>Bonjour ${escapeHtml(row.parent_name)},</p><p>${escapeHtml(actor.displayName)} se demande si ${escapeHtml(row.child_first_name)} et ${escapeHtml(row.host_child)} se voient : on est libres <strong>${escapeHtml(when)}</strong>.</p>${row.note ? `<p>« ${escapeHtml(row.note)} »</p>` : ''}<p><a href="${link}">Répondre</a> — pas de compte.</p><p>— Viens jouer</p>`,
   })
+  await recordMail(ctx.env, actor.householdId)
   return ok()
 })
 

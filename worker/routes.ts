@@ -36,6 +36,8 @@ import * as avatar from '../functions/api/avatar'
 import * as avatarImg from '../functions/api/avatar-img'
 import * as replyAvatar from '../functions/api/r/avatar'
 import * as profile from '../functions/api/profile'
+import * as password from '../functions/api/password'
+import * as sessions from '../functions/api/sessions'
 import * as testMail from '../functions/api/test-mail'
 import * as familyHistory from '../functions/api/family-history'
 import * as bring from '../functions/api/bring'
@@ -83,6 +85,8 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['avatar', avatar],
   ['avatar/:kind/:id', avatarImg],
   ['profile', profile],
+  ['password', password],
+  ['sessions', sessions],
   ['test-mail', testMail],
   ['family-history', familyHistory],
   ['bring', bring],

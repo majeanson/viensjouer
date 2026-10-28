@@ -267,6 +267,7 @@ export const EN: Dict = {
   account: {
     title: 'My account',
     keptHint: 'What we keep, where it is hosted, what it is for.',
+    security: { title: 'Security', password: 'Change my password', current: 'Current password', next: 'New password (8 characters minimum)', change: 'Change', changed: 'Password changed. Your other devices are signed out.', everywhere: 'Sign out everywhere', everywhereHint: 'Ends the session on all your other devices. This one stays signed in.', everywhereDone: 'Your other devices are signed out.' },
     exportTitle: 'Download my data',
     exportHint: 'A file with your children, families, get-togethers and answers, without passwords, secret links or photos.',
     exportBtn: 'Download',

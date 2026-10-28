@@ -25,6 +25,7 @@ export function Account() {
   const [testing, setTesting] = useState(false)
   const [testSent, setTestSent] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [secNote, setSecNote] = useState<string | null>(null)
   async function erase(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setBusy(true)
@@ -116,6 +117,44 @@ export function Account() {
             {testSent && <p className="small" role="status" style={{ margin: '0.4rem 0 0' }}>{testSent}</p>}
           </div>
         )}
+      </div>
+      <div className="card">
+        <h2><Icon name="shield" />{t.account.security.title}</h2>
+        <form
+          onSubmit={async (e: FormEvent<HTMLFormElement>) => {
+            e.preventDefault()
+            const form = e.currentTarget
+            const f = new FormData(form)
+            setSecNote(null)
+            try {
+              await api('password', { method: 'POST', body: { current: String(f.get('current') ?? ''), next: String(f.get('next') ?? '') } })
+              form.reset()
+              setSecNote(t.account.security.changed)
+            } catch (ex) {
+              setSecNote(ex instanceof Error ? ex.message : t.common.error)
+            }
+          }}
+        >
+          <label className="field"><span>{t.account.security.current}</span><input className="input" name="current" type="password" required autoComplete="current-password" /></label>
+          <label className="field"><span>{t.account.security.next}</span><input className="input" name="next" type="password" required minLength={8} autoComplete="new-password" /></label>
+          <button className="btn">{t.account.security.change}</button>
+        </form>
+        <p className="muted small" style={{ margin: '0.8rem 0 0.4rem' }}>{t.account.security.everywhereHint}</p>
+        <button
+          className="btn"
+          onClick={async () => {
+            setSecNote(null)
+            try {
+              await api('sessions', { method: 'DELETE' })
+              setSecNote(t.account.security.everywhereDone)
+            } catch (ex) {
+              setSecNote(ex instanceof Error ? ex.message : t.common.error)
+            }
+          }}
+        >
+          <Icon name="logout" />{t.account.security.everywhere}
+        </button>
+        {secNote && <p className="small" role="status" style={{ margin: '0.5rem 0 0' }}>{secNote}</p>}
       </div>
       {!install.installed && (install.canPrompt || install.ios) && (
         <div className="card">

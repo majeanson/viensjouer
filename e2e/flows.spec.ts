@@ -457,3 +457,26 @@ test('the invitation tab is titled with who invites', async ({ page }) => {
   await page.goto('/lune-miel')
   await expect(page).toHaveTitle('Noé invite Léa · Viens jouer')
 })
+
+test('a page that crashes shows a calm card, and moving on clears it', async ({ page }) => {
+  await host(page, { 'GET encounters': (_c, url) => (url.searchParams.get('id') ? { json: { encounter: enc(), invitations: null, messages: [], relais: [], souvenirs: [], changes: [], bring: [] } } : undefined) })
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.goto('/rencontres/e1')
+  await expect(page.getByRole('alert')).toContainText('Quelque chose a cassé')
+  await expect(page.getByRole('button', { name: 'Recharger' })).toBeVisible()
+  // one broken page never traps the rest of the app
+  await page.goto('/amis')
+  await expect(page.getByRole('heading', { name: 'Amis' })).toBeVisible()
+})
+
+test('going offline says so, and coming back clears it', async ({ page }) => {
+  await host(page)
+  await page.goto('/rencontres')
+  await expect(page.getByRole('heading', { name: 'Rencontres' })).toBeVisible()
+  await expect(page.getByText('Hors ligne')).toHaveCount(0)
+  await page.evaluate(() => dispatchEvent(new Event('offline')))
+  await expect(page.getByText(/Hors ligne/)).toBeVisible()
+  await page.evaluate(() => dispatchEvent(new Event('online')))
+  await expect(page.getByText('Hors ligne')).toHaveCount(0)
+})

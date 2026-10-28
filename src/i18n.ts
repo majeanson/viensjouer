@@ -429,7 +429,7 @@ export const FR = {
   avatar: { add: 'Ajouter une photo', change: 'Changer la photo', remove: 'Retirer la photo' },
   profile: { title: 'Mon profil', name: 'Mon prénom', nameHint: 'Le prénom qui s’affiche sur les invitations que tu envoies.', save: 'Enregistrer', saved: 'Enregistré.' },
   board: { title: 'Le tableau', hint: 'Un mot pour tout le monde : où se retrouver, quoi apporter, une photo à venir voir. Il reste là, tu peux y revenir.', empty: 'Rien d’écrit encore. Écris le premier mot.', closedEmpty: 'Rien n’a été écrit.', placeholder: 'Écrire sur le tableau…', send: 'Publier', host: 'Hôte', mine: 'Toi', pinned: 'Épinglés', pin: 'Épingler', unpin: 'Détacher', remove: 'Retirer', new: 'Nouveau', newCount: (n: number) => `${n} nouveau${n > 1 ? 'x' : ''}`, closed: 'La rencontre est passée : le tableau reste ouvert à la lecture.' },
-  common: { skip: 'Aller au contenu', loading: 'Chargement…', why: 'Pourquoi ?', error: 'Ça n’a pas marché. Réessaie.', theme: 'Thème', lang: 'English' },
+  common: { crashed: 'Quelque chose a cassé', crashedHint: 'Ce n’est pas toi. Recharge la page : tes données sont gardées sur le serveur.', reload: 'Recharger', tryAgain: 'Réessayer', offline: 'Hors ligne : ce que tu fais ne partira pas avant le retour du réseau.', skip: 'Aller au contenu', loading: 'Chargement…', why: 'Pourquoi ?', error: 'Ça n’a pas marché. Réessaie.', theme: 'Thème', lang: 'English' },
 }
 
 export type Dict = typeof FR

@@ -3,6 +3,7 @@ import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
 import { Header } from './Header'
 import { Icon } from './Icon'
+import { OfflineNotice } from './ErrorBoundary'
 import type { ReactNode } from 'react'
 
 // The signed-in frame: the header (always there), three tabs, and the page. The agenda holds the
@@ -14,6 +15,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="shell">
       <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus() }}>{t.common.skip}</a>
       <Header />
+      <OfflineNotice />
       <nav className="nav" aria-label="Navigation">
         <NavLink to="/rencontres"><Icon name="calendar" /><span>{t.nav.home}</span></NavLink>
         <NavLink to="/amis"><Icon name="users" /><span>{t.nav.friends}</span></NavLink>

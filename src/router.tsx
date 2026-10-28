@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 const Door = lazy(() => import('./pages/Door').then((m) => ({ default: m.Door })))
 const Encounters = lazy(() => import('./pages/Encounters').then((m) => ({ default: m.Encounters })))
@@ -20,6 +20,7 @@ import { Shell } from './components/Shell'
 import { useT } from './i18n'
 import { CODE_RE } from './lib/link'
 import { usePageTitle } from './lib/pageTitle'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 // `/r/:token` — and its paper spelling, a bare `/<xxxx-xxxx>` — is the one route a
 // stranger lands on; everything else is the host's.
@@ -38,8 +39,9 @@ function Private({ children }: { children: React.ReactNode }) {
 export function AppRoutes() {
   const t = useT()
   usePageTitle(t.appName)
+  const { pathname } = useLocation()
   return (
-    <Suspense fallback={<div className="shell" aria-busy="true"><div className="card skeleton" style={{ marginTop: '4rem' }} /></div>}>
+    <ErrorBoundary resetKey={pathname}>
     <Suspense fallback={<div className="shell" aria-busy="true"><div className="card skeleton" style={{ marginTop: '4rem' }} /></div>}>
     <Routes>
       <Route path="/" element={<Door />} />
@@ -64,6 +66,6 @@ export function AppRoutes() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </Suspense>
-    </Suspense>
+    </ErrorBoundary>
   )
 }

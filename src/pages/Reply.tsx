@@ -17,6 +17,7 @@ import { Header } from '../components/Header'
 import { Icon } from '../components/Icon'
 import { Face } from '../components/Face'
 import { MessageBoard } from '../components/MessageBoard'
+import { OfflineNotice } from '../components/ErrorBoundary'
 
 interface Card {
   alive: boolean
@@ -135,6 +136,7 @@ function ReplyInner() {
   return (
     <div className="shell">
       <Header />
+      <OfflineNotice />
 
       {fresh.length > 0 && (
         <div className="notice notice--changed" role="status">

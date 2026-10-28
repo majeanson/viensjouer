@@ -414,6 +414,10 @@ export const EN: Dict = {
     homeCard: 'Our place: say it once (optional)',
   },
   first: {
+    title: 'To get started, three steps',
+    childDone: 'Your child is added.',
+    friendDone: 'A friend is added.',
+    later: 'Propose your first get-together.',
     child: 'Start by adding your child: they are the one who invites.',
     childBtn: 'Add my child',
     friend: 'Add a friend to invite: a first name is enough, an email if you have it.',

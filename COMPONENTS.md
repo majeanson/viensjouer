@@ -14,6 +14,7 @@
 | `PhotoGrid` | Souvenirs: the day's photos | The caller says where bytes come from and how to upload. |
 | `MessageBoard` | The board on the host page and the invitation | Pins, own messages, « Nouveau » per device. |
 | `Why` / `WhyMany` | « Pourquoi ? » under optional fields | ONE `WhyMany` per group of fields, `Why` for a single field. |
+| `Rel` | « · demain », « · dans 3 jours » beside a date | Only inside the coming week; `lib/format.ts` `relativeDay`. |
 | `Loading` | First read in flight | Skeleton cards + a status line. `page` for screens rendered before the header. |
 | `QueryError` | A read failed | `role=alert`, a « Réessayer » button; `dead` gives the 404 sentence and drops the button. |
 | `ErrorBoundary` / `OfflineNotice` | A thrown render error; no network | Reloads once when a deploy replaced a chunk. |

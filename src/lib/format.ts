@@ -21,6 +21,15 @@ export const whenDay = (sec: number, lang: Lang) =>
 export const whenShort = (sec: number, lang: Lang) =>
   f(lang, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }, 'short').format(new Date(sec * 1000))
 
+// « aujourd’hui », « demain », « dans 3 jours » for a date within the coming week, else null (the weekday and date
+// already say it). Counted in calendar days on the device, so « demain » means tomorrow for the person reading it.
+export function relativeDay(sec: number, lang: Lang, nowMs = Date.now()): string | null {
+  const day = (d: Date) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000
+  const diff = day(new Date(sec * 1000)) - day(new Date(nowMs))
+  if (diff < 0 || diff > 6) return null
+  return new Intl.RelativeTimeFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', { numeric: 'auto' }).format(diff, 'day')
+}
+
 export const timeOnly = (sec: number, lang: Lang) => f(lang, { hour: 'numeric', minute: '2-digit' }, 'time').format(new Date(sec * 1000))
 
 // <input type="datetime-local"> ↔ unix seconds, in the browser's zone.

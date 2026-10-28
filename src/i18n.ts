@@ -415,6 +415,10 @@ export const FR = {
     homeCard: 'Chez nous : dis-le une fois (facultatif)',
   },
   first: {
+    title: 'Pour commencer, trois pas',
+    childDone: 'Ton enfant est ajouté.',
+    friendDone: 'Un ami est ajouté.',
+    later: 'Propose ta première rencontre.',
     child: 'Commence par ajouter ton enfant : c’est lui qui invite.',
     childBtn: 'Ajouter mon enfant',
     friend: 'Ajoute un ami à inviter : un prénom suffit, un courriel si tu l’as.',

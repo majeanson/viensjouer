@@ -47,6 +47,9 @@ test('three tabs only, and a brand-new host is told the next step each time', as
   await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Amis', 'Ma famille'])
   await expect(page.getByText('Commence par ajouter ton enfant')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Ajouter mon enfant' })).toBeVisible()
+  // three steps, the first is the one to do
+  await expect(page.locator('.steps li')).toHaveCount(3)
+  await expect(page.locator('.steps li.now')).toHaveText(/Commence par ajouter ton enfant/)
 
   await page.unrouteAll({ behavior: 'ignoreErrors' })
   await host(page)
@@ -57,6 +60,9 @@ test('three tabs only, and a brand-new host is told the next step each time', as
   await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }) })
   await page.goto('/rencontres')
   await expect(page.getByText('Tout est prêt.')).toBeVisible()
+  // both earlier steps are checked off, the last one is next
+  await expect(page.locator('.steps li.done')).toHaveCount(2)
+  await expect(page.locator('.steps li.now')).toHaveText(/Tout est prêt/)
 })
 
 test('the agenda mixes my rencontres, invitations, free moments and birthdays by date', async ({ page }) => {

@@ -16,6 +16,7 @@ import { WhyMany } from '../components/WhyMany'
 import type { Encounter, HomeCard, Message, Reply as ReplyKind } from '../lib/types'
 import { Header } from '../components/Header'
 import { Loading } from '../components/Loading'
+import { Rel } from '../components/Rel'
 import { QueryError } from '../components/QueryError'
 import { Icon } from '../components/Icon'
 import { Face } from '../components/Face'
@@ -213,7 +214,7 @@ function ReplyInner() {
         <p><strong>{you.scope === 'friend' ? t.scope.youFriend(you.child_first_name) : t.scope.youFamily}</strong></p>
         <dl className="facts">
           <div><dt><Icon name="tag" />{t.reply.what}</dt><dd>{e.title}{mark(freshOf('title'))}</dd></div>
-          <div><dt><Icon name="calendar" />{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
+          <div><dt><Icon name="calendar" />{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}<Rel at={e.starts_at} />{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
           {e.place && <div><dt><Icon name="pin" />{t.reply.where}</dt><dd>{e.place}{mark(freshOf('place'))}</dd></div>}
           {e.map_url && <div><dt><Icon name="map" />{t.reply.map}</dt><dd><a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a>{mark(freshOf('map_url'))}</dd></div>}
           {e.address ? <div><dt><Icon name="home" />{t.reply.addressLabel}</dt><dd>{e.address}{mark(freshOf('address'))}</dd></div> : e.kind !== 'park' && <div><dt><Icon name="home" />{t.reply.addressLabel}</dt><dd className="muted">{t.reply.addressOnYes}</dd></div>}

@@ -356,3 +356,5 @@ main:focus { outline: none; }
 .shell--bar { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
 @media (min-width: 761px) { .answerbar { display: none; } }
 @media (prefers-reduced-motion: no-preference) { .answerbar { animation: slide-up 0.28s var(--ease) backwards; } }
+
+.rel { color: var(--ink); font-weight: 600; margin-left: 0.35em; }

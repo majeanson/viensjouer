@@ -5,6 +5,7 @@ import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { whenShort } from '../lib/format'
+import { Rel } from '../components/Rel'
 import { paperCode } from '../lib/link'
 import type { Child, Encounter, Family, InvitationSummary } from '../lib/types'
 import { Icon, kindIcon } from '../components/Icon'
@@ -42,7 +43,7 @@ export function Encounters() {
       </div>
       <p className="meta--row muted small">
         <span><Icon name={kindIcon(e.kind)} />{t.encounters.kind[e.kind]}</span>
-        <span><Icon name="clock" />{whenShort(e.starts_at, lang)}</span>
+        <span><Icon name="clock" />{whenShort(e.starts_at, lang)}<Rel at={e.starts_at} /></span>
         {e.place && <span><Icon name="pin" />{e.place}</span>}
         {e.status !== 'proposed' && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
       </p>
@@ -68,7 +69,7 @@ export function Encounters() {
             <div className="row"><strong>{it.title}</strong><span className="chip chip--kind">{t.agenda.invited(it.host ?? '')}</span></div>
             <p className="meta--row muted small">
               <span><Icon name={kindIcon(it.kind)} />{t.encounters.kind[it.kind]}</span>
-              <span><Icon name="clock" />{whenShort(it.at, lang)}</span>
+              <span><Icon name="clock" />{whenShort(it.at, lang)}<Rel at={it.at} /></span>
               {it.place && <span><Icon name="pin" />{it.place}</span>}
               <span className={`chip ${it.reply ? `chip--${it.reply}` : ''}`}>{it.reply ? t.encounters.reply[it.reply] : t.encounters.reply.none}</span>
             </p>
@@ -118,7 +119,12 @@ export function Encounters() {
       {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && (
         <div className="card">
-          <p style={{ marginTop: 0 }}>{noChild ? t.first.child : noFriend ? t.first.friend : t.first.go}</p>
+          <h2><Icon name="check" />{t.first.title}</h2>
+          <ol className="steps">
+            <li className={noChild ? 'now' : 'done'}>{noChild ? t.first.child : t.first.childDone}</li>
+            <li className={noChild ? '' : noFriend ? 'now' : 'done'}>{noFriend ? t.first.friend : t.first.friendDone}</li>
+            <li className={noChild || noFriend ? '' : 'now'}>{noChild || noFriend ? t.first.later : t.first.go}</li>
+          </ol>
           {noChild ? <Link to="/enfants" className="btn btn--primary">{t.first.childBtn}</Link> : noFriend ? <Link to="/amis" className="btn btn--primary">{t.first.friendBtn}</Link> : <Link to="/rencontres/nouvelle" className="btn btn--primary">{t.encounters.new}</Link>}
         </div>
       )}

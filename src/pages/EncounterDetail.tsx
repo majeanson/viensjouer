@@ -18,6 +18,7 @@ import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '.
 import { Icon, kindIcon } from '../components/Icon'
 import { MessageBoard } from '../components/MessageBoard'
 import { Loading } from '../components/Loading'
+import { Rel } from '../components/Rel'
 import { QueryError } from '../components/QueryError'
 
 interface Detail {
@@ -178,7 +179,7 @@ export function EncounterDetail() {
       </div>
       <ul className="meta">
         <li><Icon name={kindIcon(e.kind)} />{t.encounters.kind[e.kind]} <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span></li>
-        <li><Icon name="clock" />{whenLong(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}</li>
+        <li><Icon name="clock" />{whenLong(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}<Rel at={e.starts_at} /></li>
         {e.place && <li><Icon name="pin" />{e.place}{e.map_url && <>{' '}· <a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a></>}</li>}
       </ul>
       {e.note && <p>{e.note}</p>}
@@ -332,7 +333,8 @@ export function EncounterDetail() {
               </form>
             </div>
           </details>
-          {(health.data?.photos || souvenirs.length > 0) && (
+          {/* The day's photos: offered once the day has started (or when there already are some), not as an empty fold for days before. */}
+          {((health.data?.photos && e.starts_at <= nowSecs) || souvenirs.length > 0) && (
             <details className="fold">
               <summary><span><Icon name="camera" />{t.souvenirs.title}{souvenirs.length > 0 ? ` (${souvenirs.length})` : ''}</span></summary>
               <div>

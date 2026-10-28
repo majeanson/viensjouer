@@ -78,3 +78,28 @@ export function cleanRelais(raw: unknown): { nap: string | null; ate: string | n
   const r = { nap: f('nap', 120), ate: f('ate', 160), mood: f('mood', 60), note: f('note', 400) }
   return r.nap || r.ate || r.mood || r.note ? r : null
 }
+
+// ---- Who an invitation is for ------------------------------------------------------
+export type Scope = 'friend' | 'family'
+export const isScope = (v: unknown): v is Scope => v === 'friend' || v === 'family'
+
+// A birthday (often paid, a fixed number of seats) starts as « the friend only »; a park or a
+// play-date starts as « the whole family ». Only a default: the host can flip either, per family.
+export function defaultScope(kind: Kind): Scope {
+  return kind === 'birthday' ? 'friend' : 'family'
+}
+
+// What an answer's head-count means for the scope. A friend-only invitation never carries a
+// number of children (it is one), and only a birthday asks how many adults stay.
+export function headcount(kind: Kind, scope: Scope, body: { adults?: unknown; kids?: unknown }): { adults: number | null; kids: number | null } {
+  return {
+    adults: kind === 'birthday' ? cleanCount(body.adults) : null,
+    kids: scope === 'family' ? cleanCount(body.kids) : null,
+  }
+}
+
+// How many children come, for the host's line: friend-only is exactly one; whole-family is what
+// they said, or one when they did not say.
+export function kidsComing(scope: Scope, kids: number | null): number {
+  return scope === 'friend' ? 1 : kids ?? 1
+}

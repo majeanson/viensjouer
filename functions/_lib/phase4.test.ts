@@ -83,3 +83,29 @@ describe('sniffImage', () => {
     expect(sniffImage(bytes())).toBeNull()
   })
 })
+
+import { defaultScope, headcount, isScope, kidsComing } from './kinds'
+describe('invitation scope', () => {
+  it('a birthday defaults to the friend only, everything else to the whole family', () => {
+    expect(defaultScope('birthday')).toBe('friend')
+    expect(defaultScope('park')).toBe('family')
+    expect(defaultScope('home')).toBe('family')
+  })
+  it('only the two scopes are accepted', () => {
+    expect(isScope('friend')).toBe(true)
+    expect(isScope('family')).toBe(true)
+    expect(isScope('all')).toBe(false)
+    expect(isScope(undefined)).toBe(false)
+  })
+  it('a friend-only answer never stores a number of children; only a birthday stores adults', () => {
+    expect(headcount('birthday', 'friend', { adults: 2, kids: 3 })).toEqual({ adults: 2, kids: null })
+    expect(headcount('park', 'family', { adults: 2, kids: 3 })).toEqual({ adults: null, kids: 3 })
+    expect(headcount('birthday', 'family', { adults: 1, kids: 2 })).toEqual({ adults: 1, kids: 2 })
+    expect(headcount('park', 'family', { kids: 99 })).toEqual({ adults: null, kids: null })
+  })
+  it('counts one child for a friend-only invitation and what was said (or one) for a family', () => {
+    expect(kidsComing('friend', 5)).toBe(1)
+    expect(kidsComing('family', 3)).toBe(3)
+    expect(kidsComing('family', null)).toBe(1)
+  })
+})

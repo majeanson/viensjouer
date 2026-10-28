@@ -9,6 +9,7 @@ import { timeOnly, whenLong } from '../lib/format'
 import { linkFor, linkLabel } from '../lib/link'
 import { PhotoGrid } from '../components/PhotoGrid'
 import { Why } from '../components/Why'
+import { kidsComing } from '../lib/scope'
 import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
 
 interface Detail {
@@ -46,6 +47,7 @@ export function EncounterDetail() {
   const patch = useMutation({ mutationFn: (body: Record<string, unknown>) => api('encounters', { method: 'PATCH', body: { id, ...body } }), onSuccess: refresh, onError: fail })
   const del = useMutation({ mutationFn: () => api('encounters', { method: 'DELETE', body: { id } }), onSuccess: () => { refresh(); nav('/rencontres', { replace: true }) }, onError: fail })
   const send = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'POST', body: { id: invId } }), onSuccess: refresh, onError: fail })
+  const setScope = useMutation({ mutationFn: (b: { id: string; scope: 'friend' | 'family' }) => api('invitations', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
   const withdraw = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'DELETE', body: { id: invId } }), onSuccess: refresh, onError: fail })
   const message = useMutation({ mutationFn: (text: string) => api('messages', { method: 'POST', body: { encounterId: id, text } }), onSuccess: refresh, onError: fail })
   const relaisSave = useMutation({
@@ -94,10 +96,11 @@ export function EncounterDetail() {
   const invited = new Set(invitations.map((i) => i.friend_family_id))
   const notYet = (fams.data?.families ?? []).filter((f) => !invited.has(f.id))
   const relaisOf = (invId: string) => relais.find((r) => r.invitation_id === invId)
-  // The birthday's RSVP, read from the families that said yes and gave a number.
-  const counted = invitations.filter((i) => i.reply === 'yes' && (i.adults !== null || i.kids !== null))
-  const totalKids = counted.reduce((n, i) => n + (i.kids ?? 0), 0)
-  const totalAdults = counted.reduce((n, i) => n + (i.adults ?? 0), 0)
+  // The head-count, read from the families that said yes: one child for a friend-only invitation,
+  // what the family said (or one) for a whole-family one.
+  const yes = invitations.filter((i) => i.reply === 'yes')
+  const totalKids = yes.reduce((n, i) => n + kidsComing(i.scope, i.kids), 0)
+  const totalAdults = yes.reduce((n, i) => n + (i.adults ?? 0), 0)
 
   return (
     <>
@@ -118,7 +121,7 @@ export function EncounterDetail() {
         </div>
       )}
 
-      {e.kind === 'birthday' && counted.length > 0 && (
+      {yes.length > 0 && (
         <div className="notice">{t.kinds.birthday.summary(totalKids, totalAdults)}</div>
       )}
 
@@ -130,9 +133,10 @@ export function EncounterDetail() {
               <span className="cluster"><span><strong>{i.child_first_name}</strong> <span className="muted small">· {i.parent_name}</span></span></span>
               <span className={`chip ${i.reply ? `chip--${i.reply}` : ''}`}>{i.reply ? t.encounters.reply[i.reply] : t.encounters.reply.none}</span>
             </div>
+            <p className="small muted" style={{ margin: 0 }}>{i.scope === 'friend' ? t.scope.chipFriend(i.child_first_name) : t.scope.chipFamily}</p>
             {i.reply_note && <p className="small" style={{ margin: 0 }}>« {i.reply_note} »</p>}
             {i.allergies && <p className="small" style={{ margin: 0 }}>{t.families.allergies} : {i.allergies}</p>}
-            {e.kind === 'birthday' && i.reply === 'yes' && (i.adults !== null || i.kids !== null) && <p className="small muted" style={{ margin: 0 }}>{t.kinds.birthday.theyCome(i.kids ?? 0, i.adults ?? 0)}</p>}
+            {i.reply === 'yes' && <p className="small muted" style={{ margin: 0 }}>{t.kinds.birthday.theyCome(kidsComing(i.scope, i.kids), i.adults ?? 0)}</p>}
             <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
             <div className="cluster">
               <button className="btn" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
@@ -141,6 +145,7 @@ export function EncounterDetail() {
               ) : (
                 <span className="muted small">{t.encounters.noEmail}</span>
               ))}
+              <button className="linkbtn" onClick={() => setScope.mutate({ id: i.id, scope: i.scope === 'friend' ? 'family' : 'friend' })}>{i.scope === 'friend' ? t.scope.toFamily : t.scope.toFriend}</button>
               {e.kind === 'home' && <button className="linkbtn" onClick={() => setRelaisFor(relaisFor === i.id ? null : i.id)}>{relaisOf(i.id) ? t.kinds.relais.edit : t.kinds.relais.write}</button>}
               <button className="linkbtn linkbtn--danger" onClick={() => withdraw.mutate(i.id)}>{t.encounters.withdraw}</button>
             </div>

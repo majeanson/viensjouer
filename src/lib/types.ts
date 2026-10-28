@@ -63,6 +63,7 @@ export interface Invitation {
   allergies: string | null
   adults: number | null
   kids: number | null
+  scope: 'friend' | 'family'
 }
 
 export interface Message {

@@ -2,7 +2,7 @@ import { badRequest, created, notFound, ok, readJson, str } from '../_lib/json'
 import { authed } from '../_lib/route'
 import { newId, newLinkCode, nowSec } from '../_lib/ids'
 import { isKind, type EncounterRow, type Kind, type Reply } from '../_lib/encounters'
-import { cleanDetails, hereAllowed, parseDetails } from '../_lib/kinds'
+import { cleanDetails, defaultScope, hereAllowed, isScope, parseDetails, type Scope } from '../_lib/kinds'
 
 // The host side of a rencontre.
 //   GET    /api/encounters            → upcoming + recent, with each invitation's reply
@@ -27,10 +27,11 @@ interface InviteRow {
   allergies: string | null
   adults: number | null
   kids: number | null
+  scope: Scope
 }
 
 const INVITE_SELECT = `SELECT i.id, i.friend_family_id, i.token, i.reply, i.reply_note, i.reply_at, i.sent_at,
-                              f.parent_name, f.child_first_name, f.email, f.allergies, i.adults, i.kids
+                              f.parent_name, f.child_first_name, f.email, f.allergies, i.adults, i.kids, i.scope
                          FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id`
 
 export const onRequestGet = authed(async (ctx, actor) => {
@@ -86,6 +87,7 @@ type Body = {
   series?: boolean
   details?: unknown
   here?: boolean
+  scope?: string
   endsAt?: number | null
   place?: string
   address?: string | null
@@ -94,7 +96,7 @@ type Body = {
   invite?: string[]
 }
 
-async function mintInvitations(db: D1Database, householdId: string, encounterId: string, familyIds: string[]): Promise<void> {
+async function mintInvitations(db: D1Database, householdId: string, encounterId: string, familyIds: string[], scope: Scope): Promise<void> {
   if (!familyIds.length) return
   // Only families from THIS household's book, and not one already on the card.
   const { results: owned } = await db
@@ -108,8 +110,8 @@ async function mintInvitations(db: D1Database, householdId: string, encounterId:
     .filter((r) => !skip.has(r.id))
     .map((r) =>
       db
-        .prepare('INSERT INTO invitations (id, encounter_id, friend_family_id, token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)')
-        .bind(newId(), encounterId, r.id, newLinkCode(), ts, ts),
+        .prepare('INSERT INTO invitations (id, encounter_id, friend_family_id, token, scope, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .bind(newId(), encounterId, r.id, newLinkCode(), scope, ts, ts),
     )
   if (stmts.length) await db.batch(stmts)
 }
@@ -139,6 +141,8 @@ export const onRequestPost = authed(async (ctx, actor) => {
   const times = seriesTimes(startsAt, body?.startsAtList)
   if (!times) return badRequest('Série invalide (12 occurrences au plus, sur un an).')
   const seriesId = times.length > 1 ? newId() : null
+  // Who is invited: the friend only (a paid birthday) or the whole family (a park). Defaults by kind.
+  const scope: Scope = isScope(body?.scope) ? body.scope : defaultScope(body!.kind as Kind)
   const ts = nowSec()
   const invite = Array.isArray(body?.invite) ? body!.invite.filter((v) => typeof v === 'string').slice(0, 40) : []
   const ids: string[] = []
@@ -146,11 +150,11 @@ export const onRequestPost = authed(async (ctx, actor) => {
     const id = newId()
     ids.push(id)
     await ctx.env.DB.prepare(
-      'INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, ends_at, place, address, note, series_id, details, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, ends_at, place, address, note, series_id, details, default_scope, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     )
-      .bind(id, actor.householdId, childId, body!.kind, title, at, endsAt ? at + (endsAt - startsAt) : null, str(body?.place, 120), str(body?.address, 200), str(body?.note, 1000), seriesId, JSON.stringify(cleanDetails(body!.kind as Kind, body?.details)), ts, ts)
+      .bind(id, actor.householdId, childId, body!.kind, title, at, endsAt ? at + (endsAt - startsAt) : null, str(body?.place, 120), str(body?.address, 200), str(body?.note, 1000), seriesId, JSON.stringify(cleanDetails(body!.kind as Kind, body?.details)), scope, ts, ts)
       .run()
-    await mintInvitations(ctx.env.DB, actor.householdId, id, invite)
+    await mintInvitations(ctx.env.DB, actor.householdId, id, invite, scope)
   }
   return created({ id: ids[0], ids })
 })
@@ -159,7 +163,7 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   const body = await readJson<Body>(ctx.request)
   const id = str(body?.id, 20)
   if (!id) return badRequest('id requis.')
-  const own = await ctx.env.DB.prepare('SELECT starts_at, ends_at, status, series_id FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(id, actor.householdId).first<{ starts_at: number; ends_at: number | null; status: 'proposed' | 'confirmed' | 'cancelled'; series_id: string | null }>()
+  const own = await ctx.env.DB.prepare('SELECT starts_at, ends_at, status, series_id, default_scope FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(id, actor.householdId).first<{ starts_at: number; ends_at: number | null; status: 'proposed' | 'confirmed' | 'cancelled'; series_id: string | null; default_scope: Scope }>()
   if (!own) return notFound()
   // « On y est » / « On est partis »: only around the rencontre itself (hereAllowed).
   if (typeof body?.here === 'boolean') {
@@ -204,7 +208,7 @@ export const onRequestPatch = authed(async (ctx, actor) => {
       id,
     )
     .run()
-  if (Array.isArray(body?.invite)) await mintInvitations(ctx.env.DB, actor.householdId, id, body!.invite.filter((v) => typeof v === 'string').slice(0, 40))
+  if (Array.isArray(body?.invite)) await mintInvitations(ctx.env.DB, actor.householdId, id, body!.invite.filter((v) => typeof v === 'string').slice(0, 40), isScope(body?.scope) ? body.scope : own.default_scope)
   return ok()
 })
 

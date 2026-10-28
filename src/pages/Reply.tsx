@@ -18,7 +18,7 @@ interface Card {
   alive: boolean
   encounter: Omit<Encounter, 'address'> & { address: string | null }
   host: { child_first_name: string; parent_name: string; household_name: string; tz: string }
-  you: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null; reply: ReplyKind | null; replyNote: string | null; remind: boolean; adults: number | null; kids: number | null }
+  you: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null; reply: ReplyKind | null; replyNote: string | null; remind: boolean; adults: number | null; kids: number | null; scope: 'friend' | 'family' }
   homeCard: HomeCard | null
   relais: { nap: string | null; ate: string | null; mood: string | null; note: string | null } | null
   souvenirs: { id: string; author_label: string }[]
@@ -85,9 +85,9 @@ function ReplyInner() {
       const v = String(f.get(k) ?? '').trim()
       if (v) body[k] = v
     }
-    if (e.kind === 'birthday' && chosen === 'yes') {
-      body.adults = Number(f.get('adults') ?? 1)
-      body.kids = Number(f.get('kids') ?? 1)
+    if (chosen === 'yes') {
+      if (e.kind === 'birthday') body.adults = Number(f.get('adults') ?? 1)
+      if (you.scope === 'family') body.kids = Number(f.get('kids') ?? 1)
     }
     post.mutate(body, { onSuccess: () => { setDone(true); setEditing(false) } })
   }
@@ -109,6 +109,7 @@ function ReplyInner() {
         <span className="kind">{t.encounters.kind[e.kind]}</span>
         <h1 style={{ marginTop: '0.5rem' }}>{t.reply.invites(host.child_first_name, you.child_first_name)}</h1>
         <p className="muted">{t.reply.from(host.parent_name || host.household_name)}</p>
+        <p><strong>{you.scope === 'friend' ? t.scope.youFriend(you.child_first_name) : t.scope.youFamily}</strong></p>
         <h2>{e.title}</h2>
         <p><strong>{whenLong(e.starts_at, lang)}</strong>{e.ends_at ? ` → ${whenLong(e.ends_at, lang)}` : ''}</p>
         {e.place && <p>{e.place}</p>}
@@ -158,10 +159,10 @@ function ReplyInner() {
           <label className="field"><span>{t.reply.email}</span><input className="input" name="email" type="email" defaultValue={you.email ?? ''} autoComplete="email" /><Why k="replyEmail" /></label>
           <label className="field"><span>{t.reply.phone}</span><input className="input" name="phone" type="tel" defaultValue={you.phone ?? ''} autoComplete="tel" /><Why k="replyPhone" /></label>
           <label className="field"><span>{t.reply.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={you.allergies ?? ''} /><Why k="replyAllergies" /></label>
-          {e.kind === 'birthday' && chosen === 'yes' && (
+          {chosen === 'yes' && (you.scope === 'family' || e.kind === 'birthday') && (
             <div className="cluster" style={{ marginBottom: '0.75rem' }}>
-              <label className="field" style={{ flex: 1 }}><span>{t.kinds.birthday.adults}</span><input className="input" name="adults" type="number" min={0} max={20} defaultValue={you.adults ?? 1} /><Why k="headcount" /></label>
-              <label className="field" style={{ flex: 1 }}><span>{t.kinds.birthday.kids}</span><input className="input" name="kids" type="number" min={0} max={20} defaultValue={you.kids ?? 1} /></label>
+              {you.scope === 'family' && <label className="field" style={{ flex: 1 }}><span>{t.scope.kidsLabel}</span><input className="input" name="kids" type="number" min={0} max={20} defaultValue={you.kids ?? 1} /><Why k="headcount" /></label>}
+              {e.kind === 'birthday' && <label className="field" style={{ flex: 1 }}><span>{t.kinds.birthday.adults}</span><input className="input" name="adults" type="number" min={0} max={20} defaultValue={you.adults ?? 1} /></label>}
             </div>
           )}
           <label className="check"><input type="checkbox" name="remind" defaultChecked={you.remind} /><span>{t.reply.remind}</span></label>

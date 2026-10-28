@@ -9,7 +9,7 @@ const card = (over: Record<string, unknown> = {}) => ({
   alive: true,
   encounter: { id: 'e1', child_id: 'c1', kind: 'home', title: 'Chez nous après la sieste', starts_at: soon, ends_at: soon + 7200, place: 'Chez nous', address: null, note: 'Sieste à 13 h', status: 'proposed', details: {}, hereAt: null },
   host: { child_first_name: 'Noé', parent_name: 'Marc', household_name: 'Les Jeanson', tz: 'America/Toronto' },
-  you: { parent_name: 'Julie', email: null, phone: null, child_first_name: 'Léa', allergies: null, reply: null, replyNote: null, remind: false, adults: null, kids: null },
+  you: { parent_name: 'Julie', email: null, phone: null, child_first_name: 'Léa', allergies: null, reply: null, replyNote: null, remind: false, adults: null, kids: null, scope: 'family' },
   homeCard: { dog: true, pool: false, screens: 'little', nutFree: true, note: 'Le chien est doux' },
   relais: null,
   souvenirs: [],
@@ -62,7 +62,7 @@ test('a birthday asks how many come, only once the answer is yes', async ({ page
   await expect(page.getByLabel('Adultes qui restent')).toHaveCount(0)
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   await page.getByLabel('Adultes qui restent').fill('2')
-  await page.getByLabel('Enfants', { exact: true }).fill('3')
+  await page.getByLabel('Enfants qui viennent').fill('3')
   await page.getByRole('button', { name: 'Répondre', exact: true }).click()
   await expect(page.getByText('Réponse envoyée. Merci !')).toBeVisible()
   expect(posts[0]).toMatchObject({ reply: 'yes', adults: 2, kids: 3 })
@@ -122,7 +122,7 @@ test('every optional field on the reply page has a « Pourquoi ? » that says wh
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   // Collapsed by default so the form stays light; one tap opens the reason.
   const whys = page.getByText('Pourquoi ?')
-  await expect(whys).toHaveCount(3)
+  await expect(whys).toHaveCount(4)
   await expect(page.getByText(/Sans ça : pas de rappel/)).toBeHidden()
   await whys.nth(0).click()
   await expect(page.getByText(/Sans ça : pas de rappel/)).toBeVisible()
@@ -139,4 +139,25 @@ test('the header with the language switch is there on every public page', async 
     await expect(page.getByRole('button', { name: 'EN (English)' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Viens jouer' })).toBeVisible()
   }
+})
+
+test('whole family: the card says siblings are welcome and asks how many children come', async ({ page }) => {
+  await stub(page, card())
+  await page.goto(`/${CODE}`)
+  await expect(page.getByText('Toute la famille est la bienvenue, frères et sœurs inclus.')).toBeVisible()
+  await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  await expect(page.getByLabel('Enfants qui viennent')).toBeVisible()
+})
+
+test('friend only (a paid birthday): the card names the child and never asks about siblings', async ({ page }) => {
+  const posts = await stub(page, card({ encounter: { ...card().encounter, kind: 'birthday' }, homeCard: null, you: { ...card().you, scope: 'friend' } }))
+  await page.goto(`/${CODE}`)
+  await expect(page.getByText('Invitation pour Léa seulement.')).toBeVisible()
+  await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  await expect(page.getByLabel('Enfants qui viennent')).toHaveCount(0)
+  await expect(page.getByLabel('Adultes qui restent')).toBeVisible()
+  await page.getByRole('button', { name: 'Répondre', exact: true }).click()
+  await expect(page.getByText('Réponse envoyée. Merci !')).toBeVisible()
+  expect(posts[0]).toMatchObject({ reply: 'yes', adults: 1 })
+  expect(posts[0]).not.toHaveProperty('kids')
 })

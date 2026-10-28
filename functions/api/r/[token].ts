@@ -4,7 +4,7 @@ import { overAuthLimit } from '../../_lib/rateLimit'
 import { newId, normalizeLinkCode, nowSec } from '../../_lib/ids'
 import { addressFor, isReply, linkAlive, type EncounterRow, type Reply } from '../../_lib/encounters'
 import { REMIND_LEAD_SEC } from '../../_lib/reminders'
-import { cleanCount, hereAllowed, homeCardOrNull, parseDetails, souvenirsVisible } from '../../_lib/kinds'
+import { headcount, hereAllowed, homeCardOrNull, parseDetails, souvenirsVisible, type Scope } from '../../_lib/kinds'
 import { photosEnabled } from '../../_lib/photos'
 
 // THE install-free side. The token in the path is the whole credential: one card, one
@@ -16,7 +16,7 @@ import { photosEnabled } from '../../_lib/photos'
 //                            message? } — any subset; a message appends to the thread
 
 interface Resolved {
-  invitation: { id: string; friend_family_id: string; reply: Reply | null; reply_note: string | null; remind_at: number | null; adults: number | null; kids: number | null }
+  invitation: { id: string; friend_family_id: string; reply: Reply | null; reply_note: string | null; remind_at: number | null; adults: number | null; kids: number | null; scope: Scope }
   encounter: EncounterRow & { household_id: string }
   series_id: string | null
   family: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null }
@@ -29,7 +29,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
   if (!token) return null
   const row = await env.DB.prepare(
     `SELECT i.id AS inv_id, i.friend_family_id, i.reply, i.reply_note, i.remind_at,
-            e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.note, e.status, e.details, e.here_at, i.adults, i.kids,
+            e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.note, e.status, e.details, e.here_at, i.adults, i.kids, i.scope,
             f.parent_name, f.email, f.phone, f.child_first_name, f.allergies,
             c.first_name AS host_child, h.name AS household_name, h.tz,
             (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent
@@ -44,7 +44,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
     .first<Record<string, unknown>>()
   if (!row) return null
   return {
-    invitation: { id: row.inv_id as string, friend_family_id: row.friend_family_id as string, reply: row.reply as Reply | null, reply_note: row.reply_note as string | null, remind_at: row.remind_at as number | null, adults: row.adults as number | null, kids: row.kids as number | null },
+    invitation: { id: row.inv_id as string, friend_family_id: row.friend_family_id as string, reply: row.reply as Reply | null, reply_note: row.reply_note as string | null, remind_at: row.remind_at as number | null, adults: row.adults as number | null, kids: row.kids as number | null, scope: row.scope as Scope },
     encounter: {
       id: row.id as string,
       household_id: row.household_id as string,
@@ -111,7 +111,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     souvenirsOpen: souvenirsVisible(r.encounter, r.invitation.reply, now),
     photos: photosEnabled(ctx.env),
     host: r.host,
-    you: { ...r.family, reply: r.invitation.reply, replyNote: r.invitation.reply_note, remind: r.invitation.remind_at !== null, adults: r.invitation.adults, kids: r.invitation.kids },
+    you: { ...r.family, reply: r.invitation.reply, replyNote: r.invitation.reply_note, remind: r.invitation.remind_at !== null, adults: r.invitation.adults, kids: r.invitation.kids, scope: r.invitation.scope },
     messages,
     series: seriesRows,
   })
@@ -141,9 +141,11 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       ),
     )
   }
-  // A birthday asks how many adults stay and how many children come.
-  if (r.encounter.kind === 'birthday' && (body.adults !== undefined || body.kids !== undefined)) {
-    stmts.push(ctx.env.DB.prepare('UPDATE invitations SET adults = ?, kids = ?, updated_at = ? WHERE id = ?').bind(cleanCount(body.adults), cleanCount(body.kids), ts, r.invitation.id))
+  // The head-count: how many children come (a whole-family invitation only) and, for a birthday,
+  // how many adults stay. A friend-only invitation is one child, so no number is stored.
+  if (body.adults !== undefined || body.kids !== undefined) {
+    const n = headcount(r.encounter.kind, r.invitation.scope, body)
+    stmts.push(ctx.env.DB.prepare('UPDATE invitations SET adults = ?, kids = ?, updated_at = ? WHERE id = ?').bind(n.adults, n.kids, ts, r.invitation.id))
   }
   // The ONE reminder (the hourly cron sends it): a day before, only if still ahead, and
   // only once the family has an email on file (sent now or already in the book).

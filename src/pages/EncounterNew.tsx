@@ -9,6 +9,10 @@ import { Why } from '../components/Why'
 import { FamilyPicker } from '../components/FamilyPicker'
 import type { Child, Family, Group, Kind } from '../lib/types'
 
+type Scope = 'friend' | 'family'
+// A birthday starts as « the friend only », everything else as « the whole family ».
+const defaultScope = (k: Kind): Scope => (k === 'birthday' ? 'friend' : 'family')
+
 const KINDS: Kind[] = ['park', 'home', 'birthday']
 const REPEATS = [0, 4, 8, 12]
 
@@ -33,6 +37,12 @@ export function EncounterNew() {
   const [kind, setKind] = useState<Kind>('park')
   const [childId, setChildId] = useState<string | null>(null)
   const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [scope, setScope] = useState<Scope>('family')
+  const [scopeTouched, setScopeTouched] = useState(false)
+  const chooseKind = (k: Kind) => {
+    setKind(k)
+    if (!scopeTouched) setScope(defaultScope(k))
+  }
   const [err, setErr] = useState<string | null>(null)
 
   const create = useMutation({
@@ -65,6 +75,7 @@ export function EncounterNew() {
       address: f.get('address') || undefined,
       note: f.get('note') || undefined,
       ...(kind === 'birthday' && f.get('gift') ? { details: { gift: f.get('gift') } } : {}),
+      scope,
       invite: [...picked],
     })
   }
@@ -95,7 +106,7 @@ export function EncounterNew() {
         <h3>{t.encounters.whichKind}</h3>
         <div className="seg">
           {KINDS.map((k) => (
-            <button type="button" key={k} className={`btn ${kind === k ? 'btn--on' : ''}`} onClick={() => setKind(k)}>{t.encounters.kind[k]}</button>
+            <button type="button" key={k} className={`btn ${kind === k ? 'btn--on' : ''}`} onClick={() => chooseKind(k)}>{t.encounters.kind[k]}</button>
           ))}
         </div>
       </div>
@@ -116,6 +127,13 @@ export function EncounterNew() {
         <label className="field"><span>{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} placeholder={t.encounters.notePlaceholder} /></label>
       </div>
       <div className="card">
+        <h3>{t.scope.label}</h3>
+        <div className="seg" role="radiogroup" aria-label={t.scope.label}>
+          {(['friend', 'family'] as Scope[]).map((x) => (
+            <button type="button" key={x} role="radio" aria-checked={scope === x} className={`btn ${scope === x ? 'btn--on' : ''}`} onClick={() => { setScope(x); setScopeTouched(true) }}>{t.scope[x]}</button>
+          ))}
+        </div>
+        <p className="muted small" style={{ margin: '0.5rem 0 1rem' }}>{scope === 'friend' ? t.scope.friendHint : t.scope.familyHint}</p>
         <h3>{t.encounters.invite}</h3>
         <p className="muted small">{t.encounters.inviteHint}</p>
         <FamilyPicker families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />

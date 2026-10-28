@@ -131,3 +131,10 @@ Done so far: the icon set (`components/Icon.tsx`, in front of labels, headings a
 - **Layout**: tabs at the thumb on phones (bottom bar, icons), 44 px targets, the invitation asks « Vous venez ? » first, skeleton loading, safe areas.
 - **Guard**: `export.test.ts` pins query aliases (a real export bug was caught by the smoke and fixed).
 - **Left**: the screenshot pass should be re-run (`SHOTS=1 npx playwright test shots`) and eyeballed once more; the Door page points and the account cards were not re-viewed; ideas not started: dynamic link previews per invitation, Babillard/Horizon-style audit pass.
+
+## Overnight standards pass (2026-10-28)
+
+- **Routes are lazy** (`src/router.tsx`): the first download fell from 136 KB to 83 KB gzip; each page is its own chunk. `scripts/check-bundle.mjs` (`npm run check:bundle`, in CI and `verify`) holds the entry, every chunk and the stylesheet to a ratcheting budget, and fails if Reply, the host card or the door fold back into the entry.
+- **CI e2e runs in the authoritative shape** (`npm run e2e:ci`: one worker, no retries), as in Babillard and Horizon.
+- Found by CI, fixed: at 320 px with a wider font the header overflowed; the name now gives way to the face, and the 320 px test uses a long name so it cannot pass by luck.
+- Ideas not done: split the English dictionary into its own lazy chunk (the shared chunk is 23 KB gzip), a knip dead-code gate, dynamic link previews per invitation.

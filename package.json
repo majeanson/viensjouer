@@ -14,9 +14,11 @@
     "cf:dev": "wrangler dev",
     "db:migrate:local": "wrangler d1 migrations apply viensjouer --local",
     "db:migrate:prod": "wrangler d1 migrations apply viensjouer --remote",
-    "verify": "npm run typecheck && npm test && npm run build",
+    "verify": "npm run typecheck && npm test && npm run build && npm run check:bundle",
     "deploy": "npm run build && wrangler deploy",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:ci": "playwright test --workers=1 --retries=0 --forbid-only",
+    "check:bundle": "node scripts/check-bundle.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.5",

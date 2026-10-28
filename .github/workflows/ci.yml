@@ -28,6 +28,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npm run check:bundle
 
   # The invited parent's walk on a phone-sized browser (API stubbed). Signal only: like the
   # other repos, the deploy does not wait for it.
@@ -42,7 +43,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run e2e
+      - run: npm run e2e:ci
 
   deploy:
     name: Deploy to Cloudflare

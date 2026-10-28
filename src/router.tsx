@@ -1,19 +1,21 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './lib/auth'
-import { Door } from './pages/Door'
-import { Encounters } from './pages/Encounters'
-import { EncounterNew } from './pages/EncounterNew'
-import { EncounterDetail } from './pages/EncounterDetail'
-import { Children } from './pages/Children'
-import { Friends } from './pages/Friends'
-import { Reply } from './pages/Reply'
-import { Join } from './pages/Join'
-import { Keep } from './pages/Keep'
-import { Privacy } from './pages/Privacy'
-import { Account } from './pages/Account'
-import { Windows } from './pages/Windows'
-import { WindowReply } from './pages/WindowReply'
-import { Forgot, Reset } from './pages/Forgot'
+const Door = lazy(() => import('./pages/Door').then((m) => ({ default: m.Door })))
+const Encounters = lazy(() => import('./pages/Encounters').then((m) => ({ default: m.Encounters })))
+const EncounterNew = lazy(() => import('./pages/EncounterNew').then((m) => ({ default: m.EncounterNew })))
+const EncounterDetail = lazy(() => import('./pages/EncounterDetail').then((m) => ({ default: m.EncounterDetail })))
+const Children = lazy(() => import('./pages/Children').then((m) => ({ default: m.Children })))
+const Friends = lazy(() => import('./pages/Friends').then((m) => ({ default: m.Friends })))
+const Reply = lazy(() => import('./pages/Reply').then((m) => ({ default: m.Reply })))
+const Join = lazy(() => import('./pages/Join').then((m) => ({ default: m.Join })))
+const Keep = lazy(() => import('./pages/Keep').then((m) => ({ default: m.Keep })))
+const Privacy = lazy(() => import('./pages/Privacy').then((m) => ({ default: m.Privacy })))
+const Account = lazy(() => import('./pages/Account').then((m) => ({ default: m.Account })))
+const Windows = lazy(() => import('./pages/Windows').then((m) => ({ default: m.Windows })))
+const WindowReply = lazy(() => import('./pages/WindowReply').then((m) => ({ default: m.WindowReply })))
+const Forgot = lazy(() => import('./pages/Forgot').then((m) => ({ default: m.Forgot })))
+const Reset = lazy(() => import('./pages/Forgot').then((m) => ({ default: m.Reset })))
 import { Shell } from './components/Shell'
 import { useT } from './i18n'
 import { CODE_RE } from './lib/link'
@@ -34,6 +36,8 @@ function Private({ children }: { children: React.ReactNode }) {
 
 export function AppRoutes() {
   return (
+    <Suspense fallback={<div className="shell" aria-busy="true"><div className="card skeleton" style={{ marginTop: '4rem' }} /></div>}>
+    <Suspense fallback={<div className="shell" aria-busy="true"><div className="card skeleton" style={{ marginTop: '4rem' }} /></div>}>
     <Routes>
       <Route path="/" element={<Door />} />
       <Route path="/r/:token" element={<Reply />} />
@@ -56,5 +60,7 @@ export function AppRoutes() {
       <Route path="/:token" element={<CodeOrHome />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
+    </Suspense>
   )
 }

@@ -89,7 +89,7 @@ rencontre could land on the board as an event).
 - **Edit**: « Modifier » on the host card opens a form with a live preview of exactly what the families will see change. Migration 0008 `encounter_changes` logs one row per changed field. Address and map link are logged as « mis à jour » only, never their values.
 - **Invited page**: a device that opened the link before sees « Mis à jour depuis ta dernière visite » plus « Modifié » marks with the old value; everyone gets a collapsed « Historique des modifications ». « Prévenir par courriel » is optional and only reaches families with an address who did not say no. A moved start re-arms the day-before reminder.
 - **Map link** (migration 0009 `map_url`): optional, https only (`cleanMapUrl`), standard `type=url` input. Same privacy as the address: park = everyone, home/birthday = after a yes.
-- **« Jusqu'à »** is now a standard time input on the day of « Quand » (past midnight = next day).
+- **« Jusqu'à »** is now a standard time input on the day of « Quand » (nothing runs past midnight: the end must be after the start, same day).
 - Simplification batch: built, see the next section.
 
 ## Simplification batch (2026-10-27)
@@ -98,9 +98,10 @@ rencontre could land on the board as an event).
 - **Nothing runs past midnight**: « Jusqu'à » must be after the start on the same day; the form says so, the server refuses it too.
 - **One-tap answer**: Oui / Peut-être / Non saves at once (reply alone). Name, courriel, téléphone, allergies, head-count, reminder and note come after, under « Ajouter mes coordonnées (facultatif) », saved separately. A later answer keeps the note.
 - **Short form**: who, kind, families, when (quick chips Samedi / Dimanche / Demain), where, title (written for you if empty). Everything else under « Plus d'options ». The home card is asked the first time someone proposes « Chez nous ».
-- **Refaire pareil**:  copies kind, child, families, scope, place, note and the same weekday and time, a week on.
+- **Refaire pareil**: the link `/rencontres/nouvelle?from=ID` copies kind, child, families, scope, place, note and the same weekday and time, a week on.
 - **First run**: an empty agenda says the next step (add a child, add a friend, propose).
-- **Three tabs**: Rencontres (agenda with birthdays, invitations and « je suis libre » mixed in), Amis (families, groups as tags, « Sur Viens jouer » badge, the circle folded in), Ma famille (children only). , ,  redirect. « Je suis libre, sans plan » is the second choice at the top of Proposer. The other parent and « Chez nous » live on the account page.
-- **Undo, not confirm()**: . Cancel is immediate with an undo; deletes (rencontre, friend, child, group, window, photo, invitation, circle link) hide at once and run after 6 s unless undone, flushed if the tab closes. A browser dialog now fails the build's e2e.
-- **One Pourquoi per section** (), naming each field and what skipping it costs.
+- **Three tabs**: Rencontres (agenda with birthdays, invitations and « je suis libre » mixed in), Amis (families, groups as tags, « Sur Viens jouer » badge, the circle folded in), Ma famille (children only). The old addresses /calendrier, /cercle and /familles redirect.
+- **Undo, not confirm()** (`src/lib/toast.tsx`): cancel is immediate with an undo; deletes (rencontre, friend, child, group, window, photo, invitation, circle link) hide at once and run after 6 s unless undone, flushed if the tab closes. A browser dialog now fails the build's e2e.
+- **One Pourquoi per section** (`WhyMany`), naming each field and what skipping it costs.
 - **Host card**: one line per family (Partager, with the rest under « Plus d'options »), messages and photos folded, two columns from 900 px.
+- **Moved**: « Je suis libre, sans plan » is the second choice at the top of Proposer. The other parent and « Chez nous » (home card) live on the account page.

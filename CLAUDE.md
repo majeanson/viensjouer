@@ -17,7 +17,9 @@ child's circle. Sibling of Babillard (`../PlannerOrSomething`) and Horizon
 npm run dev              # Vite, HMR on :5173, /api proxied to :8787
 npm run cf:dev           # wrangler dev on :8787 (SPA + Worker + local D1)
 npm run db:migrate:local # apply migrations to local D1 (before cf:dev the first time)
-npm run typecheck · npm test · npm run build   # the three gates
+npm run typecheck · npm run knip · npm test · npm run build · npm run check:bundle   # the gates (npm run verify runs them all)
+npm run e2e:ci           # Playwright in CI shape (one worker, no retries). API stubbed
+SHOTS=1 npx playwright test shots   # screenshots of every screen, phone/small/desktop, light/dark -> screenshots/
 npm run deploy           # build + wrangler deploy (CI does this on main)
 ```
 
@@ -40,8 +42,21 @@ Local needs `.dev.vars` (copy `.dev.vars.example`; `SESSION_SECRET` ≥ 32 chars
 - New migration = next number, forward-only, follows `0001_init.sql`'s header conventions.
 - Calm, toned down: ordinary interactions are fine; **no score, streak, rank or badge**
   — `calm-tenets.test.ts` fails the build on any of them in the schema.
-- Other people's children: no photos in v1, no discovery, no public profile; the
-  address shows only on a yes.
+- Faces are optional and ours only: a photo for the household's own children and parents (shown to invited families on their link's page, nowhere else). Never a photo of another family's child, no discovery, no public profile; the address shows only on a yes.
 - Mobile first; the reply page is the surface most people ever see.
 - Push straight to `main`; CI gates the deploy; fix forward. Update `STATE.md` in the
   same commit as the work.
+
+## Reuse before you write (the shared pieces)
+
+- **Icons**: `components/Icon.tsx` (no emoji, ever: a build test fails on one). Always beside words, decorative.
+- **A group of optional fields**: ONE `WhyMany` (each field named, why it is asked, what skipping costs). A single field: `Why`.
+- **Never `confirm()`**: `lib/toast.tsx` (`done` for reversible, `later`/`useDeferredRemove` for deletes, 6 s undo). An e2e fails on a browser dialog.
+- **Faces / pictures**: `Face`, `AvatarPicker` (small square JPEG, server cap 400 KB), `CoverPicture`. All optional; no bucket means no button.
+- **The board**: `MessageBoard` on the host page and the invitation. **Rows of choices**: the `.seg` family. **A fold**: `.fold` / `.more`.
+- **Copy**: French first, EN parity is a type. `functions/_lib/copyRules.test.ts`: no dead key, no em-dash, no emoji.
+- **Pages are lazy** (`src/router.tsx`); `scripts/check-bundle.mjs` holds the first download to a ratcheting budget.
+
+## Guards worth knowing (plant the violation before trusting a new one)
+
+`calm-tenets` (schema) · `demo.test` (every table in the sweep) · `export.test` (query aliases) · `copyRules` · `knip` · `check:bundle` · the e2e a11y + 320 px overflow sweeps.

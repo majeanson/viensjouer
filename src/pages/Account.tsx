@@ -6,6 +6,8 @@ import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
 import { ParentInvite } from '../components/ParentInvite'
 import { HomeCardForm } from '../components/HomeCard'
+import { useInstall } from '../lib/install'
+import { CalendarFeed } from '../components/CalendarFeed'
 
 // « Mon compte » — what is kept (link), a download of everything, and « tout effacer ».
 export function Account() {
@@ -14,6 +16,7 @@ export function Account() {
   const qc = useQueryClient()
   const { me, refresh } = useAuth()
   const [err, setErr] = useState<string | null>(null)
+  const install = useInstall()
   const [busy, setBusy] = useState(false)
   async function erase(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -34,6 +37,14 @@ export function Account() {
     <>
       <h1>{t.account.title}</h1>
       <p className="muted small">{me.email}</p>
+      {!install.installed && (install.canPrompt || install.ios) && (
+        <div className="card">
+          <h2>{t.install.title}</h2>
+          <p className="muted small">{install.ios ? t.install.ios : t.install.hint}</p>
+          {install.canPrompt && <button className="btn btn--primary" onClick={() => void install.install()}>{t.install.button}</button>}
+        </div>
+      )}
+      <CalendarFeed />
       <ParentInvite />
       <HomeCardForm />
       <div className="card" style={{ marginTop: '1.5rem' }}>

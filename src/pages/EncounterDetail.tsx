@@ -23,6 +23,7 @@ interface Detail {
   relais: Relais[]
   souvenirs: Souvenir[]
   changes: ChangeRow[]
+  bring: { id: string; label: string; claimed_label: string | null; added_by: string }[]
 }
 
 // The host's card. Left: the plan, WHO IS COMING, and one calm line per family (share, with the rest
@@ -37,6 +38,7 @@ export function EncounterDetail() {
   const toast = useToast()
   const inviteRm = useDeferredRemove()
   const photoRm = useDeferredRemove()
+  const bringRm = useDeferredRemove()
   const q = useQuery({ queryKey: K.encounter(id), queryFn: () => api<Detail>(`encounters?id=${id}`), refetchInterval: 30_000 })
   const fams = useQuery({ queryKey: K.families, queryFn: () => api<{ families: Family[] }>('families') })
   const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
@@ -62,6 +64,16 @@ export function EncounterDetail() {
     onSuccess: () => {
       setRelaisFor(null)
       refresh()
+    },
+    onError: fail,
+  })
+  const addBring = useMutation({ mutationFn: (label: string) => api('bring', { method: 'POST', body: { encounter: id, label } }), onSuccess: refresh, onError: fail })
+  const thank = useMutation({
+    mutationFn: (text: string) => api<{ sent: number }>('thanks', { method: 'POST', body: { encounter: id, text } }),
+    onSuccess: (r) => {
+      setFlash(t.thanks.sent(r.sent))
+      refresh()
+      setTimeout(() => setFlash(null), 6000)
     },
     onError: fail,
   })
@@ -136,6 +148,9 @@ export function EncounterDetail() {
   const { encounter: e, messages, relais, changes: rawChanges } = q.data
   const invitations = inviteRm.visible(q.data.invitations)
   const souvenirs = photoRm.visible(q.data.souvenirs)
+  const bring = bringRm.visible(q.data.bring ?? [])
+  const nowSecs = Math.floor(Date.now() / 1000)
+  const canThank = e.status !== 'cancelled' && e.starts_at <= nowSecs && nowSecs - e.starts_at <= 30 * 86_400 && !e.thanked_at
   const changes = rawChanges ?? []
   const invited = new Set(invitations.map((i) => i.friend_family_id))
   const notYet = (fams.data?.families ?? []).filter((f) => !invited.has(f.id))
@@ -188,6 +203,22 @@ export function EncounterDetail() {
           <Link to={`/rencontres/nouvelle?from=${e.id}`} className="linkbtn">{t.form.again}</Link>
         </p>
       )}
+
+      {canThank && yes.length > 0 && (
+        <form
+          className="card"
+          onSubmit={(ev) => {
+            ev.preventDefault()
+            thank.mutate(String(new FormData(ev.currentTarget).get('text') ?? ''))
+          }}
+        >
+          <h3>{t.thanks.title}</h3>
+          <p className="muted small">{t.thanks.hint}</p>
+          <textarea className="input" name="text" maxLength={500} defaultValue={t.thanks.default} aria-label={t.thanks.title} />
+          <button className="btn btn--primary" style={{ marginTop: '0.5rem' }} disabled={thank.isPending}>{t.thanks.send}</button>
+        </form>
+      )}
+      {e.thanked_at && <p className="muted small">{t.thanks.done}</p>}
 
       <div className="cols">
         <div>
@@ -274,6 +305,32 @@ export function EncounterDetail() {
         </div>
 
         <div>
+          <details className="fold">
+            <summary><span>{t.bring.title}{bring.length > 0 ? ` (${bring.length})` : ''}</span></summary>
+            <div>
+              <p className="muted small">{t.bring.hint}</p>
+              {bring.map((b) => (
+                <div key={b.id} className="row linkrow">
+                  <span>{b.label} <span className="muted small">· {b.claimed_label ? t.bring.byName(b.claimed_label) : t.bring.nobody}</span></span>
+                  <button className="linkbtn linkbtn--danger" onClick={() => bringRm.remove(b.id, t.undo.removed, async () => { await api('bring', { method: 'DELETE', body: { id: b.id } }); refresh() })}>{t.bring.remove}</button>
+                </div>
+              ))}
+              <form
+                className="cluster"
+                style={{ marginTop: '0.5rem' }}
+                onSubmit={(ev) => {
+                  ev.preventDefault()
+                  const f = ev.currentTarget
+                  const label = String(new FormData(f).get('label') ?? '').trim()
+                  if (label) addBring.mutate(label)
+                  f.reset()
+                }}
+              >
+                <input className="input" name="label" maxLength={60} placeholder={t.bring.placeholder} aria-label={t.bring.title} style={{ flex: '1 1 10rem' }} />
+                <button className="btn" disabled={addBring.isPending}>{t.bring.add}</button>
+              </form>
+            </div>
+          </details>
           {(health.data?.photos || souvenirs.length > 0) && (
             <details className="fold">
               <summary><span>{t.souvenirs.title}{souvenirs.length > 0 ? ` (${souvenirs.length})` : ''}</span></summary>

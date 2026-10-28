@@ -35,6 +35,7 @@ export interface Encounter {
   map_url: string | null
   cover?: string | null
   show_guests?: boolean
+  thanked_at?: number | null
   note: string | null
   status: Status
   series_id?: string | null

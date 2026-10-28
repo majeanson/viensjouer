@@ -7,7 +7,7 @@ import { nowSec } from '../_lib/ids'
 export const onRequestGet = authed(async (ctx, actor) => {
   const hh = actor.householdId
   const db = ctx.env.DB
-  const [household, parents, children, families, encounters, invitations, messages, groups, groupMembers, windows, windowTargets, homeCard, souvenirs, changes] = await db.batch([
+  const [household, parents, children, families, encounters, invitations, messages, groups, groupMembers, windows, windowTargets, homeCard, souvenirs, bring, changes] = await db.batch([
     db.prepare('SELECT id, name, tz, created_at FROM households WHERE id = ?').bind(hh),
     db.prepare('SELECT email, display_name, created_at FROM parents WHERE household_id = ?').bind(hh),
     db.prepare('SELECT id, first_name, birthdate, colour, created_at FROM children WHERE household_id = ? AND deleted_at IS NULL').bind(hh),
@@ -21,6 +21,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
     db.prepare('SELECT t.window_id, t.friend_family_id, t.reply, t.reply_note FROM window_targets t JOIN open_windows w ON w.id = t.window_id WHERE w.household_id = ? AND w.deleted_at IS NULL').bind(hh),
     db.prepare('SELECT details FROM home_cards WHERE household_id = ?').bind(hh),
     db.prepare('SELECT s.encounter_id, s.author_label, s.created_at FROM souvenirs s JOIN encounters e ON e.id = s.encounter_id WHERE e.household_id = ? AND s.deleted_at IS NULL').bind(hh),
+    db.prepare('SELECT b.encounter_id, b.label, b.claimed_label FROM bring_items b JOIN encounters e ON e.id = b.encounter_id WHERE e.household_id = ? AND e.deleted_at IS NULL').bind(hh),
     db.prepare('SELECT c.encounter_id, c.field, c.old_value, c.new_value, c.created_at FROM encounter_changes c JOIN encounters e ON e.id = c.encounter_id WHERE e.household_id = ? AND e.deleted_at IS NULL').bind(hh),
   ])
   const body = {
@@ -38,6 +39,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
     homeCard: homeCard.results[0] ? JSON.parse((homeCard.results[0] as { details: string }).details) : null,
     photos: souvenirs.results,
     changes: changes.results,
+    bring: bring.results,
   }
   return new Response(JSON.stringify(body, null, 2), {
     headers: { 'content-type': 'application/json; charset=utf-8', 'content-disposition': 'attachment; filename="viens-jouer-mes-donnees.json"', 'cache-control': 'no-store' },

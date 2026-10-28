@@ -37,6 +37,8 @@ export function EncounterNew() {
   const kids = useQuery({ queryKey: K.children, queryFn: () => api<{ children: Child[] }>('children') })
   const fams = useQuery({ queryKey: K.families, queryFn: () => api<{ families: Family[] }>('families') })
   const grp = useQuery({ queryKey: K.groups, queryFn: () => api<{ groups: Group[] }>('groups') })
+  const placesQ = useQuery({ queryKey: ['places'], queryFn: () => api<{ places: { place: string; map_url: string | null; address: string | null; kind: string }[] }>('places'), staleTime: 60_000 })
+  const [reused, setReused] = useState(false)
   const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const home = useQuery({ queryKey: K.homeCard, queryFn: () => api<{ card: unknown | null }>('home-card') })
@@ -195,7 +197,27 @@ export function EncounterNew() {
               </div>
               <input className="input" name="startsAt" type="datetime-local" required value={start} onChange={(e) => setStart(e.target.value)} aria-label={t.encounters.when} />
             </div>
-            <label className="field"><span>{t.encounters.place}</span><input className="input" name="place" maxLength={120} defaultValue={prev?.place ?? ''} placeholder={t.encounters.placePlaceholder[kind]} /></label>
+            <label className="field"><span>{t.encounters.place}</span><input
+              className="input"
+              name="place"
+              maxLength={120}
+              list="past-places"
+              autoComplete="off"
+              defaultValue={prev?.place ?? ''}
+              placeholder={t.encounters.placePlaceholder[kind]}
+              onChange={(ev) => {
+                // A place used before brings its map link (and, away from the park, its address) back.
+                const hit = placesQ.data?.places.find((p) => p.place.toLowerCase() === ev.target.value.trim().toLowerCase())
+                const f = ev.target.form
+                if (!hit || !f) return setReused(false)
+                const map = f.elements.namedItem('mapUrl') as HTMLInputElement | null
+                const addr = f.elements.namedItem('address') as HTMLInputElement | null
+                let did = false
+                if (map && !map.value && hit.map_url) { map.value = hit.map_url; did = true }
+                if (addr && !addr.value && hit.address && kind !== 'park') { addr.value = hit.address; did = true }
+                setReused(did)
+              }}
+            /><datalist id="past-places">{(placesQ.data?.places ?? []).map((p) => <option key={p.place} value={p.place} />)}</datalist>{reused && <span className="small muted" style={{ fontWeight: 400 }}>{t.form.reused}</span>}</label>
             <label className="field"><span>{t.encounters.titleField}</span><input className="input" name="title" maxLength={120} defaultValue={prev?.title ?? ''} placeholder={`${t.form.autoTitle[kind]}, ${dayHour(fromLocalInput(start) ?? nextSaturdayTen(), lang)}`} /><span className="small muted" style={{ fontWeight: 400 }}>{t.form.titleAuto}</span></label>
 
             <details className="why" open={moreOpen} style={{ marginTop: '0.5rem' }}>

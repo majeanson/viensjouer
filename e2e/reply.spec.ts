@@ -26,7 +26,7 @@ async function stub(page: Page, data: unknown, status = 200) {
   let state = data as { you?: Record<string, unknown> }
   await page.route('**/api/health', (r) => r.fulfill({ json: { ok: true, mail: false, photos: false, invite: false } }))
   await page.route('**/api/auth/me', (r) => r.fulfill({ json: { signedIn: false } }))
-  await page.route('**/api/r/*', async (r) => {
+  await page.route('**/api/r/**', async (r) => {
     if (r.request().method() === 'POST') {
       const body = r.request().postDataJSON() as { reply?: string }
       posts.push(body)
@@ -253,4 +253,31 @@ test('the host can hide who is coming: the page then shows no list', async ({ pa
   await page.goto(`/${CODE}`)
   await expect(page.getByLabel('Qui vient')).toHaveCount(0)
   await expect(page.locator('img.cover')).toHaveCount(0)
+})
+
+test('« À apporter »: take a line, add your own, and a family that has not answered only reads', async ({ page }) => {
+  const lines = [{ id: 'b1', label: 'la collation', by: null, mine: false }, { id: 'b2', label: 'des jus', by: 'Paul', mine: false }]
+  const posts = await stub(page, card({ bring: lines, homeCard: null }))
+  await page.goto(`/${CODE}`)
+  const box = page.getByLabel('À apporter', { exact: true }).first()
+  await expect(box).toContainText('la collation')
+  await expect(box).toContainText('apporté par Paul')
+  // not answered: no buttons, a sentence says why
+  await expect(box.getByRole('button', { name: 'Je l’apporte' })).toHaveCount(0)
+  await expect(box).toContainText('Réponds « oui » ou « peut-être » pour en prendre une.')
+  await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  await expect(box.getByRole('button', { name: 'Je l’apporte' })).toHaveCount(1)
+  await box.getByRole('button', { name: 'Je l’apporte' }).click()
+  await expect.poll(() => posts.filter((p) => (p as { claim?: string }).claim).length).toBe(1)
+  expect(posts.find((p) => (p as { claim?: string }).claim)).toEqual({ claim: 'b1' })
+  await box.getByLabel('J’apporte…').fill('des fruits')
+  await box.getByRole('button', { name: 'Ajouter' }).click()
+  await expect.poll(() => posts.filter((p) => (p as { add?: string }).add).length).toBe(1)
+})
+
+test('the calendar button is a download AND a link the calendar app keeps up to date', async ({ page }) => {
+  await stub(page, card())
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('link', { name: 'Ajouter à mon calendrier' })).toHaveAttribute('href', `/api/r/${CODE}/ics`)
+  await expect(page.getByRole('link', { name: 'Suivre dans mon calendrier (se met à jour)' })).toHaveAttribute('href', new RegExp(`^webcal://[^/]+/api/r/${CODE}/ics\\?s=1$`))
 })

@@ -32,6 +32,12 @@ import * as exportData from '../functions/api/export'
 import * as join from '../functions/api/join'
 import * as parentInvite from '../functions/api/parent-invite'
 import * as relais from '../functions/api/relais'
+import * as bring from '../functions/api/bring'
+import * as replyBring from '../functions/api/r/bring'
+import * as feed from '../functions/api/feed'
+import * as calLink from '../functions/api/cal-link'
+import * as thanks from '../functions/api/thanks'
+import * as places from '../functions/api/places'
 import * as cover from '../functions/api/cover'
 import * as coverImg from '../functions/api/cover-img'
 import * as replyCover from '../functions/api/r/cover'
@@ -68,12 +74,18 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['join', join],
   ['parent-invite', parentInvite],
   ['relais', relais],
+  ['bring', bring],
+  ['feed/:token', feed],
+  ['cal-link', calLink],
+  ['thanks', thanks],
+  ['places', places],
   ['cover', cover],
   ['cover/:id', coverImg],
   ['souvenirs', souvenirs],
   ['souvenirs/:id', souvenirImg],
   ['r/:token/ics', replyIcs],
   ['r/:token/cover', replyCover],
+  ['r/:token/bring', replyBring],
   ['r/:token/photo/:id', replyPhotoImg],
   ['r/:token/photo', replyPhoto],
   ['r/:token/claim', replyClaim],

@@ -121,6 +121,10 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
       waiting: results.filter((g) => g.reply === null).length,
     }
   }
+  const { results: bringRows } = await ctx.env.DB.prepare('SELECT id, label, claimed_by, claimed_label FROM bring_items WHERE encounter_id = ? ORDER BY created_at')
+    .bind(r.encounter.id)
+    .all<{ id: string; label: string; claimed_by: string | null; claimed_label: string | null }>()
+  const bring = bringRows.map((b) => ({ id: b.id, label: b.label, by: b.claimed_label, mine: b.claimed_by === r.invitation.id }))
   // What was edited since the invitation went out (the address itself is never in the log).
   const { results: changes } = await ctx.env.DB.prepare('SELECT field, old_value, new_value, created_at FROM encounter_changes WHERE encounter_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 10')
     .bind(r.encounter.id, now - 60 * 86_400)
@@ -135,6 +139,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     changes,
     cover: coverId(cover_key),
     guests,
+    bring,
     souvenirsOpen: souvenirsVisible(r.encounter, r.invitation.reply, now),
     photos: photosEnabled(ctx.env),
     host: r.host,

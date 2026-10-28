@@ -36,3 +36,8 @@ createRoot(document.getElementById('root')!).render(
     <Root />
   </StrictMode>,
 )
+
+// Installable, never cached: see public/sw.js.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  addEventListener('load', () => void navigator.serviceWorker.register('/sw.js').catch(() => {}))
+}

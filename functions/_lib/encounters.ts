@@ -31,6 +31,7 @@ export interface EncounterRow {
   details?: string
   cover_key?: string | null
   show_guests?: number
+  thanked_at?: number | null
 }
 
 // The id at the tail of a stored cover key: what the page puts in the image URL (it also busts the cache).
@@ -53,28 +54,86 @@ export function addressFor(reply: Reply | null, address: string | null): string 
 
 // iCalendar text for one rencontre. UTC instants (`Z`), which every calendar app maps
 // to the reader's own zone; no VTIMEZONE block to get wrong.
-export function toIcs(e: { id: string; title: string; starts_at: number; ends_at: number | null; place: string | null; note: string | null }, origin: string): string {
-  const stamp = (sec: number) => new Date(sec * 1000).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
-  const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n')
+export interface IcsEvent {
+  id: string
+  title: string
+  starts_at: number
+  ends_at: number | null
+  place: string | null
+  note: string | null
+  address?: string | null
+  status?: Status
+  updated_at?: number
+}
+
+const icsStamp = (sec: number) => new Date(sec * 1000).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
+const icsEsc = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
+
+// RFC 5545: a line is at most 75 OCTETS; the rest continues on the next line after a space.
+export function icsFold(line: string): string {
+  const enc = new TextEncoder()
+  if (enc.encode(line).length <= 75) return line
+  const parts: string[] = []
+  let cur = ''
+  let bytes = 0
+  for (const ch of line) {
+    const n = enc.encode(ch).length
+    if (bytes + n > (parts.length === 0 ? 75 : 74)) {
+      parts.push(cur)
+      cur = ''
+      bytes = 0
+    }
+    cur += ch
+    bytes += n
+  }
+  parts.push(cur)
+  return parts.join('\r\n ')
+}
+
+const ICS_STATUS: Record<Status, string> = { proposed: 'TENTATIVE', confirmed: 'CONFIRMED', cancelled: 'CANCELLED' }
+
+// One VEVENT. The UID never changes and SEQUENCE grows with every edit, so a calendar that already has the
+// event UPDATES it (time moved, cancelled) instead of adding a second one.
+export function icsEvent(e: IcsEvent, url: string, nowSecs = Math.floor(Date.now() / 1000)): string[] {
   const end = e.ends_at ?? e.starts_at + 2 * 3600
+  const where = [e.place, e.address].filter(Boolean).join(', ')
+  return [
+    'BEGIN:VEVENT',
+    `UID:${e.id}@viensjouer`,
+    `DTSTAMP:${icsStamp(nowSecs)}`,
+    e.updated_at ? `LAST-MODIFIED:${icsStamp(e.updated_at)}` : null,
+    `SEQUENCE:${e.updated_at ?? 0}`,
+    `DTSTART:${icsStamp(e.starts_at)}`,
+    `DTEND:${icsStamp(end)}`,
+    `SUMMARY:${icsEsc(e.title)}`,
+    where ? `LOCATION:${icsEsc(where)}` : null,
+    `DESCRIPTION:${icsEsc((e.note ? e.note + '\n\n' : '') + url)}`,
+    `URL:${url}`,
+    e.status ? `STATUS:${ICS_STATUS[e.status]}` : null,
+    'END:VEVENT',
+  ].filter((l): l is string => l !== null)
+}
+
+export function icsCalendar(name: string, events: string[][]): string {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Viens jouer//FR',
-    'BEGIN:VEVENT',
-    `UID:${e.id}@viensjouer`,
-    `DTSTAMP:${stamp(Math.floor(Date.now() / 1000))}`,
-    `DTSTART:${stamp(e.starts_at)}`,
-    `DTEND:${stamp(end)}`,
-    `SUMMARY:${esc(e.title)}`,
-    e.place ? `LOCATION:${esc(e.place)}` : null,
-    `DESCRIPTION:${esc((e.note ? e.note + '\n\n' : '') + origin)}`,
-    'END:VEVENT',
+    'CALSCALE:GREGORIAN',
+    `X-WR-CALNAME:${icsEsc(name)}`,
+    'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
+    'X-PUBLISHED-TTL:PT1H',
+    ...events.flat(),
     'END:VCALENDAR',
     '',
   ]
-    .filter((l): l is string => l !== null)
+    .map(icsFold)
     .join('\r\n')
+}
+
+// « Ajouter à mon calendrier »: one rencontre (a download, or a subscription that keeps itself up to date).
+export function toIcs(e: IcsEvent, url: string): string {
+  return icsCalendar('Viens jouer', [icsEvent(e, url)])
 }
 
 // An optional link to a map (Google Maps, Apple Plans, OpenStreetMap, a short link…). Only https, no

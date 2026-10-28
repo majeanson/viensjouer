@@ -273,3 +273,124 @@ test('the host adds a cover picture, and turns « qui vient » off from the edit
   expect(stub.calls.find((c) => c.method === 'PATCH')!.body).toMatchObject({ id: 'e1', showGuests: false })
   await expect(page.getByText('Modifié. Les familles le verront sur leur page.')).toBeVisible()
 })
+
+test('« À apporter »: the host adds a line and sees who took what', async ({ page }) => {
+  const stub = await host(page, {
+    'GET encounters': () => ({ json: { ...detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes')]), bring: [{ id: 'b1', label: 'la collation', claimed_label: 'Julie', added_by: 'host' }, { id: 'b2', label: 'des jus', claimed_label: null, added_by: 'host' }] } }),
+    'POST bring': () => ({ status: 201, json: { id: 'b3' } }),
+  })
+  await page.goto('/rencontres/e1')
+  await page.getByText('À apporter (2)').click()
+  await expect(page.getByText('apporté par Julie')).toBeVisible()
+  await expect(page.getByText('personne encore')).toBeVisible()
+  await page.getByLabel('À apporter', { exact: true }).fill('des fruits')
+  await page.getByRole('button', { name: 'Ajouter', exact: true }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'bring').length).toBe(1)
+  expect(stub.calls.find((c) => c.path === 'bring')!.body).toEqual({ encounter: 'e1', label: 'des fruits' })
+})
+
+test('« Dire merci » appears only after the rencontre, once, and sends the message', async ({ page }) => {
+  const past = now - 86_400
+  const stub = await host(page, {
+    'GET encounters': () => ({ json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes')], { starts_at: past }) }),
+    'POST thanks': () => ({ json: { sent: 1 } }),
+  })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByRole('heading', { name: 'Dire merci' })).toBeVisible()
+  await expect(page.getByLabel('Dire merci')).toHaveValue('Merci d’être venus !')
+  await page.getByRole('button', { name: 'Envoyer le merci' }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.path === 'thanks').length).toBe(1)
+  expect(stub.calls.find((c) => c.path === 'thanks')!.body).toEqual({ encounter: 'e1', text: 'Merci d’être venus !' })
+  await expect(page.getByText('Merci envoyé. 1 courriel parti.')).toBeVisible()
+
+  // before the rencontre, and after it was thanked: nothing to offer
+  await page.unrouteAll({ behavior: 'ignoreErrors' })
+  await host(page, { 'GET encounters': () => ({ json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes')]) }) })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByRole('heading', { name: 'Dire merci' })).toHaveCount(0)
+  await page.unrouteAll({ behavior: 'ignoreErrors' })
+  await host(page, { 'GET encounters': () => ({ json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes')], { starts_at: past, thanked_at: now }) }) })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByRole('heading', { name: 'Dire merci' })).toHaveCount(0)
+  await expect(page.getByText('Merci envoyé.')).toBeVisible()
+})
+
+test('« Où » remembers the places used before and brings the map link back', async ({ page }) => {
+  await host(page, {
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }),
+    'GET places': () => ({ json: { places: [{ place: 'Parc Lafontaine', map_url: 'https://maps.app.goo.gl/abc', address: null, kind: 'park' }, { place: 'Chez nous', map_url: null, address: '12 rue X', kind: 'home' }] } }),
+  })
+  await page.goto('/rencontres/nouvelle')
+  await expect(page.locator('#past-places option')).toHaveCount(2)
+  await page.getByLabel('Où').fill('parc lafontaine')
+  await expect(page.getByText('Lien de carte et adresse repris de la dernière fois.')).toBeVisible()
+  await page.getByText('Plus d’options').click()
+  await expect(page.locator('input[name=mapUrl]')).toHaveValue('https://maps.app.goo.gl/abc')
+  // a link already typed is never overwritten
+  await page.locator('input[name=mapUrl]').fill('https://maps.app.goo.gl/mine')
+  await page.getByLabel('Où').fill('')
+  await page.getByLabel('Où').fill('Parc Lafontaine')
+  await expect(page.locator('input[name=mapUrl]')).toHaveValue('https://maps.app.goo.gl/mine')
+})
+
+test('« Mon calendrier »: get a secret link, copy it, rotate it only after a second tap', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  let token: string | null = null
+  const stub = await host(page, {
+    'GET cal-link': () => ({ json: { token } }),
+    'POST cal-link': () => {
+      token = token ? 'B'.repeat(24) : 'A'.repeat(24)
+      return { json: { token } }
+    },
+    'DELETE cal-link': () => {
+      token = null
+      return { json: { ok: true } }
+    },
+  })
+  await page.goto('/compte')
+  await expect(page.getByRole('heading', { name: 'Mon calendrier' })).toBeVisible()
+  await page.getByRole('button', { name: 'Obtenir mon lien' }).click()
+  await expect(page.getByText('ne le partage pas')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Ouvrir dans mon calendrier' })).toHaveAttribute('href', new RegExp(`^webcal://.+/api/feed/${'A'.repeat(24)}$`))
+  await page.getByRole('button', { name: 'Copier le lien' }).click()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`/api/feed/${'A'.repeat(24)}$`))
+  // rotating asks first, inline, with no browser dialog
+  await page.getByRole('button', { name: 'Nouveau lien' }).click()
+  await expect(page.getByText('L’ancien lien cessera de marcher.')).toBeVisible()
+  expect(stub.calls.filter((c) => c.method === 'POST' && c.path === 'cal-link')).toHaveLength(1)
+  await page.getByRole('button', { name: 'Oui, un nouveau lien' }).click()
+  await expect(page.getByRole('link', { name: 'Ouvrir dans mon calendrier' })).toHaveAttribute('href', new RegExp('B{24}$'))
+  await page.getByRole('button', { name: 'Désactiver' }).click()
+  await expect(page.getByRole('button', { name: 'Obtenir mon lien' })).toBeVisible()
+})
+
+test('the app is installable: manifest, icons, iOS tags, and no caching service worker', async ({ page, request }) => {
+  await host(page)
+  await page.goto('/rencontres')
+  const manifestHref = await page.locator('link[rel=manifest]').getAttribute('href')
+  expect(manifestHref).toBe('/manifest.webmanifest')
+  const manifest = await (await request.get(manifestHref!)).json()
+  expect(manifest).toMatchObject({ name: 'Viens jouer', display: 'standalone', start_url: '/rencontres', lang: 'fr-CA' })
+  for (const icon of manifest.icons as { src: string; purpose: string }[]) {
+    const r = await request.get(icon.src)
+    expect(r.status(), icon.src).toBe(200)
+  }
+  expect((manifest.icons as { purpose: string }[]).some((i) => i.purpose === 'maskable')).toBe(true)
+  expect(await page.locator('link[rel=apple-touch-icon]').getAttribute('href')).toBe('/apple-touch-icon.png')
+  expect((await request.get('/apple-touch-icon.png')).status()).toBe(200)
+  expect(await page.locator('meta[name=apple-mobile-web-app-capable]').getAttribute('content')).toBe('yes')
+  expect(await page.locator('meta[property="og:image"]').getAttribute('content')).toMatch(/og-image\.png$/)
+  // the service worker caches nothing
+  const sw = await (await request.get('/sw.js')).text()
+  expect(sw).not.toMatch(/caches\.|cache\.put|respondWith/)
+})
+
+test('on an iPhone the account page explains « Sur l’écran d’accueil »', async ({ browser }) => {
+  const ctx = await browser.newContext({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1' })
+  const page = await ctx.newPage()
+  await host(page)
+  await page.goto('/compte')
+  await expect(page.getByRole('heading', { name: 'Sur l’écran d’accueil' })).toBeVisible()
+  await expect(page.getByText(/bouton Partager de Safari/)).toBeVisible()
+  await ctx.close()
+})

@@ -42,17 +42,18 @@ export const onRequestGet = authed(async (ctx, actor) => {
   const url = new URL(ctx.request.url)
   const id = url.searchParams.get('id')
   if (id) {
-    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, map_url, note, status, series_id, here_at, details, cover_key, show_guests FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
+    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, map_url, note, status, series_id, here_at, details, cover_key, show_guests, thanked_at FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
       .bind(id, actor.householdId)
       .first<EncounterRow>()
     if (!e) return notFound()
     const now = nowSec()
-    const [inv, msgs, rel, sou, chg] = await ctx.env.DB.batch([
+    const [inv, msgs, rel, sou, chg, brg] = await ctx.env.DB.batch([
       ctx.env.DB.prepare(`${INVITE_SELECT} WHERE i.encounter_id = ? ORDER BY i.created_at`).bind(id),
       ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at FROM encounter_messages WHERE encounter_id = ? ORDER BY created_at').bind(id),
       ctx.env.DB.prepare('SELECT r.invitation_id, r.nap, r.ate, r.mood, r.note, r.expires_at FROM relais r JOIN invitations i ON i.id = r.invitation_id WHERE i.encounter_id = ? AND r.expires_at > ?').bind(id, now),
       ctx.env.DB.prepare('SELECT id, author_kind, author_label, created_at FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(id),
       ctx.env.DB.prepare('SELECT field, old_value, new_value, created_at FROM encounter_changes WHERE encounter_id = ? ORDER BY created_at DESC LIMIT 30').bind(id),
+      ctx.env.DB.prepare('SELECT id, label, claimed_label, added_by FROM bring_items WHERE encounter_id = ? ORDER BY created_at').bind(id),
     ])
     const { details, cover_key, show_guests, ...rest } = e
     return ok({
@@ -62,6 +63,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
       relais: rel.results,
       souvenirs: sou.results,
       changes: chg.results,
+      bring: brg.results,
     })
   }
   // The list: everything not older than two weeks, soonest first. A hub later paginates.

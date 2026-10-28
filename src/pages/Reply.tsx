@@ -30,6 +30,7 @@ interface Card {
   changes: ChangeRow[]
   cover: string | null
   guests: { yes: string[]; maybe: string[]; waiting: number } | null
+  bring: { id: string; label: string; by: string | null; mine: boolean }[]
 }
 
 // THE install-free page. A parent opens it from a text, sees the plan, answers in one
@@ -73,6 +74,14 @@ function ReplyInner() {
     onError: (e) => setErr(e.message),
   })
 
+  const bringPost = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api(`r/${token}/bring`, { method: 'POST', body }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: K.reply(token) })
+      setErr(null)
+    },
+    onError: (e) => setErr(e.message),
+  })
   const post = useMutation({
     mutationFn: (body: Record<string, unknown>) => api(`r/${token}`, { method: 'POST', body }),
     onSuccess: () => {
@@ -84,7 +93,9 @@ function ReplyInner() {
 
   if (q.isLoading) return <p className="shell muted">{t.common.loading}</p>
   if (!q.data) return <div className="shell"><p className="notice notice--err">{isStatus(q.error, 404) ? t.reply.dead : t.common.error}</p></div>
-  const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos, changes: rawChanges, cover, guests } = q.data
+  const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos, changes: rawChanges, cover, guests, bring: rawBring } = q.data
+  const bring = rawBring ?? []
+  const canBring = (you.reply === 'yes' || you.reply === 'maybe') && alive
   const changes = rawChanges ?? []
   const fresh = seenAt === null ? [] : changes.filter((c) => c.created_at > seenAt)
   const freshOf = (...fields: ChangeField[]) => fresh.find((c) => fields.includes(c.field))
@@ -163,7 +174,10 @@ function ReplyInner() {
         </dl>
         {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
-        <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
+        <div className="cluster">
+          <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
+          <a className="linkbtn" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
+        </div>
         {changes.length > 0 && (
           <details className="why" style={{ marginTop: '0.75rem' }}>
             <summary>{t.edit.history}</summary>
@@ -195,6 +209,37 @@ function ReplyInner() {
           {guests.maybe.length > 0 && <p><strong>{t.roster.maybe} ({guests.maybe.length})</strong> : {guests.maybe.join(', ')}</p>}
           {guests.waiting > 0 && <p className="muted small">{t.roster.waiting(guests.waiting)}</p>}
           <p className="muted small">{t.roster.public}</p>
+        </section>
+      )}
+
+      {(bring.length > 0 || canBring) && (
+        <section className="card" aria-label={t.bring.title}>
+          <h3>{t.bring.title}</h3>
+          {bring.map((b) => (
+            <div key={b.id} className="row linkrow">
+              <span>{b.label} <span className="muted small">· {b.by ? (b.mine ? t.bring.byName(you.parent_name) : t.bring.byName(b.by)) : t.bring.nobody}</span></span>
+              {canBring && !b.by && <button className="btn btn--small" disabled={bringPost.isPending} onClick={() => bringPost.mutate({ claim: b.id })}>{t.bring.take}</button>}
+              {canBring && b.mine && <button className="linkbtn" disabled={bringPost.isPending} onClick={() => bringPost.mutate({ release: b.id })}>{t.bring.release}</button>}
+            </div>
+          ))}
+          {canBring ? (
+            <form
+              className="cluster"
+              style={{ marginTop: '0.5rem' }}
+              onSubmit={(ev) => {
+                ev.preventDefault()
+                const f = ev.currentTarget
+                const add = String(new FormData(f).get('add') ?? '').trim()
+                if (add) bringPost.mutate({ add })
+                f.reset()
+              }}
+            >
+              <input className="input" name="add" maxLength={60} placeholder={t.bring.addMine} aria-label={t.bring.addMine} style={{ flex: '1 1 10rem' }} />
+              <button className="btn" disabled={bringPost.isPending}>{t.bring.add}</button>
+            </form>
+          ) : (
+            <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.bring.answerFirst}</p>
+          )}
         </section>
       )}
 

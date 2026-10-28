@@ -22,6 +22,8 @@ export const ENFORCED: ReadonlyArray<readonly [name: string, value: string]> = [
   ['Referrer-Policy', 'strict-origin-when-cross-origin'],
   ['Permissions-Policy', 'camera=(), microphone=(), geolocation=()'],
   ['Content-Security-Policy', CSP],
+  // Private by design (privacy page: « rien n’est public, rien ne se cherche »): no indexing.
+  ['X-Robots-Tag', 'noindex, nofollow'],
 ]
 
 // Cloudflare serves a static file that matches the request WITHOUT the Worker, so `/`

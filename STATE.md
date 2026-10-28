@@ -105,3 +105,8 @@ rencontre could land on the board as an event).
 - **One Pourquoi per section** (`WhyMany`), naming each field and what skipping it costs.
 - **Host card**: one line per family (Partager, with the rest under « Plus d'options »), messages and photos folded, two columns from 900 px.
 - **Moved**: « Je suis libre, sans plan » is the second choice at the top of Proposer. The other parent and « Chez nous » (home card) live on the account page.
+
+## Cover picture and public « qui vient » (2026-10-27)
+
+- **Who is coming is visible to the invited families** (`r/[token]` returns `guests`): first names of the children who said yes or maybe, how many have not answered, never a decline. The host can turn it off per rencontre (`encounters.show_guests`, migration 0010; checkbox in « Modifier »). The line is also on the privacy page and under the host's « Qui vient ». Reply page says it plainly before anyone answers.
+- **Cover picture** (`encounters.cover_key`, migration 0010): one per rencontre, host page (add / change / remove with undo) or the « Plus d'options » of the new form. `POST/DELETE /api/cover`, served to the host at `/api/cover/<encounterId>` and to any family holding a live code at `/api/r/<code>/cover` (it is the invitation's picture, not private). Optional like all photos (no R2 bucket, no picture). Replacing frees the old blob; « Tout effacer » and the demo sweep delete covers too.

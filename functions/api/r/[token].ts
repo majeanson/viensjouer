@@ -3,7 +3,7 @@ import { lockedOut, lookupMiss } from '../../_lib/guessLimit'
 import { badRequest, ok, readJson, str, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { newId, normalizeLinkCode, nowSec } from '../../_lib/ids'
-import { addressFor, isReply, linkAlive, type EncounterRow, type Reply } from '../../_lib/encounters'
+import { addressFor, coverId, isReply, linkAlive, type EncounterRow, type Reply } from '../../_lib/encounters'
 import { REMIND_LEAD_SEC } from '../../_lib/reminders'
 import { headcount, hereAllowed, homeCardOrNull, parseDetails, souvenirsVisible, type Scope } from '../../_lib/kinds'
 import { photosEnabled } from '../../_lib/photos'
@@ -30,7 +30,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
   if (!token) return null
   const row = await env.DB.prepare(
     `SELECT i.id AS inv_id, i.friend_family_id, i.reply, i.reply_note, i.remind_at,
-            e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.map_url, e.note, e.status, e.details, e.here_at, i.adults, i.kids, i.scope,
+            e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.map_url, e.cover_key, e.show_guests, e.note, e.status, e.details, e.here_at, i.adults, i.kids, i.scope,
             f.parent_name, f.email, f.phone, f.child_first_name, f.allergies,
             c.first_name AS host_child, h.name AS household_name, h.tz,
             (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent
@@ -57,6 +57,8 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
       place: row.place as string | null,
       address: row.address as string | null,
       map_url: row.map_url as string | null,
+      cover_key: row.cover_key as string | null,
+      show_guests: row.show_guests as number,
       note: row.note as string | null,
       status: row.status as EncounterRow['status'],
       details: row.details as string,
@@ -103,11 +105,27 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const photoRows = souvenirsVisible(r.encounter, r.invitation.reply, now)
     ? (await ctx.env.DB.prepare('SELECT id, author_label FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(r.encounter.id).all()).results
     : []
+  // Who is coming, for the families invited too: first names of the children who said yes or maybe
+  // (never a no), and how many have not answered. The host can switch it off (show_guests).
+  let guests: { yes: string[]; maybe: string[]; waiting: number } | null = null
+  if (r.encounter.show_guests !== 0) {
+    const { results } = await ctx.env.DB.prepare(
+      `SELECT f.child_first_name AS name, i.reply FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id
+        WHERE i.encounter_id = ? AND f.deleted_at IS NULL ORDER BY i.reply_at`,
+    )
+      .bind(r.encounter.id)
+      .all<{ name: string; reply: Reply | null }>()
+    guests = {
+      yes: results.filter((g) => g.reply === 'yes').map((g) => g.name),
+      maybe: results.filter((g) => g.reply === 'maybe').map((g) => g.name),
+      waiting: results.filter((g) => g.reply === null).length,
+    }
+  }
   // What was edited since the invitation went out (the address itself is never in the log).
   const { results: changes } = await ctx.env.DB.prepare('SELECT field, old_value, new_value, created_at FROM encounter_changes WHERE encounter_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 10')
     .bind(r.encounter.id, now - 60 * 86_400)
     .all()
-  const { address: _hidden, map_url: _mapHidden, household_id: _hh, details, here_at, ...card } = r.encounter
+  const { address: _hidden, map_url: _mapHidden, cover_key, show_guests, household_id: _hh, details, here_at, ...card } = r.encounter
   return ok({
     alive,
     encounter: { ...card, address: addressFor(r.invitation.reply, r.encounter.address), map_url: r.encounter.kind === 'park' ? r.encounter.map_url : addressFor(r.invitation.reply, r.encounter.map_url), details: parseDetails(details), hereAt: hereAllowed(r.encounter, now) ? here_at ?? null : null },
@@ -115,6 +133,8 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     relais,
     souvenirs: photoRows,
     changes,
+    cover: coverId(cover_key),
+    guests,
     souvenirsOpen: souvenirsVisible(r.encounter, r.invitation.reply, now),
     photos: photosEnabled(ctx.env),
     host: r.host,

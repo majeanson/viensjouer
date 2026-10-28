@@ -1,7 +1,7 @@
 import { badRequest, created, notFound, ok, readJson, str } from '../_lib/json'
 import { authed } from '../_lib/route'
 import { freshLinkCode, newId, nowSec, paperCode } from '../_lib/ids'
-import { cleanMapUrl, isKind, type EncounterRow, type Kind, type Reply, type Status } from '../_lib/encounters'
+import { cleanMapUrl, coverId, isKind, type EncounterRow, type Kind, type Reply, type Status } from '../_lib/encounters'
 import { changeLinesFr, diffEncounter, type Change, type Snapshot } from '../_lib/changes'
 import { REMIND_LEAD_SEC } from '../_lib/reminders'
 import { escapeHtml, mailEnabled, sendMail } from '../_lib/mail'
@@ -42,7 +42,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
   const url = new URL(ctx.request.url)
   const id = url.searchParams.get('id')
   if (id) {
-    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, map_url, note, status, series_id, here_at, details FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
+    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, map_url, note, status, series_id, here_at, details, cover_key, show_guests FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
       .bind(id, actor.householdId)
       .first<EncounterRow>()
     if (!e) return notFound()
@@ -54,9 +54,9 @@ export const onRequestGet = authed(async (ctx, actor) => {
       ctx.env.DB.prepare('SELECT id, author_kind, author_label, created_at FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(id),
       ctx.env.DB.prepare('SELECT field, old_value, new_value, created_at FROM encounter_changes WHERE encounter_id = ? ORDER BY created_at DESC LIMIT 30').bind(id),
     ])
-    const { details, ...rest } = e
+    const { details, cover_key, show_guests, ...rest } = e
     return ok({
-      encounter: { ...rest, details: parseDetails(details), hereOpen: hereAllowed(e, now) },
+      encounter: { ...rest, details: parseDetails(details), hereOpen: hereAllowed(e, now), cover: coverId(cover_key), show_guests: show_guests !== 0 },
       invitations: inv.results as unknown as InviteRow[],
       messages: msgs.results,
       relais: rel.results,
@@ -95,6 +95,7 @@ type Body = {
   here?: boolean
   scope?: string
   notify?: boolean
+  showGuests?: boolean
   endsAt?: number | null
   place?: string
   address?: string | null
@@ -183,6 +184,7 @@ export const onRequestPatch = authed(async (ctx, actor) => {
     await ctx.env.DB.prepare('UPDATE encounters SET here_at = ?, updated_at = ? WHERE id = ?').bind(body.here ? nowSec() : null, nowSec(), id).run()
     return ok()
   }
+  if (typeof body?.showGuests === 'boolean') await ctx.env.DB.prepare('UPDATE encounters SET show_guests = ?, updated_at = ? WHERE id = ?').bind(body.showGuests ? 1 : 0, nowSec(), id).run()
   const status = body?.status
   if (status !== undefined && status !== 'proposed' && status !== 'confirmed' && status !== 'cancelled') return badRequest('Statut inconnu.')
   // « Annuler toute la série »: the same status on this occurrence and every later one.

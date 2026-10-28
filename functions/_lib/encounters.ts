@@ -29,7 +29,12 @@ export interface EncounterRow {
   status: Status
   here_at?: number | null
   details?: string
+  cover_key?: string | null
+  show_guests?: number
 }
+
+// The id at the tail of a stored cover key: what the page puts in the image URL (it also busts the cache).
+export const coverId = (key: string | null | undefined): string | null => (key ? (key.split('/').pop() ?? null) : null)
 
 // A link stays usable until a day after the rencontre (a late « merci » still lands),
 // and dies the moment it is cancelled.

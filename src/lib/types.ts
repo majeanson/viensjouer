@@ -33,6 +33,8 @@ export interface Encounter {
   place: string | null
   address: string | null
   map_url: string | null
+  cover?: string | null
+  show_guests?: boolean
   note: string | null
   status: Status
   series_id?: string | null

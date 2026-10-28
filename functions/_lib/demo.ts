@@ -50,6 +50,8 @@ export async function deleteHouseholds(env: Env, ids: string[]): Promise<void> {
   if (env.PHOTOS) {
     const { results: keys } = await env.DB.prepare(`SELECT s.media_key FROM souvenirs s JOIN encounters e ON e.id = s.encounter_id WHERE e.household_id IN (${marks})`).bind(...ids).all<{ media_key: string }>()
     await Promise.all(keys.map((k) => env.PHOTOS!.delete(k.media_key).catch(() => {})))
+    const { results: covers } = await env.DB.prepare(`SELECT cover_key FROM encounters WHERE household_id IN (${marks}) AND cover_key IS NOT NULL`).bind(...ids).all<{ cover_key: string }>()
+    await Promise.all(covers.map((c) => env.PHOTOS!.delete(c.cover_key).catch(() => {})))
   }
   // The `?` list is repeated where a statement mentions the ids twice (child_links).
   const stmts = SWEEP_ORDER.map((s) => {

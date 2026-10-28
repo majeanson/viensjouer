@@ -25,7 +25,7 @@ async function host(page: Page, handlers: Record<string, Handler> = {}): Promise
     const req = r.request()
     const url = new URL(req.url())
     const path = url.pathname.replace('/api/', '')
-    const body = req.postData() ? (req.postDataJSON() as Record<string, unknown>) : null
+    const body = req.postData() && (req.headers()['content-type'] ?? '').includes('json') ? (req.postDataJSON() as Record<string, unknown>) : null
     stub.calls.push({ method: req.method(), path, body })
     const custom = handlers[`${req.method()} ${path}`]?.(body, url)
     if (custom) return r.fulfill({ status: custom.status ?? 200, json: custom.json })
@@ -250,4 +250,26 @@ test('the host screens have no serious accessibility violation and nothing bleed
     const bad = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
     expect(bad.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`), path).toEqual([])
   }
+})
+
+test('the host adds a cover picture, and turns « qui vient » off from the edit form', async ({ page }) => {
+  const stub = await host(page, {
+    'GET health': () => ({ json: { ok: true, mail: false, photos: true, invite: false } }),
+    'GET encounters': () => ({ json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes')], { cover: null, show_guests: true }) }),
+    'POST cover': () => ({ status: 201, json: { cover: 'zzz' } }),
+    'PATCH encounters': () => ({ json: { changed: 0, notified: 0 } }),
+  })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByLabel('Qui vient')).toContainText('Les familles invitées voient les prénoms des enfants qui viennent')
+  // a real image so the browser can shrink it before sending
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
+  await page.locator('input[type=file]').first().setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: png })
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'cover').length).toBe(1)
+
+  await page.getByRole('button', { name: 'Modifier', exact: true }).click()
+  await page.getByRole('checkbox', { name: /Montrer aux familles invitées qui vient/ }).uncheck()
+  await page.getByRole('button', { name: 'Enregistrer les changements' }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'PATCH').length).toBe(1)
+  expect(stub.calls.find((c) => c.method === 'PATCH')!.body).toMatchObject({ id: 'e1', showGuests: false })
+  await expect(page.getByText('Modifié. Les familles le verront sur leur page.')).toBeVisible()
 })

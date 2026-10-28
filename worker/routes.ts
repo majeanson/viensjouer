@@ -32,6 +32,9 @@ import * as exportData from '../functions/api/export'
 import * as join from '../functions/api/join'
 import * as parentInvite from '../functions/api/parent-invite'
 import * as relais from '../functions/api/relais'
+import * as cover from '../functions/api/cover'
+import * as coverImg from '../functions/api/cover-img'
+import * as replyCover from '../functions/api/r/cover'
 import * as souvenirs from '../functions/api/souvenirs'
 import * as souvenirImg from '../functions/api/souvenir-img'
 import * as replyPhoto from '../functions/api/r/photo'
@@ -65,9 +68,12 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['join', join],
   ['parent-invite', parentInvite],
   ['relais', relais],
+  ['cover', cover],
+  ['cover/:id', coverImg],
   ['souvenirs', souvenirs],
   ['souvenirs/:id', souvenirImg],
   ['r/:token/ics', replyIcs],
+  ['r/:token/cover', replyCover],
   ['r/:token/photo/:id', replyPhotoImg],
   ['r/:token/photo', replyPhoto],
   ['r/:token/claim', replyClaim],

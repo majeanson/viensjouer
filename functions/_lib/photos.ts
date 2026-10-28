@@ -20,8 +20,10 @@ export function sniffImage(b: Uint8Array): 'image/jpeg' | 'image/png' | 'image/w
 
 export type StoreResult = { ok: true; id: string } | { ok: false; status: 400 | 413 | 429 | 503; message: string }
 
-// Validate, cap and store one souvenir; the caller has already authorised the person.
-export async function storeSouvenir(env: Env, request: Request, encounterId: string, author: { kind: 'host' | 'guest'; label: string }, now: number): Promise<StoreResult> {
+type Taken = { ok: true; bytes: Uint8Array; type: 'image/jpeg' | 'image/png' | 'image/webp' } | { ok: false; status: 400 | 413 | 429 | 503; message: string }
+
+// The body as an image: capped, non-empty, and typed by its own first bytes.
+async function takeImage(env: Env, request: Request): Promise<Taken> {
   if (!env.PHOTOS) return { ok: false, status: 503, message: 'Les photos ne sont pas branchées.' }
   const declared = Number(request.headers.get('content-length') ?? 0)
   if (declared > MAX_PHOTO_BYTES) return { ok: false, status: 413, message: 'Photo trop lourde (3 Mo au plus).' }
@@ -30,17 +32,43 @@ export async function storeSouvenir(env: Env, request: Request, encounterId: str
   if (bytes.length > MAX_PHOTO_BYTES) return { ok: false, status: 413, message: 'Photo trop lourde (3 Mo au plus).' }
   const type = sniffImage(bytes)
   if (!type) return { ok: false, status: 400, message: 'Seulement des photos JPEG, PNG ou WebP.' }
+  return { ok: true, bytes, type }
+}
+
+// The host's cover picture: one per rencontre, replacing the last (whose blob is freed).
+export async function storeCover(env: Env, request: Request, encounterId: string, now: number): Promise<{ ok: true; id: string; key: string } | Exclude<StoreResult, { ok: true }>> {
+  const img = await takeImage(env, request)
+  if (!img.ok) return img
+  const id = newId()
+  const key = `covers/${encounterId}/${id}`
+  await env.PHOTOS!.put(key, img.bytes, { httpMetadata: { contentType: img.type } })
+  const old = await env.DB.prepare('SELECT cover_key FROM encounters WHERE id = ?').bind(encounterId).first<{ cover_key: string | null }>()
+  try {
+    await env.DB.prepare('UPDATE encounters SET cover_key = ?, updated_at = ? WHERE id = ?').bind(key, now, encounterId).run()
+  } catch (err) {
+    await env.PHOTOS!.delete(key).catch(() => {})
+    throw err
+  }
+  if (old?.cover_key) await env.PHOTOS!.delete(old.cover_key).catch(() => {})
+  return { ok: true, id, key }
+}
+
+// Validate, cap and store one souvenir; the caller has already authorised the person.
+export async function storeSouvenir(env: Env, request: Request, encounterId: string, author: { kind: 'host' | 'guest'; label: string }, now: number): Promise<StoreResult> {
+  const img = await takeImage(env, request)
+  if (!img.ok) return img
+  const { bytes, type } = img
   const count = await env.DB.prepare('SELECT COUNT(*) AS n FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL').bind(encounterId).first<{ n: number }>()
   if ((count?.n ?? 0) >= MAX_PHOTOS_PER_ENCOUNTER) return { ok: false, status: 429, message: 'Déjà douze photos pour cette rencontre.' }
   const id = newId()
   const key = `souvenirs/${encounterId}/${id}`
-  await env.PHOTOS.put(key, bytes, { httpMetadata: { contentType: type } })
+  await env.PHOTOS!.put(key, bytes, { httpMetadata: { contentType: type } })
   try {
     await env.DB.prepare('INSERT INTO souvenirs (id, encounter_id, media_kind, media_key, author_kind, author_label, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .bind(id, encounterId, 'image', key, author.kind, author.label.slice(0, 60), now)
       .run()
   } catch (err) {
-    await env.PHOTOS.delete(key).catch(() => {})
+    await env.PHOTOS!.delete(key).catch(() => {})
     throw err
   }
   return { ok: true, id }

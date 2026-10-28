@@ -6,6 +6,7 @@ import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { dayHour, endFromTime, fromLocalInput, nextAt, nextSaturdayTen, sameSlotAhead, toLocalInput, toLocalTime } from '../lib/format'
 import { WhyMany } from '../components/WhyMany'
+import { resizeToJpeg } from '../lib/photo'
 import { FREQUENCIES, MAX_OCCURRENCES, repeatTimes, type Frequency } from '../lib/repeat'
 import { FamilyPicker } from '../components/FamilyPicker'
 import { HomeCardForm } from '../components/HomeCard'
@@ -36,6 +37,8 @@ export function EncounterNew() {
   const kids = useQuery({ queryKey: K.children, queryFn: () => api<{ children: Child[] }>('children') })
   const fams = useQuery({ queryKey: K.families, queryFn: () => api<{ families: Family[] }>('families') })
   const grp = useQuery({ queryKey: K.groups, queryFn: () => api<{ groups: Group[] }>('groups') })
+  const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
+  const [coverFile, setCoverFile] = useState<File | null>(null)
   const home = useQuery({ queryKey: K.homeCard, queryFn: () => api<{ card: unknown | null }>('home-card') })
   const src = useQuery({ queryKey: ['again', from], queryFn: () => api<Source>(`encounters?id=${from}`), enabled: !!from })
   const [mode, setMode] = useState<'plan' | 'free'>('plan')
@@ -68,8 +71,17 @@ export function EncounterNew() {
   }, [src.data])
 
   const create = useMutation({
-    mutationFn: (body: unknown) => api<{ id: string }>('encounters', { method: 'POST', body }),
-    onSuccess: (r) => {
+    mutationFn: (body: unknown) => api<{ id: string; ids: string[] }>('encounters', { method: 'POST', body }),
+    onSuccess: async (r) => {
+      // The picture is best effort: the rencontre exists either way, and the host page can add it again.
+      if (coverFile) {
+        try {
+          const blob = await resizeToJpeg(coverFile)
+          await Promise.all(r.ids.map((id) => api(`cover?encounter=${id}`, { method: 'POST', body: blob })))
+        } catch {
+          /* shown as missing on the host page */
+        }
+      }
       void qc.invalidateQueries({ queryKey: K.encounters })
       void qc.invalidateQueries({ queryKey: K.calendar })
       nav(`/rencontres/${r.id}`, { replace: true })
@@ -205,12 +217,14 @@ export function EncounterNew() {
                     <span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.repeatHint}</span>
                   </label>
                 )}
+                {health.data?.photos && <label className="field"><span>{t.cover.field}</span><input className="input" type="file" accept="image/*" onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)} /></label>}
                 <label className="field"><span>{t.encounters.mapUrl}</span><input className="input" name="mapUrl" type="url" autoComplete="off" maxLength={300} defaultValue={prev?.map_url ?? ''} placeholder="https://maps.app.goo.gl/…" /></label>
                 {kind !== 'park' && <label className="field"><span>{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" defaultValue={prev?.address ?? ''} /></label>}
                 {kind === 'birthday' && <label className="field"><span>{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} defaultValue={prev?.details?.gift ?? ''} placeholder={t.kinds.birthday.giftPlaceholder} /></label>}
                 <label className="field"><span>{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} defaultValue={prev?.note ?? ''} placeholder={t.encounters.notePlaceholder} /></label>
                 <WhyMany
                   items={[
+                    ...(health.data?.photos ? ([[t.cover.field, 'cover']] as [string, 'cover'][]) : []),
                     [t.encounters.mapUrl, 'mapUrl'],
                     ...(kind !== 'park' ? ([[t.encounters.address, 'address']] as [string, 'address'][]) : []),
                     ...(kind === 'birthday' ? ([[t.kinds.birthday.gift, 'gift']] as [string, 'gift'][]) : []),

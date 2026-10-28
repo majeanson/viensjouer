@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { useLang, useT } from '../i18n'
@@ -26,10 +26,12 @@ export function EncounterEdit({
   const { lang } = useLang()
   const [form, setForm] = useState<HTMLFormElement | null>(null)
   const [tick, setTick] = useState(0)
+  const guestsWas = useRef(e.show_guests !== false)
   const [err, setErr] = useState<string | null>(null)
+  const guestsChangedNow = useRef(false)
   const save = useMutation({
     mutationFn: (body: Record<string, unknown>) => api<{ changed: number; notified: number }>('encounters', { method: 'PATCH', body: { id: e.id, ...body } }),
-    onSuccess: onSaved,
+    onSuccess: (r) => onSaved(guestsChangedNow.current && r.changed === 0 ? { ...r, changed: 1 } : r),
     onError: (x) => setErr(x.message),
   })
 
@@ -57,10 +59,12 @@ export function EncounterEdit({
     const body: Record<string, unknown> = { title: v('title'), startsAt: start, endsAt: end, place: v('place'), mapUrl: v('mapUrl'), note: v('note') }
     if (e.kind !== 'park') body.address = v('address')
     if (e.kind === 'birthday') body.details = { gift: v('gift') }
+    body.showGuests = f ? (f.elements.namedItem('showGuests') as HTMLInputElement | null)?.checked !== false : guestsWas.current
     return { snap, body }
   }
 
   const changes = form ? clientDiff(before, read(form).snap) : []
+  const guestsChanged = !!form && read(form).body.showGuests !== guestsWas.current
   void tick
 
   function submit(ev: FormEvent<HTMLFormElement>) {
@@ -71,6 +75,7 @@ export function EncounterEdit({
       setErr(t.form.endAfter)
       return
     }
+    guestsChangedNow.current = read(ev.currentTarget).body.showGuests !== guestsWas.current
     const notify = canNotify && (ev.currentTarget.elements.namedItem('notify') as HTMLInputElement | null)?.checked === true
     save.mutate({ ...read(ev.currentTarget).body, notify })
   }
@@ -88,9 +93,10 @@ export function EncounterEdit({
       <label className="field"><span>{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} defaultValue={e.note ?? ''} /></label>
       {e.kind === 'birthday' && <label className="field"><span>{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} defaultValue={gift ?? ''} /></label>}
 
+      <label className="check"><input type="checkbox" name="showGuests" defaultChecked={guestsWas.current} /><span>{t.roster.showToggle}</span></label>
       <div className="changes-preview" aria-live="polite">
         <strong>{t.edit.willChange}</strong>
-        {changes.length === 0 ? (
+        {changes.length === 0 && !guestsChanged ? (
           <p className="muted small" style={{ margin: '0.25rem 0 0' }}>{t.edit.nothing}</p>
         ) : (
           <ul>
@@ -113,7 +119,7 @@ export function EncounterEdit({
       {canNotify && changes.length > 0 && <label className="check"><input type="checkbox" name="notify" defaultChecked /><span>{t.edit.notify}</span></label>}
       {err && <div className="notice notice--err">{err}</div>}
       <div className="cluster">
-        <button className="btn btn--primary" disabled={save.isPending || changes.length === 0}>{t.edit.save}</button>
+        <button className="btn btn--primary" disabled={save.isPending || (changes.length === 0 && !guestsChanged)}>{t.edit.save}</button>
         <button type="button" className="btn btn--ghost" onClick={onClose}>{t.edit.cancel}</button>
       </div>
     </form>

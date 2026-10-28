@@ -9,6 +9,7 @@ import { timeOnly, whenLong, whenShort } from '../lib/format'
 import { linkFor, linkLabel } from '../lib/link'
 import { PhotoGrid } from '../components/PhotoGrid'
 import { EncounterEdit } from '../components/EncounterEdit'
+import { CoverPicture } from '../components/CoverPicture'
 import { fromRow, isPrivate, showValue, type ChangeRow } from '../lib/changes'
 import { Why } from '../components/Why'
 import { kidsComing } from '../lib/scope'
@@ -155,7 +156,10 @@ export function EncounterDetail() {
   return (
     <>
       <Link to="/rencontres" className="muted small">← {t.encounters.back}</Link>
-      <div className="row" style={{ marginTop: '0.5rem' }}>
+      <div style={{ marginTop: '0.5rem' }}>
+        <CoverPicture encounterId={e.id} cover={e.cover ?? null} enabled={!!health.data?.photos && e.status !== 'cancelled'} onChanged={refresh} />
+      </div>
+      <div className="row">
         <h1>{e.title}</h1>
         {e.series_id && <span className="chip">{t.encounters.seriesChip}</span>}
       </div>
@@ -196,6 +200,7 @@ export function EncounterDetail() {
 
           <div className="card" aria-label={t.roster.title}>
             <h3>{t.roster.title}</h3>
+            <p className="muted small" style={{ margin: '0 0 0.4rem' }}>{e.show_guests === false ? null : t.roster.public}</p>
             {invitations.length === 0 && <p className="muted small" style={{ margin: 0 }}>{t.roster.empty}</p>}
             {groups.filter(([, list]) => list.length > 0).map(([label, list, kind]) => (
               <div key={kind} className="roster__row" data-roster={kind}>

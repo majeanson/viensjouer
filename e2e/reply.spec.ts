@@ -236,3 +236,21 @@ test('a first-time visitor sees no « new » marks, but can read the history', a
   // the address itself is never in the history
   await expect(page.getByText(/rue/)).toHaveCount(0)
 })
+
+test('an invited family sees the cover picture and who is coming (names of children, never a decline)', async ({ page }) => {
+  await stub(page, card({ cover: 'abc123', guests: { yes: ['Max', 'Zoé'], maybe: ['Eli'], waiting: 2 }, homeCard: null }))
+  await page.goto(`/${CODE}`)
+  await expect(page.locator('img.cover')).toHaveAttribute('src', `/api/r/${CODE}/cover?v=abc123`)
+  const guests = page.getByLabel('Qui vient')
+  await expect(guests).toContainText('Viennent (2) : Max, Zoé')
+  await expect(guests).toContainText('Peut-être (1) : Eli')
+  await expect(guests).toContainText('2 familles n’ont pas encore répondu.')
+  await expect(guests).toContainText('jamais ceux qui ont dit non')
+})
+
+test('the host can hide who is coming: the page then shows no list', async ({ page }) => {
+  await stub(page, card({ cover: null, guests: null, homeCard: null }))
+  await page.goto(`/${CODE}`)
+  await expect(page.getByLabel('Qui vient')).toHaveCount(0)
+  await expect(page.locator('img.cover')).toHaveCount(0)
+})

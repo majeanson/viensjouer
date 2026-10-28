@@ -28,6 +28,8 @@ interface Card {
   messages: Message[]
   series: { token: string; starts_at: number; reply: ReplyKind | null }[]
   changes: ChangeRow[]
+  cover: string | null
+  guests: { yes: string[]; maybe: string[]; waiting: number } | null
 }
 
 // THE install-free page. A parent opens it from a text, sees the plan, answers in one
@@ -82,7 +84,7 @@ function ReplyInner() {
 
   if (q.isLoading) return <p className="shell muted">{t.common.loading}</p>
   if (!q.data) return <div className="shell"><p className="notice notice--err">{isStatus(q.error, 404) ? t.reply.dead : t.common.error}</p></div>
-  const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos, changes: rawChanges } = q.data
+  const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos, changes: rawChanges, cover, guests } = q.data
   const changes = rawChanges ?? []
   const fresh = seenAt === null ? [] : changes.filter((c) => c.created_at > seenAt)
   const freshOf = (...fields: ChangeField[]) => fresh.find((c) => fields.includes(c.field))
@@ -145,6 +147,7 @@ function ReplyInner() {
         </div>
       )}
       <section className="card">
+        {cover && <img className="cover" src={`/api/r/${token}/cover?v=${cover}`} alt="" />}
         <p className="kind" style={{ margin: 0 }}>{t.reply.invitation} · {t.encounters.kind[e.kind]}</p>
         <h1 style={{ marginTop: '0.25rem' }}>{t.reply.invites(host.child_first_name, you.child_first_name)}</h1>
         <p className="muted">{t.reply.organizer(host.parent_name || host.household_name, host.child_first_name)}</p>
@@ -184,6 +187,16 @@ function ReplyInner() {
           <li className={answered && you.reply === 'yes' ? 'now' : ''}>{t.reply.step3}</li>
         </ol>
       </section>
+
+      {guests && (guests.yes.length > 0 || guests.maybe.length > 0) && (
+        <section className="card guests" aria-label={t.roster.guestsTitle}>
+          <h3>{t.roster.guestsTitle}</h3>
+          {guests.yes.length > 0 && <p><strong>{t.roster.yes} ({guests.yes.length})</strong> : {guests.yes.join(', ')}</p>}
+          {guests.maybe.length > 0 && <p><strong>{t.roster.maybe} ({guests.maybe.length})</strong> : {guests.maybe.join(', ')}</p>}
+          {guests.waiting > 0 && <p className="muted small">{t.roster.waiting(guests.waiting)}</p>}
+          <p className="muted small">{t.roster.public}</p>
+        </section>
+      )}
 
       {homeCard && <HomeCardView card={homeCard} />}
       {relais && (

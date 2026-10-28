@@ -394,3 +394,12 @@ test('on an iPhone the account page explains « Sur l’écran d’accueil »', 
   await expect(page.getByText(/bouton Partager de Safari/)).toBeVisible()
   await ctx.close()
 })
+
+test('« Nouvelle famille » stays closed for a host who already has friends, even while they load', async ({ page }) => {
+  await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }) })
+  await page.goto('/rencontres/nouvelle')
+  await expect(page.getByRole('checkbox', { name: /Léa/ })).toBeVisible()
+  await expect(page.getByLabel('Prénom de l’ami')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Nouvelle famille' }).click()
+  await expect(page.getByLabel('Prénom de l’ami')).toBeVisible()
+})

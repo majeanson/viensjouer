@@ -179,7 +179,7 @@ export function EncounterNew() {
 
           <div className="card">
             <h3><Icon name="users" />{t.encounters.invite}</h3>
-            <FamilyPicker families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
+            <FamilyPicker loaded={!!fams.data} families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
             <h3 style={{ marginTop: '1rem' }}><Icon name="users" />{t.scope.label}</h3>
             <div className="seg" role="radiogroup" aria-label={t.scope.label}>
               {(['friend', 'family'] as Scope[]).map((x) => (

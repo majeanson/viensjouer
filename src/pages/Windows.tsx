@@ -108,7 +108,7 @@ export function Windows({ embedded = false }: { embedded?: boolean }) {
           <label className="field"><span><Icon name="clock" />{t.windows.to}</span><input className="input" name="endsAt" type="datetime-local" required defaultValue={toLocalInput(defaultStart + 3 * 3600)} /></label>
           <label className="field"><span><Icon name="note" />{t.encounters.note}</span><input className="input" name="note" maxLength={500} placeholder={t.windows.notePlaceholder} /></label>
           <h3><Icon name="users" />{t.encounters.invite}</h3>
-          <FamilyPicker families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
+          <FamilyPicker loaded={!!fams.data} families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
           <div className="cluster" style={{ marginTop: '0.75rem' }}>
             <button className="btn btn--primary" disabled={create.isPending || picked.size === 0 || !pickedChild}>{t.windows.create}</button>
             <button type="button" className="btn btn--ghost" onClick={() => setAdding(false)}>{t.encounters.back}</button>

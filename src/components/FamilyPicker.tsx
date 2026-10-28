@@ -12,10 +12,12 @@ import { Icon } from './Icon'
 // never have to leave the form to add the first friend. Two first names are enough; the email
 // is optional (without it the host copies the link). The new family is ticked on the spot.
 // Controlled: the parent owns the Set. Shared by the new-rencontre form and the windows.
-export function FamilyPicker({ families, groups, selected, onChange }: { families: Family[]; groups: Group[]; selected: Set<string>; onChange: (s: Set<string>) => void }) {
+export function FamilyPicker({ families, groups, selected, onChange, loaded = true }: { families: Family[]; groups: Group[]; selected: Set<string>; onChange: (s: Set<string>) => void; loaded?: boolean }) {
   const t = useT()
   const qc = useQueryClient()
-  const [adding, setAdding] = useState(families.length === 0)
+  // Open by itself only for a host whose book is EMPTY once it has loaded (never while it is still loading).
+  const [choice, setAdding] = useState<boolean | null>(null)
+  const adding = choice ?? (loaded && families.length === 0)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 

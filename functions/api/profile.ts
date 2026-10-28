@@ -1,11 +1,16 @@
 import { badRequest, ok, readJson, str } from '../_lib/json'
 import { authed } from '../_lib/route'
 
-// « Mon nom » — the first name shown on the invitations I send. PATCH /api/profile { displayName }.
+// « Mon profil » — PATCH /api/profile { displayName?, remindHost? }: the first name shown on the invitations I send,
+// and whether I want the one email the day before a rencontre I host (off unless asked for).
 export const onRequestPatch = authed(async (ctx, actor) => {
-  const body = await readJson<{ displayName?: string }>(ctx.request)
-  const name = str(body?.displayName, 60)
-  if (!name) return badRequest('Il faut un prénom.')
-  await ctx.env.DB.prepare('UPDATE parents SET display_name = ? WHERE email = ?').bind(name, actor.email).run()
+  const body = await readJson<{ displayName?: string; remindHost?: boolean }>(ctx.request)
+  const name = body?.displayName === undefined ? null : str(body.displayName, 60)
+  if (body?.displayName !== undefined && !name) return badRequest('Il faut un prénom.')
+  const remind = typeof body?.remindHost === 'boolean' ? (body.remindHost ? 1 : 0) : null
+  if (name === null && remind === null) return badRequest('Rien à changer.')
+  await ctx.env.DB.prepare('UPDATE parents SET display_name = COALESCE(?, display_name), remind_host = COALESCE(?, remind_host) WHERE email = ?')
+    .bind(name, remind, actor.email)
+    .run()
   return ok()
 })

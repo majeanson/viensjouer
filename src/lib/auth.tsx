@@ -11,6 +11,7 @@ interface Me {
   mail?: boolean
   demo?: boolean
   photo?: string | null
+  remindHost?: boolean
 }
 
 interface AuthState {

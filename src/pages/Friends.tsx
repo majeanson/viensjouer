@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
@@ -20,6 +21,35 @@ interface Linked {
 }
 interface CircleData {
   children: { child: { id: string }; linked: Linked[] }[]
+}
+
+interface Past {
+  id: string
+  title: string
+  startsAt: number
+  place: string | null
+}
+
+// « Déjà ensemble » — the last few rencontres this family came to, opened on demand. Dates and places only: never
+// how often, never who is ahead. « Refaire pareil » starts from any of them.
+function Together({ familyId }: { familyId: string }) {
+  const t = useT()
+  const { lang } = useLang()
+  const [open, setOpen] = useState(false)
+  const q = useQuery({ queryKey: ['family-history', familyId], queryFn: () => api<{ past: Past[] }>(`family-history?id=${familyId}`), enabled: open })
+  return (
+    <details className="fold" onToggle={(e) => setOpen(e.currentTarget.open)} style={{ marginTop: '0.35rem' }}>
+      <summary><span><Icon name="calendar" />{t.friends.together}</span></summary>
+      <div>
+        {q.data && q.data.past.length === 0 && <p className="muted small">{t.friends.togetherNone}</p>}
+        {q.data?.past.map((p) => (
+          <p key={p.id} className="small" style={{ margin: '0.25rem 0' }}>
+            {whenShort(p.startsAt, lang)} · {p.title}{p.place ? ` · ${p.place}` : ''} <Link to={`/rencontres/nouvelle?from=${p.id}`} className="linkbtn">{t.form.again}</Link>
+          </p>
+        ))}
+      </div>
+    </details>
+  )
 }
 
 // « Amis » — ONE list. Every family you invite, with the groups it belongs to as small tags and a
@@ -128,6 +158,7 @@ export function Friends() {
                 </div>
               )}
               <p className="small muted" style={{ margin: '0.35rem 0 0' }}>{[f.email, f.phone, l ? dates(l) : null, f.allergies && `${t.families.allergies} : ${f.allergies}`, f.notes].filter(Boolean).join(' · ')}</p>
+              <Together familyId={f.id} />
               {l && <button className="linkbtn linkbtn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button>}
             </div>
           )

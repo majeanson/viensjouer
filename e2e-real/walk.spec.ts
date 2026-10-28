@@ -117,6 +117,13 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   const sample = await host.request.post('/api/test-mail', { data: {}, headers: { 'x-csrf-token': csrf } })
   expect(sample.status()).toBe(403)
 
+  // the history answers for a family of this household, and the reminder switch is a real write
+  const fams = (await (await host.request.get('/api/families')).json()) as { families: { id: string }[] }
+  const hist = await host.request.get(`/api/family-history?id=${fams.families[0].id}`)
+  expect(hist.status()).toBe(200)
+  expect(Array.isArray((await hist.json()).past)).toBe(true)
+  expect((await host.request.patch('/api/profile', { data: { remindHost: true }, headers: { 'x-csrf-token': csrf } })).status()).toBe(200)
+
   const erase = await host.request.delete('/api/household', { data: {}, headers: { 'x-csrf-token': csrf } })
   expect(erase.status(), await erase.text()).toBe(200)
   expect((await (await host.request.get('/api/auth/me')).json()).signedIn).toBe(false)

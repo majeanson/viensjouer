@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright'
 
 // Faces (a child's, mine), the profile name, the message board on both sides, the phone's bottom tabs,
 // the icons, and the invitation answering first. The API is stubbed like in the other specs.
-import { PNG, now } from './fixtures'
+import { PNG, fam, now } from './fixtures'
 
 type Call = { method: string; path: string; full: string; body: unknown; type: string }
 type Handler = (c: Call, url: URL) => { status?: number; json?: unknown } | undefined
@@ -285,4 +285,26 @@ test('no test-mail button without mail, or in a trial', async ({ page }) => {
   await host(page, {}, { me: { mail: true, demo: true } })
   await page.goto('/compte')
   await expect(page.getByRole('button', { name: 'M’envoyer un courriel d’essai' })).toHaveCount(0)
+})
+
+test('« Déjà ensemble »: a friend opens the past get-togethers and starts the same again from one', async ({ page }) => {
+  const calls = await host(page, {
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }),
+    'GET family-history': () => ({ json: { past: [{ id: 'e7', title: 'Au parc', kind: 'park', startsAt: now - 86400 * 9, place: 'Parc Lafontaine' }] } }),
+  })
+  await page.goto('/amis')
+  expect(calls.filter((c) => c.path === 'family-history')).toHaveLength(0) // nothing is fetched until it is opened
+  await page.getByText('Déjà ensemble').click()
+  await expect(page.getByText(/Au parc · Parc Lafontaine/)).toBeVisible()
+  await page.getByRole('link', { name: 'Refaire pareil' }).click()
+  await expect(page).toHaveURL(/\/rencontres\/nouvelle\?from=e7$/)
+})
+
+test('the host reminder is a plain checkbox in my profile, off unless asked for, and only when mail is wired', async ({ page }) => {
+  const calls = await host(page, { 'PATCH profile': () => ({ json: { ok: true } }) }, { me: { mail: true } })
+  await page.goto('/compte')
+  const box = page.getByLabel(/Me rappeler la veille de mes rencontres/)
+  await expect(box).not.toBeChecked()
+  await box.click()
+  await expect.poll(() => calls.filter((c) => c.method === 'PATCH' && c.path === 'profile').map((c) => c.body)).toEqual([{ remindHost: true }])
 })

@@ -62,3 +62,62 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
   }
   return sent
 }
+
+interface HostDue {
+  id: string
+  email: string
+  display_name: string
+  title: string
+  starts_at: number
+  place: string | null
+  tz: string
+  host_child: string
+}
+
+// The host's own reminder, only for a parent who turned it on (parents.remind_host). One email per rencontre, once it
+// is under a day away: when, where, who said yes. Stamped first, like the others, so it can never go out twice.
+export async function sendHostReminders(env: Env, origin: string): Promise<number> {
+  if (!mailEnabled(env)) return 0
+  const now = nowSec()
+  const { results } = await env.DB.prepare(
+    `SELECT e.id, p.email, p.display_name, e.title, e.starts_at, e.place, h.tz, c.first_name AS host_child
+       FROM encounters e
+       JOIN households h ON h.id = e.household_id
+       JOIN children c ON c.id = e.child_id
+       JOIN parents p ON p.household_id = e.household_id AND p.remind_host = 1
+      WHERE e.host_reminded_at IS NULL AND e.deleted_at IS NULL AND e.status != 'cancelled'
+        AND e.starts_at > ? AND e.starts_at <= ?
+      LIMIT 100`,
+  )
+    .bind(now, now + REMIND_LEAD_SEC)
+    .all<HostDue>()
+  let sent = 0
+  const stamped = new Set<string>()
+  for (const d of results) {
+    if (!stamped.has(d.id)) {
+      const r = await env.DB.prepare('UPDATE encounters SET host_reminded_at = ? WHERE id = ? AND host_reminded_at IS NULL').bind(now, d.id).run()
+      if (!r.meta.changes) continue
+      stamped.add(d.id)
+    }
+    const { results: yes } = await env.DB.prepare(
+      `SELECT f.child_first_name FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id WHERE i.encounter_id = ? AND i.reply = 'yes' ORDER BY f.child_first_name`,
+    )
+      .bind(d.id)
+      .all<{ child_first_name: string }>()
+    const who = yes.length ? yes.map((y) => y.child_first_name).join(', ') : 'personne n’a encore répondu oui'
+    const when = whenLong(d.starts_at, 'fr', d.tz)
+    const link = `${origin}/rencontres/${d.id}`
+    try {
+      await sendMail(env, {
+        to: d.email,
+        subject: `Demain : ${d.title}`,
+        text: `Bonjour ${d.display_name},\n\nPetit rappel : ${d.title} avec ${d.host_child}, ${when}${d.place ? ` — ${d.place}` : ''}.\nQui vient : ${who}.\n\nLa page de la rencontre : ${link}\n\nTu reçois ce courriel parce que tu l’as demandé dans Mon profil. Tu peux le couper là-bas.\n\n— Viens jouer`,
+        html: `<p>Bonjour ${escapeHtml(d.display_name)},</p><p>Petit rappel : <strong>${escapeHtml(d.title)}</strong> avec ${escapeHtml(d.host_child)}, ${escapeHtml(when)}${d.place ? ` — ${escapeHtml(d.place)}` : ''}.<br>Qui vient : ${escapeHtml(who)}.</p><p><a href="${link}">La page de la rencontre</a></p><p class="small">Tu reçois ce courriel parce que tu l’as demandé dans Mon profil. Tu peux le couper là-bas.</p><p>— Viens jouer</p>`,
+      })
+      sent++
+    } catch (err) {
+      console.error('[reminders] host send', d.id, err)
+    }
+  }
+  return sent
+}

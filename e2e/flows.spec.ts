@@ -413,13 +413,13 @@ test('English is its own chunk: a French visitor never downloads it, an English-
     await host(page)
     await page.goto('/rencontres')
     if (name === 'en') {
-      await expect(page.getByRole('link', { name: 'Propose a get-together' })).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Add a friend' })).toBeVisible()
     } else {
-      await expect(page.getByRole('link', { name: 'Proposer une rencontre' })).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Ajouter un ami' })).toBeVisible()
       expect(seen.fr, 'a French visitor must not download the English chunk').toHaveLength(0)
       // switching later keeps the page and swaps the words once the chunk is in
       await page.getByRole('button', { name: 'EN (English)' }).click()
-      await expect(page.getByRole('link', { name: 'Propose a get-together' })).toBeVisible()
+      await expect(page.getByRole('link', { name: 'Add a friend' })).toBeVisible()
     }
     await ctx.close()
   }

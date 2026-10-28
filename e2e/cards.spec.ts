@@ -127,3 +127,17 @@ test('the host page lists each family once until someone has answered', async ({
   await expect(page.locator('.linkrow').filter({ hasText: 'Léa' })).toBeVisible()
   await expect(page.getByLabel('Qui vient')).toHaveCount(0)
 })
+
+test('every list page has one big tile for its main action, right under the title', async ({ page }) => {
+  await hostStub(page)
+  await page.route('**/api/encounters', (r) => r.fulfill({ json: { encounters: [enc({})], invitations: [] } }))
+  await page.route('**/api/windows', (r) => r.fulfill({ json: { windows: [] } }))
+  await page.route('**/api/calendar', (r) => r.fulfill({ json: { busy: [], free: [], windows: [] } }))
+  for (const [path, name] of [['/rencontres', 'Proposer une rencontre'], ['/amis', 'Nouvelle famille'], ['/enfants', 'Ajouter un enfant'], ['/fenetres', 'Ouvrir une fenêtre']] as const) {
+    await page.goto(path)
+    const tile = page.locator('.bigaction')
+    await expect(tile, path).toHaveCount(1)
+    await expect(tile).toContainText(name)
+    await expect(page.locator('h1 + .bigaction'), path).toHaveCount(1)
+  }
+})

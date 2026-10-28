@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { BigAction } from '../components/BigAction'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -86,10 +87,8 @@ export function Windows({ embedded = false }: { embedded?: boolean }) {
     <>
       {!embedded && (
         <>
-          <div className="row">
-            <h1>{t.windows.title}</h1>
-            {!adding && <button className="btn btn--primary" onClick={() => setAdding(true)}>{t.windows.new}</button>}
-          </div>
+          <h1>{t.windows.title}</h1>
+          {!adding && <BigAction icon="calendar" onClick={() => setAdding(true)}>{t.windows.new}</BigAction>}
           <p className="small"><Link to="/rencontres">← {t.nav.home}</Link></p>
         </>
       )}

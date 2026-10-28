@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { BigAction } from '../components/BigAction'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
@@ -63,6 +64,7 @@ export function Children() {
   return (
     <>
       <h1>{t.children.title}</h1>
+      {!editing && <BigAction icon="smile" onClick={() => { setPending(null); setEditing('new') }}>{t.children.add}</BigAction>}
       {err && <div className="notice notice--err">{err}</div>}
       {q.isLoading && <Loading />}
       {q.isError && !q.data && <QueryError error={q.error} onRetry={() => void q.refetch()} />}
@@ -107,9 +109,7 @@ export function Children() {
             <button type="button" className="btn btn--ghost" onClick={() => setEditing(null)}>{t.encounters.back}</button>
           </div>
         </form>
-      ) : (
-        <button className="btn btn--primary" style={{ marginTop: '0.75rem' }} onClick={() => { setPending(null); setEditing('new') }}>{t.children.add}</button>
-      )}
+      ) : null}
     </>
   )
 }

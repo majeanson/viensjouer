@@ -19,6 +19,7 @@
 | `QueryError` | A read failed | `role=alert`, a « Réessayer » button; `dead` gives the 404 sentence and drops the button. |
 | `ErrorBoundary` / `OfflineNotice` | A thrown render error; no network | Reloads once when a deploy replaced a chunk. |
 | `Header` | The sticky top bar on every page | Brand, language, theme, your face and name (one tap to your account) and a separate sign-out button. No dropdown. |
+| `BigAction` | The one main action of a page (new rencontre, new family, new child, new window) | A wide centred tile, icon above the words, right under the title. The rest of the page stays smaller. |
 | `Shell` | The signed-in frame: header, tabs, offline notice, main | Tabs are the bottom bar on a phone. |
 | `FamilyPicker` | Choosing friend families (and groups) for a rencontre | |
 | `Groups` | Private shortcuts in the family picker | |

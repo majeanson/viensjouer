@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { BigAction } from '../components/BigAction'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
@@ -105,10 +106,8 @@ export function Friends() {
 
   return (
     <>
-      <div className="row">
-        <h1>{t.friends.title}</h1>
-        {!editing && <button className="btn btn--primary" onClick={() => setEditing('new')}>{t.families.add}</button>}
-      </div>
+      <h1>{t.friends.title}</h1>
+      {!editing && <BigAction icon="users" onClick={() => setEditing('new')}>{t.families.add}</BigAction>}
       <p className="muted small">{t.friends.hint}</p>
       {err && <div className="notice notice--err">{err}</div>}
 

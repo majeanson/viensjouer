@@ -200,3 +200,7 @@ Two read-only audits produced a ranked list; it is worked through in order, one 
 ### Host page: one list of families at a time (2026-10-28)
 - « Qui vient » appears only once a family has answered (or when nobody is invited yet). Before that, « Les liens » already shows « Sans réponse » per family, so the same names were listed twice.
 - `FamilyPicker`'s « add a family » box was a `<form>` inside the page's own form (invalid, and React warned in the e2e log). It is now a plain group: Enter in a name field adds the family, nothing else. `host.spec` plants the old shape red.
+
+### One main action per page: the tile (2026-10-28)
+- `BigAction` (components/BigAction.tsx, `.bigaction`): a wide centred tile with the icon above the words, directly under the h1, on Rencontres (new rencontre), Amis (new family), Enfants (add a child) and Fenêtres (open a window). Everything else stays smaller and lower. Hidden on the empty Rencontres screen, where the first-run steps carry their own button.
+- Guard: `cards.spec` « every list page has one big tile … right under the title ». New pages with a main action use `BigAction`, not a `btn--primary` in the title row.

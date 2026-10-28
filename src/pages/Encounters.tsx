@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { BigAction } from '../components/BigAction'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -112,10 +113,8 @@ export function Encounters() {
 
   return (
     <>
-      <div className="row">
-        <h1>{t.encounters.title}</h1>
-        <Link to="/rencontres/nouvelle" className="btn btn--primary">{t.encounters.new}</Link>
-      </div>
+      <h1>{t.encounters.title}</h1>
+      {!nothing && <BigAction icon="plus" to="/rencontres/nouvelle">{t.encounters.new}</BigAction>}
       {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && (
         <div className="card">

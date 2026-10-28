@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
 import { Header } from '../components/Header'
 import { Icon } from '../components/Icon'
+import { CODE_RE } from '../lib/link'
 
 // The front door: one sentence, sign in or create an account, or try it. A signed-in parent
 // is sent straight to their rencontres.
@@ -16,6 +17,7 @@ export function Door() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [cardErr, setCardErr] = useState(false)
   const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ invite: boolean; mail: boolean }>('health'), staleTime: 60_000 })
 
   useEffect(() => {
@@ -35,6 +37,13 @@ export function Door() {
       setBusy(false)
     }
   }
+  // A paper card carries two words; whoever holds it types them here, with a space or a hyphen, accents or not.
+  function openCard(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const code = String(new FormData(e.currentTarget).get('code') ?? '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s_.,]+/g, '-')
+    if (CODE_RE.test(code)) nav(`/${code}`)
+    else setCardErr(true)
+  }
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     void go(mode === 'login' ? 'auth/login' : 'auth/signup', Object.fromEntries(new FormData(e.currentTarget).entries()))
@@ -52,6 +61,14 @@ export function Door() {
           <li><Icon name="check" /><span>{t.door.points[2]}</span></li>
         </ul>
       </section>
+      <form className="card" onSubmit={openCard}>
+        <h2><Icon name="note" />{t.door.cardTitle}</h2>
+        <div className="cluster">
+          <input className="input" name="code" aria-label={t.door.cardLabel} placeholder={t.door.cardPlaceholder} autoCapitalize="none" autoCorrect="off" spellCheck={false} required maxLength={40} style={{ flex: '1 1 10rem' }} onChange={() => setCardErr(false)} />
+          <button className="btn btn--primary">{t.door.cardGo}</button>
+        </div>
+        {cardErr && <div className="notice notice--err" role="alert" style={{ marginTop: '0.5rem' }}>{t.door.cardBad}</div>}
+      </form>
       <form className="card" onSubmit={submit}>
         <div className="seg" role="tablist" style={{ marginBottom: '1rem' }}>
           <button type="button" role="tab" aria-selected={mode === 'login'} className={`btn btn--small ${mode === 'login' ? 'btn--on' : ''}`} onClick={() => setMode('login')}>{t.door.haveAccount}</button>

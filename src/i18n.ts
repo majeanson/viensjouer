@@ -15,6 +15,11 @@ export const FR = {
     signup: 'Créer mon compte',
     haveAccount: 'J’ai déjà un compte',
     noAccount: 'Première fois ici',
+    cardTitle: 'Tu as reçu une carte ?',
+    cardLabel: 'Les deux mots',
+    cardPlaceholder: 'lune miel',
+    cardGo: 'Ouvrir',
+    cardBad: 'Il faut deux mots, comme lune miel.',
   },
   auth: {
     email: 'Courriel',
@@ -172,6 +177,8 @@ export const FR = {
     claimHint: 'Un compte rapide : votre enfant et celui de l’hôte sont reliés tout de suite, et vous pouvez proposer votre propre rencontre.',
     claimPassword: 'Choisissez un mot de passe',
     claimSend: 'Créer mon compte',
+    moreTitle: (host: string) => `Envie de revoir ${host} ?`,
+    moreHint: 'Un compte gratuit relie vos enfants : tu vois leurs prochaines rencontres et tu proposes les tiennes. Rien d’obligatoire, ta réponse compte déjà.',
     seriesTitle: 'Les semaines suivantes',
     seriesHint: 'Cette rencontre revient, répondez à chacune.',
   },
@@ -202,6 +209,21 @@ export const FR = {
     noEmailHint: 'Pas de courriel : envoie ce message par texto, ou écris le lien sur un papier.',
     message: (m: { parent: string; host: string; friend: string; title: string; when: string; scope: 'friend' | 'family'; link: string }) =>
       `Salut ${m.parent} ! ${m.host} organise « ${m.title} », ${m.when}. ${m.scope === 'friend' ? `L’invitation est pour ${m.friend} seulement.` : 'Toute la famille est la bienvenue.'} Tu réponds ici, sans compte : ${m.link}`,
+  },
+  cards: {
+    title: 'Cartes à imprimer',
+    hint: 'Une carte par famille, quatre par feuille. Le lieu s’affiche après un oui.',
+    print: 'Imprimer',
+    none: 'Invite d’abord une famille.',
+    forChild: (child: string) => `Pour ${child}`,
+    invites: (host: string) => `${host} t’invite`,
+    where: 'Tape ces deux mots sur',
+    free: 'Gratuit, sans compte.',
+    colour: 'Colorie une case',
+    draw: (host: string) => `Un dessin pour ${host}`,
+  },
+  record: {
+    label: 'Noter sa réponse',
   },
   scope: {
     label: 'Qui est invité ?',

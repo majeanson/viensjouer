@@ -5,6 +5,7 @@ const Door = lazy(() => import('./pages/Door').then((m) => ({ default: m.Door })
 const Encounters = lazy(() => import('./pages/Encounters').then((m) => ({ default: m.Encounters })))
 const EncounterNew = lazy(() => import('./pages/EncounterNew').then((m) => ({ default: m.EncounterNew })))
 const EncounterDetail = lazy(() => import('./pages/EncounterDetail').then((m) => ({ default: m.EncounterDetail })))
+const Cards = lazy(() => import('./pages/Cards').then((m) => ({ default: m.Cards })))
 const Children = lazy(() => import('./pages/Children').then((m) => ({ default: m.Children })))
 const Friends = lazy(() => import('./pages/Friends').then((m) => ({ default: m.Friends })))
 const Reply = lazy(() => import('./pages/Reply').then((m) => ({ default: m.Reply })))
@@ -49,6 +50,7 @@ export function AppRoutes() {
       <Route path="/rencontres" element={<Private><Encounters /></Private>} />
       <Route path="/rencontres/nouvelle" element={<Private><EncounterNew /></Private>} />
       <Route path="/rencontres/:id" element={<Private><EncounterDetail /></Private>} />
+      <Route path="/rencontres/:id/cartes" element={<Private><Cards /></Private>} />
       <Route path="/enfants" element={<Private><Children /></Private>} />
       <Route path="/calendrier" element={<Navigate to="/rencontres" replace />} />
       <Route path="/fenetres" element={<Private><Windows /></Private>} />

@@ -1,0 +1,27 @@
+/* The printable cards. Loaded only with the Cards page, so it costs the first download nothing. A4 holds four A6
+   cards, each cut along its dashed edge. Plain black on white so a home printer in grey is still readable. */
+.sheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+.pcard { background: #fff; color: #111; border: 1px dashed #999; border-radius: 0.5rem; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; break-inside: avoid; }
+.pcard p, .pcard h2 { margin: 0; }
+.pcard__for { font-size: 0.95rem; font-weight: 600; }
+.pcard__title { font-size: 1.6rem; line-height: 1.15; }
+.pcard__when { font-size: 1rem; }
+.pcard__words { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.15rem; padding: 0.6rem 0.4rem; border: 2px solid #111; border-radius: 0.6rem; font-size: 0.85rem; }
+.pcard__words strong { font-size: 1.7rem; letter-spacing: 0.02em; }
+.pcard__label { font-size: 0.8rem; }
+.pcard__boxes { display: flex; justify-content: space-around; font-size: 0.85rem; }
+.pcard__boxes span { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+.pcard__boxes i { width: 2.4rem; height: 2.4rem; border: 2px solid #111; border-radius: 50%; }
+.pcard__draw { flex: 1; min-height: 5rem; border: 2px dashed #777; border-radius: 0.5rem; display: flex; align-items: flex-start; padding: 0.4rem; font-size: 0.8rem; color: #555; }
+
+@media print {
+  @page { size: A4; margin: 0; }
+  html, body { background: #fff !important; }
+  .head, .nav, .noprint, .toast, .answerbar { display: none !important; }
+  .shell { max-width: none; padding: 0; margin: 0; }
+  .sheet { display: grid; grid-template-columns: 105mm 105mm; grid-auto-rows: 148.5mm; gap: 0; margin: 0; }
+  .pcard { border-radius: 0; height: 148.5mm; padding: 9mm; box-sizing: border-box; }
+  .pcard:nth-child(4n + 1) { break-before: page; }
+  .pcard__title { font-size: 1.9rem; }
+  .pcard__words strong { font-size: 2rem; }
+}

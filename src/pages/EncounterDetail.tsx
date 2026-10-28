@@ -62,6 +62,7 @@ export function EncounterDetail() {
   const fail = (e: Error) => setErr(e.message)
 
   const patch = useMutation({ mutationFn: (body: Record<string, unknown>) => api('encounters', { method: 'PATCH', body: { id, ...body } }), onSuccess: refresh, onError: fail })
+  const record = useMutation({ mutationFn: (b: { id: string; reply: 'yes' | 'maybe' | 'no' }) => api('invitations', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
   const send = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'POST', body: { id: invId } }), onSuccess: refresh, onError: fail })
   const setScope = useMutation({ mutationFn: (b: { id: string; scope: 'friend' | 'family' }) => api('invitations', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
   const message = useMutation({ mutationFn: (text: string) => api('messages', { method: 'POST', body: { encounterId: id, text } }), onSuccess: refresh, onError: fail })
@@ -263,6 +264,14 @@ export function EncounterDetail() {
                     <div>
                       <p className="small muted" style={{ margin: 0 }}>{i.scope === 'friend' ? t.scope.chipFriend(i.child_first_name) : t.scope.chipFamily}</p>
                       <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
+                      <div>
+                        <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.record.label}</p>
+                        <div className="seg" role="group" aria-label={t.record.label}>
+                          {(['yes', 'maybe', 'no'] as const).map((r) => (
+                            <button key={r} type="button" className={`btn btn--small ${i.reply === r ? 'btn--on' : ''}`} aria-pressed={i.reply === r} disabled={record.isPending} onClick={() => record.mutate({ id: i.id, reply: r })}>{t.encounters.reply[r]}</button>
+                          ))}
+                        </div>
+                      </div>
                       {(!i.email || !me.mail) && <p className="muted small" style={{ margin: 0 }}>{t.share.noEmailHint}</p>}
                       <div className="cluster">
                         <button className="linkbtn" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
@@ -294,6 +303,7 @@ export function EncounterDetail() {
                 )}
               </div>
             ))}
+            {invitations.length > 0 && <p style={{ margin: '0.75rem 0 0' }}><Link to={`/rencontres/${e.id}/cartes`} className="linkbtn"><Icon name="note" />{t.cards.title}</Link></p>}
             {notYet.length > 0 && (addMore ? (
               <div className="stack" style={{ marginTop: '0.75rem' }}>
                 {notYet.map((f) => (

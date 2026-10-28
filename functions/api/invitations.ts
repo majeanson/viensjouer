@@ -68,12 +68,20 @@ export const onRequestDelete = authed(async (ctx, actor) => {
 
 // PATCH { id, scope } — flip one family between « friend only » and « whole family » (the host
 // can decide family by family; the other families are not told).
+// PATCH { id, reply } — the host writes down an answer given in person or on paper (a card from the cubby, a word
+// at pick-up). It is the family's own answer, only entered by hand: nobody is mailed, and the family can still
+// change it from their link.
+const HAND_REPLIES = ['yes', 'maybe', 'no']
 export const onRequestPatch = authed(async (ctx, actor) => {
-  const body = await readJson<{ id?: string; scope?: string }>(ctx.request)
+  const body = await readJson<{ id?: string; scope?: string; reply?: string }>(ctx.request)
   const id = str(body?.id, 20)
-  if (!id || !isScope(body?.scope)) return badRequest('id et portée requis.')
-  const res = await ctx.env.DB.prepare('UPDATE invitations SET scope = ?, updated_at = ? WHERE id = ? AND encounter_id IN (SELECT id FROM encounters WHERE household_id = ?)')
-    .bind(body.scope, nowSec(), id, actor.householdId)
-    .run()
+  if (!id) return badRequest('id requis.')
+  const reply = typeof body?.reply === 'string' && HAND_REPLIES.includes(body.reply) ? body.reply : null
+  if (!reply && !isScope(body?.scope)) return badRequest('id et portée ou réponse requis.')
+  const ts = nowSec()
+  const own = 'id = ? AND encounter_id IN (SELECT id FROM encounters WHERE household_id = ?)'
+  const res = reply
+    ? await ctx.env.DB.prepare(`UPDATE invitations SET reply = ?, reply_at = ?, updated_at = ? WHERE ${own}`).bind(reply, ts, ts, id, actor.householdId).run()
+    : await ctx.env.DB.prepare(`UPDATE invitations SET scope = ?, updated_at = ? WHERE ${own}`).bind(body!.scope, ts, id, actor.householdId).run()
   return res.meta.changes ? ok() : notFound()
 })

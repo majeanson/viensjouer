@@ -65,6 +65,17 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await expect(guest.getByText('Mis à jour depuis ta dernière visite')).toBeVisible()
   await expect(guest.locator('.changed').first()).toBeVisible()
 
+  // -- paper: the printable card carries the family's two words and never the place; an answer given in person is
+  // noted by the host and the family's own page shows it (real SQL, same row the family answers on)
+  await host.goto(`${hostUrl}/cartes`)
+  const paper = host.getByRole('article', { name: 'Pour Léa' })
+  await expect(paper).toContainText(code!.split('-').join(' · '))
+  await expect(host.locator('.sheet')).not.toContainText('Chez nous')
+  await host.goto(hostUrl)
+  await host.getByText('Plus d’options').first().click()
+  await host.getByRole('group', { name: 'Noter sa réponse' }).getByRole('button', { name: 'Peut-être' }).click()
+  await expect.poll(async () => ((await (await guest.request.get(`/api/r/${code}`)).json()) as { you: { reply: string } }).you.reply).toBe('maybe')
+
   // -- the host's calendar feed and the data export answer for real
   const feed = await host.request.post('/api/cal-link', { data: {}, headers: { 'x-csrf-token': (await hostCtx.cookies()).find((c) => c.name === 'vj_csrf')?.value ?? '' } })
   expect([200, 403]).toContain(feed.status()) // a sandbox may not make a feed: either answer is a real one

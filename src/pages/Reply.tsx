@@ -180,6 +180,20 @@ function ReplyInner() {
   // While the question is still ahead (or behind) the viewport, a slim bar keeps the three answers one tap away.
   const asking = alive && !answered
   const barShown = asking && offscreen
+  // One account form, shown under the answer once there is one (a parent who has just said yes is the one who
+  // wants to see the friend again), else in the footer. Never before the question: it must not compete with it.
+  const claimForm = (
+    <form className="card" style={{ textAlign: 'left' }} onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>
+      <h3><Icon name="user" />{t.reply.claimTitle}</h3>
+      <p className="muted small">{t.reply.claimHint}</p>
+      <label className="field"><span><Icon name="user" />{t.reply.parentName}</span><input className="input" name="displayName" required maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
+      <label className="field"><span><Icon name="mail" />{t.reply.email}</span><input className="input" name="email" type="email" required defaultValue={you.email ?? ''} autoComplete="email" /></label>
+      <label className="field"><span><Icon name="lock" />{t.reply.claimPassword}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
+      {err && <div className="notice notice--err">{err}</div>}
+      <button className="btn btn--primary btn--big" disabled={claim.isPending}>{t.reply.claimSend}</button>
+    </form>
+  )
+  const offerAccount = answered && alive && !me.signedIn
   const calendarAfterYes = alive && answered && (you.reply === 'yes' || you.reply === 'maybe')
 
   return (
@@ -304,6 +318,14 @@ function ReplyInner() {
         </section>
       )}
 
+      {offerAccount && (claiming ? claimForm : (
+        <section className="card" aria-label={t.reply.moreTitle(host.child_first_name)}>
+          <h3><Icon name="heart" />{t.reply.moreTitle(host.child_first_name)}</h3>
+          <p className="muted small">{t.reply.moreHint}</p>
+          <button className="btn" onClick={() => setClaiming(true)}>{t.reply.create}</button>
+        </section>
+      ))}
+
       {guests && (guests.yes.length > 0 || guests.maybe.length > 0) && (
         <section className="card guests" aria-label={t.roster.guestsTitle}>
           <h3><Icon name="users" />{t.roster.guestsTitle}</h3>
@@ -409,19 +431,7 @@ function ReplyInner() {
       <footer className="footer muted small">
         <p>{t.reply.whatIs}</p>
         <p><Link to="/confidentialite">{t.privacy.link}</Link></p>
-        {me.signedIn ? null : claiming ? (
-          <form className="card" style={{ textAlign: 'left' }} onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>
-            <h3><Icon name="user" />{t.reply.claimTitle}</h3>
-            <p className="muted small">{t.reply.claimHint}</p>
-            <label className="field"><span><Icon name="user" />{t.reply.parentName}</span><input className="input" name="displayName" required maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
-            <label className="field"><span><Icon name="mail" />{t.reply.email}</span><input className="input" name="email" type="email" required defaultValue={you.email ?? ''} autoComplete="email" /></label>
-            <label className="field"><span><Icon name="lock" />{t.reply.claimPassword}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
-            {err && <div className="notice notice--err">{err}</div>}
-            <button className="btn btn--primary btn--big" disabled={claim.isPending}>{t.reply.claimSend}</button>
-          </form>
-        ) : (
-          <button className="btn btn--ghost" onClick={() => setClaiming(true)}>{t.reply.create}</button>
-        )}
+        {me.signedIn || offerAccount ? null : claiming ? claimForm : <button className="btn btn--ghost" onClick={() => setClaiming(true)}>{t.reply.create}</button>}
       </footer>
 
       {barShown && (

@@ -14,6 +14,11 @@ export const EN: Dict = {
     signup: 'Create my account',
     haveAccount: 'I already have an account',
     noAccount: 'First time here',
+    cardTitle: 'Got a card?',
+    cardLabel: 'The two words',
+    cardPlaceholder: 'moon honey',
+    cardGo: 'Open',
+    cardBad: 'It takes two words, like moon honey.',
   },
   auth: {
     email: 'Email',
@@ -171,6 +176,8 @@ export const EN: Dict = {
     claimHint: 'A quick account: your child and the host’s are linked right away, and you can propose your own get-together.',
     claimPassword: 'Choose a password',
     claimSend: 'Create my account',
+    moreTitle: (host: string) => `Want to see ${host} again?`,
+    moreHint: 'A free account links your children: you see their next get-togethers and propose your own. Nothing is required, your answer already counts.',
     seriesTitle: 'The following weeks',
     seriesHint: 'This get-together comes back, answer each one.',
   },
@@ -201,6 +208,21 @@ export const EN: Dict = {
     noEmailHint: 'No email: send this message by text, or write the link on a piece of paper.',
     message: (m: { parent: string; host: string; friend: string; title: string; when: string; scope: 'friend' | 'family'; link: string }) =>
       `Hi ${m.parent}! ${m.host} is organizing “${m.title}”, ${m.when}. ${m.scope === 'friend' ? `The invitation is for ${m.friend} only.` : 'The whole family is welcome.'} Answer here, no account needed: ${m.link}`,
+  },
+  cards: {
+    title: 'Cards to print',
+    hint: 'One card per family, four to a sheet. The place shows after a yes.',
+    print: 'Print',
+    none: 'Invite a family first.',
+    forChild: (child: string) => `For ${child}`,
+    invites: (host: string) => `${host} invites you`,
+    where: 'Type these two words on',
+    free: 'Free, no account.',
+    colour: 'Colour one box',
+    draw: (host: string) => `A drawing for ${host}`,
+  },
+  record: {
+    label: 'Note their answer',
   },
   scope: {
     label: 'Who is invited?',

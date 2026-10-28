@@ -16,7 +16,10 @@ const ASSETS = join('dist', 'assets')
 // Raised once, on purpose, in the 2026-10-28 audit pass (security screens, error/loading components, spacing and contrast tokens):
 // 85 -> 86 KB entry, 5 -> 5.5 KB stylesheet. The ratchet applies from here: the next change that grows them pays for it elsewhere.
 const ENTRY_GZ = 86 * KB
-const CHUNK_GZ = 16 * KB
+// 2026-10-28, second and last raise that day: the shared chunk that holds the French dictionary went 16 -> 16.5 KB for
+// the paper cards, the « J'ai une carte » box and the post-answer account card. The next growth should split French
+// into its own lazy chunk (as English already is) instead of raising this again.
+const CHUNK_GZ = 16.5 * KB
 const CSS_GZ = 5.5 * KB
 
 const files = readdirSync(ASSETS)

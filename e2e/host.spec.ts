@@ -61,6 +61,12 @@ test('adding a family needs both names, and says so', async ({ page }) => {
   await page.getByLabel('Prénom de l’ami').fill('Léa')
   await page.getByRole('button', { name: 'Ajouter et inviter' }).click()
   await expect(page.getByText('Il faut le prénom de l’ami et celui du parent.')).toBeVisible()
+  // Enter in a name field adds the family (and never submits the rencontre form that holds this box)
+  let added = 0
+  await page.route('**/api/families', async (r) => { if (r.request().method() === 'POST') { added++; return r.fulfill({ json: { id: 'f9' } }) } return r.fulfill({ json: { families: [] } }) })
+  await page.getByLabel('Prénom du parent').fill('Julie')
+  await page.getByLabel('Prénom de l’ami').press('Enter')
+  await expect.poll(() => added).toBe(1)
 })
 
 test('repeat is a frequency (once, every week, every 2 weeks, every month), with a count only when it repeats', async ({ page }) => {

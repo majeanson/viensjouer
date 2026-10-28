@@ -233,7 +233,8 @@ export function EncounterDetail() {
             </div>
           )}
 
-          <div className="card" aria-label={t.roster.title}>
+          {/* Until someone answers, « Les liens » below already says « Sans réponse » for each family: no second list. */}
+          {(invitations.length === 0 || invitations.some((i) => i.reply)) && <div className="card" aria-label={t.roster.title}>
             <h3><Icon name="users" />{t.roster.title}</h3>
             <p className="muted small" style={{ margin: '0 0 0.4rem' }}>{e.show_guests === false ? null : t.roster.public}</p>
             {invitations.length === 0 && <p className="muted small" style={{ margin: 0 }}>{t.roster.empty}</p>}
@@ -244,7 +245,7 @@ export function EncounterDetail() {
               </div>
             ))}
             {yes.length > 0 && <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.kinds.birthday.summary(totalKids, totalAdults)}</p>}
-          </div>
+          </div>}
 
           <div className="card">
             <h3><Icon name="share" />{t.encounters.links}</h3>

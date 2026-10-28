@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
@@ -38,10 +38,6 @@ export function FamilyPicker({ families, groups, selected, onChange, loaded = tr
     onChange(next)
   }
 
-  async function addFamily(e: FormEvent<HTMLFormElement>) {
-    // A nested form would submit the page's own form; this one is a plain fieldset with a button.
-    e.preventDefault()
-  }
   async function create(box: HTMLElement) {
     const val = (n: string) => (box.querySelector<HTMLInputElement>(`[name=${n}]`)?.value ?? '').trim()
     const childFirstName = val('childFirstName')
@@ -86,7 +82,7 @@ export function FamilyPicker({ families, groups, selected, onChange, loaded = tr
       {families.length === 0 && <p className="muted">{t.encounters.noFamilies}</p>}
 
       {adding ? (
-        <form onSubmit={addFamily} className="card" style={{ marginTop: '0.5rem', background: 'var(--paper)' }}>
+        <div role="group" aria-label={t.families.add} className="card" style={{ marginTop: '0.5rem', background: 'var(--paper)' }} onKeyDown={(e) => { if (e.key === 'Enter' && e.target instanceof HTMLInputElement) { e.preventDefault(); void create(e.currentTarget) } }}>
           <h3><Icon name="users" />{t.families.add}</h3>
           <label className="field"><span><Icon name="smile" />{t.families.childFirstName}</span><input className="input" name="childFirstName" maxLength={40} autoComplete="off" /></label>
           <label className="field"><span><Icon name="user" />{t.families.parentName}</span><input className="input" name="parentName" maxLength={60} autoComplete="off" /></label>
@@ -94,10 +90,10 @@ export function FamilyPicker({ families, groups, selected, onChange, loaded = tr
           <p className="muted small">{t.share.noEmailHint}</p>
           {err && <div className="notice notice--err">{err}</div>}
           <div className="cluster">
-            <button type="button" className="btn btn--primary" disabled={busy} onClick={(e) => void create((e.currentTarget.closest('form') as HTMLElement))}>{t.families.addAndPick}</button>
+            <button type="button" className="btn btn--primary" disabled={busy} onClick={(e) => void create((e.currentTarget.closest('[role=group]') as HTMLElement))}>{t.families.addAndPick}</button>
             {families.length > 0 && <button type="button" className="btn btn--ghost" onClick={() => setAdding(false)}>{t.encounters.back}</button>}
           </div>
-        </form>
+        </div>
       ) : (
         <button type="button" className="linkbtn" style={{ marginTop: '0.5rem' }} onClick={() => setAdding(true)}>{t.families.add}</button>
       )}

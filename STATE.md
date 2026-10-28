@@ -196,3 +196,7 @@ Two read-only audits produced a ranked list; it is worked through in order, one 
 - **No menu to open**: the header shows your face and name (one tap: your account) and, apart, a sign-out icon. The dropdown, its Escape / outside-press code, its CSS and `--z-menu` are gone. « Ce qu'on garde » moved to the Données tab of the account.
 - **Mon compte in five tabs** (Profil, Foyer, Agenda, Sécurité, Données; `?tab=` in the address, `role=tablist`). The headings « Mon profil » and « Sécurité » inside their own tab were dropped (the tab says it). A profile save error is now shown on the Profil tab (before it was only visible near « Tout effacer »).
 - **No repeated group titles**: the « Groupes » fold on Amis no longer holds a second « Groupes » heading with the same icon (an e2e counts it).
+
+### Host page: one list of families at a time (2026-10-28)
+- « Qui vient » appears only once a family has answered (or when nobody is invited yet). Before that, « Les liens » already shows « Sans réponse » per family, so the same names were listed twice.
+- `FamilyPicker`'s « add a family » box was a `<form>` inside the page's own form (invalid, and React warned in the e2e log). It is now a plain group: Enter in a name field adds the family, nothing else. `host.spec` plants the old shape red.

@@ -106,3 +106,24 @@ test('an invited parent is offered an account only after answering, and it never
   await page.getByRole('button', { name: 'Créer mon compte pour inviter à mon tour' }).click()
   await expect(page.getByRole('button', { name: 'Créer mon compte', exact: true })).toBeVisible()
 })
+
+test('the host page lists each family once until someone has answered', async ({ page }) => {
+  await hostStub(page)
+  await page.goto('/rencontres/e1')
+  // Léa has not answered, Zoé has: the roster is there
+  await expect(page.getByLabel('Qui vient')).toBeVisible()
+  await page.unroute('**/api/**')
+  await page.route('**/api/**', async (r) => {
+    const p = new URL(r.request().url()).pathname.replace('/api/', '')
+    const j = (json: unknown) => r.fulfill({ json })
+    if (p === 'health') return j({ ok: true, mail: false, photos: false, invite: false })
+    if (p === 'auth/me') return j({ signedIn: true, email: 'marc@example.com', displayName: 'Marc', household: { id: 'h', name: 'Les Jeanson', tz: 'America/Toronto' }, mail: false, demo: false })
+    if (p === 'children') return j({ children: [child] })
+    if (p === 'families') return j({ families: [fam('f1', 'Léa', 'Julie')] })
+    if (p.startsWith('encounters')) return j({ encounter: enc({}), invitations: [inv('i1', 'f1', 'Léa', 'Julie', null, { token: 'lune-miel' })], messages: [], relais: [], souvenirs: [], changes: [], bring: [] })
+    return j({})
+  })
+  await page.reload()
+  await expect(page.locator('.linkrow').filter({ hasText: 'Léa' })).toBeVisible()
+  await expect(page.getByLabel('Qui vient')).toHaveCount(0)
+})

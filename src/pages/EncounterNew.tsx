@@ -6,6 +6,7 @@ import { K } from '../lib/query'
 import { useT } from '../i18n'
 import { fromLocalInput, nextSaturdayTen, toLocalInput } from '../lib/format'
 import { Why } from '../components/Why'
+import { FREQUENCIES, MAX_OCCURRENCES, repeatTimes, type Frequency } from '../lib/repeat'
 import { FamilyPicker } from '../components/FamilyPicker'
 import type { Child, Family, Group, Kind } from '../lib/types'
 
@@ -14,18 +15,6 @@ type Scope = 'friend' | 'family'
 const defaultScope = (k: Kind): Scope => (k === 'birthday' ? 'friend' : 'family')
 
 const KINDS: Kind[] = ['park', 'home', 'birthday']
-const REPEATS = [0, 4, 8, 12]
-
-// The occurrences of a weekly series, computed HERE in the browser's own zone so the wall
-// time stays put across a DST change (setDate keeps the clock; +7*86400 would drift an hour).
-export function weeklyTimes(startsAt: number, weeks: number): number[] {
-  return Array.from({ length: weeks }, (_, i) => {
-    const d = new Date(startsAt * 1000)
-    d.setDate(d.getDate() + 7 * i)
-    return Math.floor(d.getTime() / 1000)
-  })
-}
-
 // One form, one card. Who invites → what kind → title/when/where → repeat? → tick the families.
 export function EncounterNew() {
   const t = useT()
@@ -38,6 +27,7 @@ export function EncounterNew() {
   const [childId, setChildId] = useState<string | null>(null)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [scope, setScope] = useState<Scope>('family')
+  const [freq, setFreq] = useState<Frequency>('once')
   const [scopeTouched, setScopeTouched] = useState(false)
   const chooseKind = (k: Kind) => {
     setKind(k)
@@ -63,13 +53,13 @@ export function EncounterNew() {
     const f = new FormData(e.currentTarget)
     const startsAt = fromLocalInput(String(f.get('startsAt') ?? ''))
     const endsRaw = String(f.get('endsAt') ?? '')
-    const weeks = Number(f.get('repeat') ?? 0)
+    const count = Number(f.get('count') ?? 4)
     create.mutate({
       childId: chosen,
       kind,
       title: f.get('title'),
       startsAt,
-      ...(weeks > 0 && startsAt ? { startsAtList: weeklyTimes(startsAt, weeks) } : {}),
+      ...(freq !== 'once' && startsAt ? { startsAtList: repeatTimes(startsAt, freq, count) } : {}),
       endsAt: endsRaw ? fromLocalInput(endsRaw) : null,
       place: f.get('place') || undefined,
       address: f.get('address') || undefined,
@@ -128,11 +118,19 @@ export function EncounterNew() {
         <label className="field"><span>{t.encounters.until}</span><input className="input" name="endsAt" type="datetime-local" /></label>
         <label className="field">
           <span>{t.encounters.repeat}</span>
-          <select className="input" name="repeat" defaultValue="0">
-            {REPEATS.map((n) => <option key={n} value={n}>{n === 0 ? t.encounters.repeatNone : t.encounters.repeatWeeks(n)}</option>)}
+          <select className="input" name="freq" value={freq} onChange={(e) => setFreq(e.target.value as Frequency)}>
+            {FREQUENCIES.map((x) => <option key={x} value={x}>{t.encounters.freq[x]}</option>)}
           </select>
-          <span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.repeatHint}</span>
         </label>
+        {freq !== 'once' && (
+          <label className="field">
+            <span>{t.encounters.repeatCount}</span>
+            <select className="input" name="count" defaultValue="4">
+              {Array.from({ length: MAX_OCCURRENCES - 1 }, (_, i) => i + 2).map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.repeatHint}</span>
+          </label>
+        )}
         <label className="field"><span>{t.encounters.place}</span><input className="input" name="place" maxLength={120} placeholder={t.encounters.placePlaceholder[kind]} /></label>
         {kind !== 'park' && <label className="field"><span>{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" /><Why k="address" /></label>}
         {kind === 'birthday' && <label className="field"><span>{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} placeholder={t.kinds.birthday.giftPlaceholder} /><Why k="gift" /></label>}

@@ -62,3 +62,38 @@ test('adding a family needs both names, and says so', async ({ page }) => {
   await page.getByRole('button', { name: 'Ajouter et inviter' }).click()
   await expect(page.getByText('Il faut le prénom de l’ami et celui du parent.')).toBeVisible()
 })
+
+test('repeat is a frequency (once, every week, every 2 weeks, every month), with a count only when it repeats', async ({ page }) => {
+  const posted: Record<string, unknown>[] = []
+  await page.route('**/api/**', async (r) => {
+    const req = r.request()
+    const p = new URL(req.url()).pathname.replace('/api/', '')
+    const j = (json: unknown, status = 200) => r.fulfill({ status, json })
+    if (p === 'auth/me') return j({ signedIn: true, email: 'm@example.com', displayName: 'Marc', household: null, mail: false, demo: false })
+    if (p === 'children') return j({ children: [{ id: 'c1', first_name: 'Noé', birthdate: null, colour: '#e8922a', position: 0 }] })
+    if (p === 'families') return j({ families: [{ id: 'f1', parent_name: 'Julie', email: null, phone: null, child_first_name: 'Léa', child_birthdate: null, allergies: null, notes: null, linked_household_id: null }] })
+    if (p === 'groups') return j({ groups: [] })
+    if (p === 'encounters' && req.method() === 'POST') {
+      posted.push(req.postDataJSON() as Record<string, unknown>)
+      return j({ id: 'e1', ids: ['e1'] }, 201)
+    }
+    return j({ encounter: { id: 'e1', child_id: 'c1', kind: 'park', title: 'P', starts_at: 1, ends_at: null, place: null, address: null, note: null, status: 'proposed', details: {}, hereOpen: false }, invitations: [], messages: [], relais: [], souvenirs: [] })
+  })
+  await page.goto('/rencontres/nouvelle')
+  const freq = page.getByLabel('Répéter')
+  await expect(freq.locator('option')).toHaveText(['Une seule fois', 'Chaque semaine', 'Aux 2 semaines', 'Chaque mois'])
+  await expect(page.getByLabel('Nombre de rencontres')).toHaveCount(0)
+
+  await freq.selectOption('biweek')
+  await page.getByLabel('Nombre de rencontres').selectOption('3')
+  await page.getByRole('checkbox', { name: /Léa/ }).check()
+  await page.getByLabel('Titre').fill('Parc aux deux semaines')
+  await page.getByRole('button', { name: 'Créer et obtenir les liens' }).click()
+  await expect.poll(() => posted.length).toBe(1)
+
+  const list = posted[0].startsAtList as number[]
+  expect(list).toHaveLength(3)
+  expect(list[0]).toBe(posted[0].startsAt)
+  // every 14 days on the wall clock (a daylight-saving change may make it 14 days ± 1 h)
+  for (let i = 1; i < list.length; i++) expect(Math.abs(list[i] - list[i - 1] - 14 * 86400)).toBeLessThanOrEqual(3600)
+})

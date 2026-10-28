@@ -140,3 +140,4 @@ Done so far: the icon set (`components/Icon.tsx`, in front of labels, headings a
 - Ideas not done: split the English dictionary into its own lazy chunk (the shared chunk is 23 KB gzip), a knip dead-code gate, dynamic link previews per invitation.
 - **English is its own chunk** (`src/i18n.en.ts`, loaded by `main.tsx` only for an English device or after pressing EN): the shared French chunk fell from 23 KB to 15 KB gzip. A first visit in English waits a beat rather than flashing French; switching later keeps the page. Both dictionaries are still held by `Dict` (tsc) and `copyRules.test.ts`.
 - **Knip** gates dead exports (`npm run knip`); **copy rules** gate dead keys, em-dashes and emoji.
+- **Accessibility basics**: a skip link, a `main` region that takes focus after a navigation, and a real `<title>` per screen (the page's own h1 plus the app name, so a texted invitation's tab reads « Noé invite Léa · Viens jouer »). `src/lib/pageTitle.ts`, held by e2e.

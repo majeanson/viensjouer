@@ -429,7 +429,7 @@ export const FR = {
   avatar: { add: 'Ajouter une photo', change: 'Changer la photo', remove: 'Retirer la photo' },
   profile: { title: 'Mon profil', name: 'Mon prénom', nameHint: 'Le prénom qui s’affiche sur les invitations que tu envoies.', save: 'Enregistrer', saved: 'Enregistré.' },
   board: { title: 'Le tableau', hint: 'Un mot pour tout le monde : où se retrouver, quoi apporter, une photo à venir voir. Il reste là, tu peux y revenir.', empty: 'Rien d’écrit encore. Écris le premier mot.', closedEmpty: 'Rien n’a été écrit.', placeholder: 'Écrire sur le tableau…', send: 'Publier', host: 'Hôte', mine: 'Toi', pinned: 'Épinglés', pin: 'Épingler', unpin: 'Détacher', remove: 'Retirer', new: 'Nouveau', newCount: (n: number) => `${n} nouveau${n > 1 ? 'x' : ''}`, closed: 'La rencontre est passée : le tableau reste ouvert à la lecture.' },
-  common: { loading: 'Chargement…', why: 'Pourquoi ?', error: 'Ça n’a pas marché. Réessaie.', theme: 'Thème', lang: 'English' },
+  common: { skip: 'Aller au contenu', loading: 'Chargement…', why: 'Pourquoi ?', error: 'Ça n’a pas marché. Réessaie.', theme: 'Thème', lang: 'English' },
 }
 
 export type Dict = typeof FR

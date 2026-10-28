@@ -428,5 +428,5 @@ export const EN: Dict = {
   avatar: { add: 'Add a photo', change: 'Change the photo', remove: 'Remove the photo' },
   profile: { title: 'My profile', name: 'My first name', nameHint: 'The first name shown on the invitations you send.', save: 'Save', saved: 'Saved.' },
   board: { title: 'The board', hint: 'A note for everyone: where to meet, what to bring, a photo to come and see. It stays here, you can come back to it.', empty: 'Nothing written yet. Write the first note.', closedEmpty: 'Nothing was written.', placeholder: 'Write on the board…', send: 'Post', host: 'Host', mine: 'You', pinned: 'Pinned', pin: 'Pin', unpin: 'Unpin', remove: 'Remove', new: 'New', newCount: (n: number) => `${n} new`, closed: 'The get-together is over: the board stays open to read.' },
-  common: { loading: 'Loading…', why: 'Why?', error: 'That did not work. Try again.', theme: 'Theme', lang: 'Français' },
+  common: { skip: 'Skip to content', loading: 'Loading…', why: 'Why?', error: 'That did not work. Try again.', theme: 'Theme', lang: 'Français' },
 }

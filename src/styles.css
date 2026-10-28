@@ -272,3 +272,8 @@ h2 .ico, h3 .ico, summary .ico { color: var(--accent); }
 .head__tools { min-width: 0; flex-shrink: 1; }
 .brand { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 420px) { .tool__name { display: none; } .tool { min-width: 44px; } }
+
+/* Keyboard users: a way past the header, and a focus target that does not draw a box around the whole page. */
+.skip { position: absolute; left: 0.5rem; top: -4rem; z-index: 100; background: var(--ink); color: var(--paper); padding: 0.6rem 0.9rem; border-radius: var(--radius); text-decoration: none; font-weight: 600; }
+.skip:focus { top: 0.5rem; }
+main:focus { outline: none; }

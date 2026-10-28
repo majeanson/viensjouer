@@ -19,6 +19,7 @@ const Reset = lazy(() => import('./pages/Forgot').then((m) => ({ default: m.Rese
 import { Shell } from './components/Shell'
 import { useT } from './i18n'
 import { CODE_RE } from './lib/link'
+import { usePageTitle } from './lib/pageTitle'
 
 // `/r/:token` — and its paper spelling, a bare `/<xxxx-xxxx>` — is the one route a
 // stranger lands on; everything else is the host's.
@@ -35,6 +36,8 @@ function Private({ children }: { children: React.ReactNode }) {
 }
 
 export function AppRoutes() {
+  const t = useT()
+  usePageTitle(t.appName)
   return (
     <Suspense fallback={<div className="shell" aria-busy="true"><div className="card skeleton" style={{ marginTop: '4rem' }} /></div>}>
     <Suspense fallback={<div className="shell" aria-busy="true"><div className="card skeleton" style={{ marginTop: '4rem' }} /></div>}>

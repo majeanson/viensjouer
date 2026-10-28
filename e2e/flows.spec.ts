@@ -427,3 +427,33 @@ test('English is its own chunk: a French visitor never downloads it, an English-
   // the French visitor only asked for it after pressing EN
   expect(seen.fr.length).toBeGreaterThan(0)
 })
+
+test('every screen has its own title, there is a skip link, and focus follows a navigation', async ({ page }) => {
+  await host(page)
+  await page.goto('/rencontres')
+  await expect(page).toHaveTitle('Rencontres · Viens jouer')
+  // the skip link is the first thing a keyboard reaches, and it lands on the main region
+  await page.keyboard.press('Tab')
+  const skip = page.getByRole('link', { name: 'Aller au contenu' })
+  await expect(skip).toBeFocused()
+  await expect(skip).toBeVisible()
+  await page.keyboard.press('Enter')
+  await expect(page.locator('main#main')).toBeFocused()
+  // a navigation changes the title and moves focus to the new page's region
+  await page.getByRole('navigation', { name: 'Navigation' }).getByRole('link', { name: 'Amis' }).click()
+  await expect(page).toHaveTitle('Amis · Viens jouer')
+  await expect(page.locator('main#main')).toBeFocused()
+  await page.getByRole('navigation', { name: 'Navigation' }).getByRole('link', { name: 'Ma famille' }).click()
+  await expect(page).toHaveTitle('Ma famille · Viens jouer')
+})
+
+test('the invitation tab is titled with who invites', async ({ page }) => {
+  await page.route('**/api/**', (r) => {
+    const p = new URL(r.request().url()).pathname
+    if (p.endsWith('/auth/me')) return r.fulfill({ json: { signedIn: false } })
+    if (p.endsWith('/health')) return r.fulfill({ json: { ok: true, mail: false, photos: false, invite: false } })
+    return r.fulfill({ json: { alive: true, encounter: { id: 'e1', child_id: 'c1', kind: 'park', title: 'Au parc', starts_at: now + 86400, ends_at: null, place: null, address: null, map_url: null, note: null, status: 'proposed', details: {}, hereAt: null }, host: { child_first_name: 'Noé', parent_name: 'Marc', household_name: 'H', tz: 'America/Toronto' }, you: { parent_name: 'Julie', email: null, phone: null, child_first_name: 'Léa', allergies: null, reply: null, replyNote: null, remind: false, adults: null, kids: null, scope: 'family' }, homeCard: null, relais: null, souvenirs: [], souvenirsOpen: false, photos: false, series: [], changes: [], cover: null, guests: null, bring: [], messages: [] } })
+  })
+  await page.goto('/lune-miel')
+  await expect(page).toHaveTitle('Noé invite Léa · Viens jouer')
+})

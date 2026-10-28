@@ -12,6 +12,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const t = useT()
   return (
     <div className="shell">
+      <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus() }}>{t.common.skip}</a>
       <Header />
       <nav className="nav" aria-label="Navigation">
         <NavLink to="/rencontres"><Icon name="calendar" /><span>{t.nav.home}</span></NavLink>
@@ -23,7 +24,9 @@ export function Shell({ children }: { children: ReactNode }) {
           {t.trial.banner} <Link to="/garder" className="btn btn--small">{t.trial.keep}</Link>
         </div>
       )}
-      {children}
+      <main id="main" tabIndex={-1}>
+        {children}
+      </main>
     </div>
   )
 }

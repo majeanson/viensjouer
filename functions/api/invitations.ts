@@ -33,16 +33,24 @@ export const onRequestPost = authed(async (ctx, actor) => {
     .first<{ token: string; scope: string; sent_at: number | null; lang: string | null; email: string | null; parent_name: string; child_first_name: string; title: string; starts_at: number; host_child: string; tz: string }>()
   if (!row) return notFound()
   if (!row.email) return badRequest('Cette famille n’a pas de courriel — copie le lien.')
-  if (row.sent_at && nowSec() - row.sent_at < RESEND_COOLDOWN_SEC) return tooManyRequests('Le courriel vient de partir. Attends quelques minutes avant de le renvoyer.')
   if ((await mailRoom(ctx.env, actor.householdId)) < 1) return tooManyRequests(MAIL_CAP_MESSAGE)
 
   const link = `${new URL(ctx.request.url).origin}/${paperCode(row.token)}`
   const lang = mailLang(row.lang, ctx.request)
   const when = whenLong(row.starts_at, lang, row.tz)
   const mail = invitationMail(lang, { parent: row.parent_name, host: actor.displayName, hostChild: row.host_child, child: row.child_first_name, title: row.title, when, friendOnly: row.scope === 'friend', link })
-  await sendMail(ctx.env, { to: row.email, ...mail })
+  // Claim the slot BEFORE sending, in one conditional write: two taps that arrive together cannot both pass the cooldown.
+  const now = nowSec()
+  const claimed = await ctx.env.DB.prepare('UPDATE invitations SET sent_at = ?, updated_at = ? WHERE id = ? AND (sent_at IS NULL OR sent_at < ?)').bind(now, now, id, now - RESEND_COOLDOWN_SEC).run()
+  if (!claimed.meta.changes) return tooManyRequests('Le courriel vient de partir. Attends quelques minutes avant de le renvoyer.')
+  try {
+    await sendMail(ctx.env, { to: row.email, ...mail })
+  } catch (err) {
+    // Nothing left: give the slot back so the host can try again at once.
+    await ctx.env.DB.prepare('UPDATE invitations SET sent_at = ? WHERE id = ?').bind(row.sent_at, id).run()
+    throw err
+  }
   await recordMail(ctx.env, actor.householdId)
-  await ctx.env.DB.prepare('UPDATE invitations SET sent_at = ?, updated_at = ? WHERE id = ?').bind(nowSec(), nowSec(), id).run()
   return ok()
 })
 

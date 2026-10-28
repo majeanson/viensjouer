@@ -30,6 +30,9 @@ export async function overAuthLimit(env: Env, request: Request, targetKey?: stri
   return false
 }
 
+/** True when this attempt is over the per-target bound only (the caller already charged the address). */
+export const overKeyLimit = (env: Env, key: string): Promise<boolean> => overLimit(env, 'key', key)
+
 export function rateLimitEnabled(env: Env): boolean {
   return !!env.LIMIT_IP && !!env.LIMIT_KEY
 }

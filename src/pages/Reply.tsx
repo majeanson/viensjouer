@@ -75,12 +75,15 @@ function ReplyInner() {
 
   // A kept answer goes out when the network is back, or the next time this link is opened.
   useEffect(() => {
+    setQueued(readPending(token))
     const flush = () => {
       const p = readPending(token)
       if (!p) return
       api(`r/${token}`, { method: 'POST', body: { reply: p } })
         .then(() => { clearPending(token); setQueued(null); setJustAnswered(true); void qc.invalidateQueries({ queryKey: K.reply(token) }) })
-        .catch((e) => { if (e instanceof ApiError) { clearPending(token); setQueued(null) } })
+        // A refusal that will not change (the rencontre is over, the link is gone) drops the answer; a busy server or the
+        // rate limit (5xx, 429) keeps it for the next try.
+        .catch((e) => { if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 429) { clearPending(token); setQueued(null) } })
     }
     flush()
     window.addEventListener('online', flush)
@@ -133,6 +136,7 @@ function ReplyInner() {
 
   // ONE TAP: the answer is saved at once. Everything else is optional and comes after.
   function answer(r: ReplyKind) {
+    clearPending(token) // a tap now replaces any answer still waiting for the network
     post.mutate(
       { reply: r },
       {

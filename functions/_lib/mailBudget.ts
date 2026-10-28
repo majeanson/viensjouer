@@ -1,7 +1,8 @@
 // The ceiling on what one household can make the app email in a day. Signup is open and a friend
 // family's address is free text, so without a cap any account could aim the verified sender at
 // strangers. The cap is generous for a real host (a handful of families a week) and fatal to a relay.
-// Callers ask `mailRoom` first, send at most that many, then `recordMail` what actually left.
+// Not counted, on purpose: the reminders the cron sends (one per invitation, and only because the RECIPIENT ticked the box
+// or the host turned their own on), and the test mail (to oneself, rate-limited). Callers ask `mailRoom` first, send at most that many, then `recordMail` what actually left.
 import type { Env } from './env'
 import { newId, nowSec } from './ids'
 

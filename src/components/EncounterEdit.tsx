@@ -21,7 +21,7 @@ export function EncounterEdit({
   gift: string | null
   canNotify: boolean
   onClose: () => void
-  onSaved: (r: { changed: number; notified: number }) => void
+  onSaved: (r: { changed: number; notified: number; notifiedSkipped?: number }) => void
 }) {
   const t = useT()
   const { lang } = useLang()
@@ -31,7 +31,7 @@ export function EncounterEdit({
   const [err, setErr] = useState<string | null>(null)
   const guestsChangedNow = useRef(false)
   const save = useMutation({
-    mutationFn: (body: Record<string, unknown>) => api<{ changed: number; notified: number }>('encounters', { method: 'PATCH', body: { id: e.id, ...body } }),
+    mutationFn: (body: Record<string, unknown>) => api<{ changed: number; notified: number; notifiedSkipped?: number }>('encounters', { method: 'PATCH', body: { id: e.id, ...body } }),
     onSuccess: (r) => onSaved(guestsChangedNow.current && r.changed === 0 ? { ...r, changed: 1 } : r),
     onError: (x) => setErr(x.message),
   })

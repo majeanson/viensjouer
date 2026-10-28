@@ -244,11 +244,12 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   if (Array.isArray(body?.invite)) await mintInvitations(ctx.env.DB, actor.householdId, id, body!.invite.filter((v) => typeof v === 'string').slice(0, 40), isScope(body?.scope) ? body.scope : own.default_scope)
   // « Prévenir les familles »: one email to each family that has an address and did not say no.
   let notified = 0
-  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) notified = await notifyChange(ctx.env, ctx.request, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes)
-  return ok({ changed: changes.length, notified })
+  let notifiedSkipped = 0
+  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) ({ sent: notified, skipped: notifiedSkipped } = await notifyChange(ctx.env, ctx.request, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes))
+  return ok({ changed: changes.length, notified, notifiedSkipped })
 })
 
-async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Request, householdId: string, origin: string, hostName: string, encounterId: string, title: string, changes: Change[]): Promise<number> {
+async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Request, householdId: string, origin: string, hostName: string, encounterId: string, title: string, changes: Change[]): Promise<{ sent: number; skipped: number }> {
   const { results } = await env.DB.prepare(
     `SELECT i.token, f.email, f.lang, f.parent_name, h.tz FROM invitations i
        JOIN friend_families f ON f.id = i.friend_family_id
@@ -259,7 +260,8 @@ async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Req
     .bind(encounterId)
     .all<{ token: string; email: string; lang: string | null; parent_name: string; tz: string }>()
   let sent = 0
-  for (const r of results.slice(0, await mailRoom(env, householdId))) {
+  const room = await mailRoom(env, householdId)
+  for (const r of results.slice(0, room)) {
     const lang = mailLang(r.lang, request)
     const link = `${origin}/${paperCode(r.token)}`
     try {
@@ -270,7 +272,8 @@ async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Req
     }
   }
   await recordMail(env, householdId, sent)
-  return sent
+  // Families left out because the day's budget ran out are counted, so the host is told and can copy the link.
+  return { sent, skipped: Math.max(0, results.length - room) }
 }
 
 export const onRequestDelete = authed(async (ctx, actor) => {

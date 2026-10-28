@@ -335,10 +335,13 @@ main:focus { outline: none; }
 @media (min-width: 540px) and (max-width: 760px) { .nav { justify-content: center; } .nav a { flex: 0 1 11rem; } }
 
 /* ---- reach and contrast ------------------------------------------------------------------------------
-   A small control keeps its look but not its small hit area: an invisible 44 px target around it (36 px tall + 4 above and below). */
-.btn--small, .linkbtn, .photo__x { position: relative; }
-.btn--small::after, .linkbtn::after { content: ''; position: absolute; inset: -4px 0; }
-.photo__x::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; }
+   On a touch screen a small control keeps its look but not its small hit area: an invisible 44 px target around it
+   (36 px tall + 4 above and below). Only there: an overlay on a mouse layout would sit over its neighbours. */
+@media (pointer: coarse) {
+  .btn--small, .linkbtn { position: relative; }
+  .btn--small::after, .linkbtn::after { content: ''; position: absolute; inset: -4px 0; }
+  .photo__x::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; }
+}
 /* The phone asks for more contrast: the quiet greys and hairlines get firmer. */
 @media (prefers-contrast: more) {
   :root { --muted: #4a4238; --line: #8a7f70; }

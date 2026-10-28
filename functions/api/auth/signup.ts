@@ -1,7 +1,7 @@
 import type { Env } from '../../_lib/env'
 import { requestLang } from '../../_lib/lang'
 import { badRequest, conflict, forbidden, readJson, serverError, str, tooManyRequests, ACCOUNT_UNAVAILABLE } from '../../_lib/json'
-import { overAuthLimit } from '../../_lib/rateLimit'
+import { overAuthLimit, overKeyLimit } from '../../_lib/rateLimit'
 import { signInAs, sessionCookies } from '../../_lib/auth'
 import { hashPassword, verifyPassword } from '../../_lib/password'
 import { inviteAccepted } from '../../_lib/signupGate'
@@ -28,7 +28,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   const existing = await ctx.env.DB.prepare('SELECT password_hash FROM parents WHERE email = ?').bind(email).first<{ password_hash: string }>()
   if (existing) {
     // Same per-address bound as the login door: this branch is a password check too.
-    if (await overAuthLimit(ctx.env, ctx.request, `login:${email}`)) return tooManyRequests()
+    if (await overKeyLimit(ctx.env, `login:${email}`)) return tooManyRequests()
     if (!(await verifyPassword(password, existing.password_hash))) return conflict(ACCOUNT_UNAVAILABLE)
     try {
       const { session, csrf } = await signInAs(ctx.env, email)

@@ -75,9 +75,9 @@ export function EncounterDetail() {
   })
   const addBring = useMutation({ mutationFn: (label: string) => api('bring', { method: 'POST', body: { encounter: id, label } }), onSuccess: refresh, onError: fail })
   const thank = useMutation({
-    mutationFn: (text: string) => api<{ sent: number }>('thanks', { method: 'POST', body: { encounter: id, text } }),
+    mutationFn: (text: string) => api<{ sent: number; skipped?: number }>('thanks', { method: 'POST', body: { encounter: id, text } }),
     onSuccess: (r) => {
-      setFlash(t.thanks.sent(r.sent))
+      setFlash(t.thanks.sent(r.sent) + (r.skipped ? ` ${t.common.mailCapped}` : ''))
       refresh()
       setTimeout(() => setFlash(null), 6000)
     },
@@ -193,7 +193,7 @@ export function EncounterDetail() {
           onClose={() => setEditing(false)}
           onSaved={(r) => {
             setEditing(false)
-            setFlash(r.changed === 0 ? t.edit.nothing : r.notified ? t.edit.savedNotified(r.notified) : t.edit.saved)
+            setFlash((r.changed === 0 ? t.edit.nothing : r.notified ? t.edit.savedNotified(r.notified) : t.edit.saved) + (r.notifiedSkipped ? ` ${t.common.mailCapped}` : ''))
             refresh()
             setTimeout(() => setFlash(null), 6000)
           }}

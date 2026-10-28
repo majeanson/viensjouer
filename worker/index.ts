@@ -92,6 +92,12 @@ export default {
   },
   // The hourly cron (wrangler.toml [triggers]): the one reminder an invited parent asked for.
   async scheduled(_controller, env, ctx): Promise<void> {
-    ctx.waitUntil(Promise.all([sendDueReminders(env, 'https://jouer.marcportal.com'), sendHostReminders(env, 'https://jouer.marcportal.com'), tidy(env)]).then(() => undefined))
+    const jobs: [string, Promise<unknown>][] = [
+      ['reminders', sendDueReminders(env, 'https://jouer.marcportal.com')],
+      ['host reminders', sendHostReminders(env, 'https://jouer.marcportal.com')],
+      ['tidy', tidy(env)],
+    ]
+    // One job failing is named in the log and never stops the others.
+    ctx.waitUntil(Promise.allSettled(jobs.map(([, p]) => p)).then((rs) => rs.forEach((r, i) => r.status === 'rejected' && console.error('[cron]', jobs[i][0], r.reason))))
   },
 } satisfies ExportedHandler<WorkerEnv>

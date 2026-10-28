@@ -25,6 +25,10 @@ describe('paper colour', () => {
     expect(html).toContain(`content="${dark}" media="(prefers-color-scheme: dark)"`)
     expect(manifest.background_color.toLowerCase()).toBe(light)
     expect(manifest.theme_color.toLowerCase()).toBe(light)
+    // the first-paint script sets the chrome colour for a saved choice, so it must carry the same two colours
+    const boot = readFileSync('public/theme-bootstrap.js', 'utf8').toLowerCase()
+    expect(boot).toContain(`'${light}'`)
+    expect(boot).toContain(`'${dark}'`)
   })
   it('tells the browser which scheme each theme is, so native controls follow the in-app toggle', () => {
     expect(css).toMatch(/:root \{\s*color-scheme: light;/)
@@ -45,5 +49,20 @@ describe('css custom properties', () => {
   })
   it('declares every var(--x) it uses', () => {
     expect([...used].filter((v) => !declared.has(v))).toEqual([])
+  })
+})
+
+describe('stylesheet order', () => {
+  it('never re-positions an absolutely placed control further down the file', () => {
+    // A later `position: relative` on the same specificity silently beats `position: absolute` (the photo remove
+    // button once fell out of its corner this way). Every selector placed absolute must not be listed in a later relative rule.
+    const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].split(',').map((x) => x.trim()), body: m[2] }))
+    rules.forEach((r, i) => {
+      if (!/position:\s*absolute/.test(r.body)) return
+      for (const later of rules.slice(i + 1)) {
+        if (!/position:\s*relative/.test(later.body)) continue
+        expect(later.sel.filter((s) => r.sel.includes(s)), `${r.sel.join(', ')} is absolute, then relative again`).toEqual([])
+      }
+    })
   })
 })

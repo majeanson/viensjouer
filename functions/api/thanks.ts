@@ -31,6 +31,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
     ctx.env.DB.prepare('UPDATE encounters SET thanked_at = ?, updated_at = ? WHERE id = ?').bind(now, now, id),
   ])
   let sent = 0
+  let skipped = 0
   if (mailEnabled(ctx.env) && !isDemoEmail(actor.email)) {
     const { results } = await ctx.env.DB.prepare(
       "SELECT i.token, f.email, f.lang, f.parent_name FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id WHERE i.encounter_id = ? AND i.reply = 'yes' AND f.email IS NOT NULL AND f.deleted_at IS NULL LIMIT 40",
@@ -40,6 +41,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
     const origin = new URL(ctx.request.url).origin
     // The thank-you is in the thread whatever happens; the emails stop at the day's budget.
     const room = await mailRoom(ctx.env, actor.householdId)
+    skipped = Math.max(0, results.length - room)
     for (const r of results.slice(0, room)) {
       const link = `${origin}/${paperCode(r.token)}`
       try {
@@ -51,5 +53,5 @@ export const onRequestPost = authed(async (ctx, actor) => {
     }
     await recordMail(ctx.env, actor.householdId, sent)
   }
-  return ok({ sent })
+  return ok({ sent, skipped })
 })

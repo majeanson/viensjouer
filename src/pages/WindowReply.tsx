@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, isStatus } from '../lib/api'
+import { api } from '../lib/api'
 import { useLang, useT } from '../i18n'
 import { whenLong } from '../lib/format'
 import { Header } from '../components/Header'
+import { Loading } from '../components/Loading'
+import { QueryError } from '../components/QueryError'
 import { Icon } from '../components/Icon'
 
 interface Offer {
@@ -34,8 +36,8 @@ export function WindowReply() {
     },
     onError: (e) => setErr(e.message),
   })
-  if (q.isLoading) return <p className="shell muted">{t.common.loading}</p>
-  if (!q.data) return <div className="shell"><p className="notice notice--err">{isStatus(q.error, 404) ? t.reply.dead : t.common.error}</p></div>
+  if (q.isLoading) return <Loading page />
+  if (!q.data) return <QueryError page error={q.error} dead={t.reply.dead} onRetry={() => void q.refetch()} />
   const { window: w, host, you, alive } = q.data
   const answer = (reply: 'yes' | 'no') => (e: FormEvent) => {
     e.preventDefault()

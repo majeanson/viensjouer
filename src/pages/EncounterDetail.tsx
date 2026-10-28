@@ -17,6 +17,8 @@ import { useDeferredRemove, useToast } from '../lib/toast'
 import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
 import { Icon, kindIcon } from '../components/Icon'
 import { MessageBoard } from '../components/MessageBoard'
+import { Loading } from '../components/Loading'
+import { QueryError } from '../components/QueryError'
 
 interface Detail {
   encounter: Encounter & { details: Record<string, string>; hereOpen: boolean }
@@ -138,8 +140,8 @@ export function EncounterDetail() {
     relaisSave.mutate({ invitationId, ...Object.fromEntries(new FormData(ev.currentTarget).entries()) })
   }
 
-  if (q.isLoading) return <p className="muted">{t.common.loading}</p>
-  if (!q.data) return <p className="notice notice--err">{t.common.error}</p>
+  if (q.isLoading) return <Loading />
+  if (!q.data) return <QueryError error={q.error} onRetry={() => void q.refetch()} />
   const { encounter: e, relais, changes: rawChanges } = q.data
   const messages = msgRm.visible(q.data.messages)
   const invitations = inviteRm.visible(q.data.invitations)

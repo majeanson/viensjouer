@@ -301,3 +301,22 @@ test.describe('in the dark theme', () => {
     expect(await scan()).toEqual([])
   })
 })
+
+test('a failed read says so out loud and tries again on a tap; an expired link does not offer a retry', async ({ page }) => {
+  let fail = true
+  await page.route('**/api/health', (r) => r.fulfill({ json: { ok: true, mail: false, photos: false, invite: false } }))
+  await page.route('**/api/auth/me', (r) => r.fulfill({ json: { signedIn: false } }))
+  await page.route('**/api/r/**', (r) => (fail ? r.fulfill({ status: 500, json: { error: 'x' } }) : r.fulfill({ json: card() })))
+  await page.goto(`/${CODE}`)
+  const alert = page.getByRole('alert')
+  await expect(alert).toContainText('Ça n’a pas marché')
+  fail = false
+  await alert.getByRole('button', { name: 'Réessayer' }).click()
+  await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
+  // a 404 is final: the sentence, no button
+  await page.unroute('**/api/r/**')
+  await page.route('**/api/r/**', (r) => r.fulfill({ status: 404, json: { error: 'x' } }))
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('alert')).toBeVisible()
+  await expect(page.getByRole('alert').getByRole('button')).toHaveCount(0)
+})

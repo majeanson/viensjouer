@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api, isStatus } from '../lib/api'
+import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { timeOnly, whenDay, whenShort } from '../lib/format'
@@ -14,6 +14,8 @@ import { Why } from '../components/Why'
 import { WhyMany } from '../components/WhyMany'
 import type { Encounter, HomeCard, Message, Reply as ReplyKind } from '../lib/types'
 import { Header } from '../components/Header'
+import { Loading } from '../components/Loading'
+import { QueryError } from '../components/QueryError'
 import { Icon } from '../components/Icon'
 import { Face } from '../components/Face'
 import { MessageBoard } from '../components/MessageBoard'
@@ -95,8 +97,8 @@ function ReplyInner() {
     onError: (e) => setErr(e.message),
   })
 
-  if (q.isLoading) return <p className="shell muted">{t.common.loading}</p>
-  if (!q.data) return <div className="shell"><p className="notice notice--err">{isStatus(q.error, 404) ? t.reply.dead : t.common.error}</p></div>
+  if (q.isLoading) return <Loading page />
+  if (!q.data) return <QueryError page error={q.error} dead={t.reply.dead} onRetry={() => void q.refetch()} />
   const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos, changes: rawChanges, cover, guests, bring: rawBring } = q.data
   const bring = rawBring ?? []
   const canBring = (you.reply === 'yes' || you.reply === 'maybe') && alive

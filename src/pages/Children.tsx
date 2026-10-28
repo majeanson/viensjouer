@@ -9,6 +9,8 @@ import { AvatarPicker } from '../components/AvatarPicker'
 import { Why } from '../components/Why'
 import { useDeferredRemove } from '../lib/toast'
 import type { Child } from '../lib/types'
+import { Loading } from '../components/Loading'
+import { QueryError } from '../components/QueryError'
 import { Icon } from '../components/Icon'
 import { PALETTE } from '../lib/palette'
 
@@ -62,7 +64,8 @@ export function Children() {
     <>
       <h1>{t.children.title}</h1>
       {err && <div className="notice notice--err">{err}</div>}
-      {q.isLoading && <p className="muted">{t.common.loading}</p>}
+      {q.isLoading && <Loading />}
+      {q.isError && !q.data && <QueryError error={q.error} onRetry={() => void q.refetch()} />}
       {q.data && kids.length === 0 && !editing && <p className="muted">{t.children.empty}</p>}
       <div className="stack">
         {kids.map((c) => (

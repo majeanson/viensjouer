@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom'
-import { BigAction } from '../components/BigAction'
+import { Link, useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -9,7 +8,7 @@ import { whenShort } from '../lib/format'
 import { Rel } from '../components/Rel'
 import { paperCode } from '../lib/link'
 import type { Child, Encounter, Family, InvitationSummary } from '../lib/types'
-import { Icon, kindIcon } from '../components/Icon'
+import { Icon, BigAction, kindIcon } from '../components/Icon'
 
 type Reply = 'yes' | 'no' | 'maybe' | null
 type CalItem =
@@ -24,6 +23,7 @@ interface Cal {
 // One agenda. What I host (with the faces invited and their answers), what others invite me to, my
 // « je suis libre » moments and the birthdays, in date order. The last two weeks sit below.
 export function Encounters() {
+  const nav = useNavigate()
   const t = useT()
   const { lang } = useLang()
   const q = useQuery({ queryKey: K.encounters, queryFn: () => api<{ encounters: Encounter[]; invitations: InvitationSummary[] }>('encounters') })
@@ -114,7 +114,7 @@ export function Encounters() {
   return (
     <>
       <h1>{t.encounters.title}</h1>
-      {!nothing && <BigAction icon="plus" to="/rencontres/nouvelle">{t.encounters.new}</BigAction>}
+      {!nothing && <BigAction icon="plus" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}
       {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && (
         <div className="card">

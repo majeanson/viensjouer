@@ -66,3 +66,16 @@ export function Icon({ name, className = '' }: { name: IconName; className?: str
 
 // The icon of a kind of rencontre.
 export const kindIcon = (k: string): IconName => (k === 'park' ? 'tree' : k === 'home' ? 'home' : 'cake')
+
+// The one main action of a page: a wide centred tile, the icon above the words, right under the title.
+// Everything else on the page stays smaller and lower. A button only: to go to another page, `navigate()` in onClick
+// (importing `Link` here changed how the bundle splits and pushed the shared chunk over its cap).
+export function BigAction({ icon, onClick, children }: { icon: IconName; onClick: () => void; children: ReactNode }) {
+  const inner = (
+    <>
+      <Icon name={icon} />
+      <span>{children}</span>
+    </>
+  )
+  return <button type="button" className="bigaction" onClick={onClick}>{inner}</button>
+}

@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react'
-import { BigAction } from '../components/BigAction'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
@@ -10,7 +9,7 @@ import { WhyMany } from '../components/WhyMany'
 import { Groups } from '../components/Groups'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
-import { Icon } from '../components/Icon'
+import { Icon, BigAction } from '../components/Icon'
 
 interface Linked {
   linkId: string

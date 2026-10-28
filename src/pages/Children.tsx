@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react'
-import { BigAction } from '../components/BigAction'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
@@ -12,7 +11,7 @@ import { useDeferredRemove } from '../lib/toast'
 import type { Child } from '../lib/types'
 import { Loading } from '../components/Loading'
 import { QueryError } from '../components/QueryError'
-import { Icon } from '../components/Icon'
+import { Icon, BigAction } from '../components/Icon'
 import { PALETTE } from '../lib/palette'
 
 // The same six colours the server hands out in turn (functions/api/children.ts).

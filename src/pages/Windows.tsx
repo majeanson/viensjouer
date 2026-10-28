@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react'
-import { BigAction } from '../components/BigAction'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -11,7 +10,7 @@ import { linkFor, linkLabel } from '../lib/link'
 import { FamilyPicker } from '../components/FamilyPicker'
 import { useDeferredRemove } from '../lib/toast'
 import type { Child, Family, Group, OpenWindow } from '../lib/types'
-import { Icon } from '../components/Icon'
+import { Icon, BigAction } from '../components/Icon'
 
 const wlink = (token: string) => linkFor(token, 'w')
 const wlabel = (token: string) => linkLabel(token, 'w')

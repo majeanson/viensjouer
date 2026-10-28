@@ -59,4 +59,4 @@ Local needs `.dev.vars` (copy `.dev.vars.example`; `SESSION_SECRET` ≥ 32 chars
 
 ## Guards worth knowing (plant the violation before trusting a new one)
 
-`calm-tenets` (schema) · `demo.test` (every table in the sweep) · `export.test` (query aliases) · `copyRules` · `knip` · `check:bundle` · the e2e a11y + 320 px overflow sweeps.
+`calm-tenets` (schema) · `demo.test` (every table in the sweep) · `export.test` (query aliases) · `structure.test` (every handler routed, authed or on the written public list, codes rate-limited, client writes only through api(), no confirm()) · `copyRules` · `knip` · `check:bundle` · the e2e a11y + 320 px overflow sweeps · `e2e:real` (the real Worker, no stubs).

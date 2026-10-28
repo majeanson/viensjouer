@@ -1,0 +1,69 @@
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { describe, expect, it } from 'vitest'
+
+// Structural rules of the house, held by the build the way Babillard holds its own (write-rule, csrfExempt,
+// swallow-rule). Each one was written against a mistake that is easy to make and invisible to a stubbed test.
+const walk = (d: string): string[] => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(d, e.name)) : [join(d, e.name).replace(/\\/g, '/')]))
+const read = (f: string) => readFileSync(f, 'utf8')
+// Code without its comments, so a rule about calls is not tripped by a sentence that mentions one.
+const code = (f: string) => read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+const handlers = walk('functions/api').filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+const routes = read('worker/routes.ts')
+
+describe('every endpoint is routed', () => {
+  it('has a row in the route table for each handler file', () => {
+    // Adding an endpoint needs BOTH the handler and a row in worker/routes.ts (CLAUDE.md): file path is not routing.
+    const missing = handlers.filter((f) => !routes.includes(`'../${f.replace(/\.ts$/, '')}'`))
+    expect(missing).toEqual([])
+  })
+})
+
+describe('who may call an endpoint', () => {
+  // Endpoints that are deliberately NOT behind a signed-in session. Each is reachable by one of: an address (a
+  // door), a code in the path (the code IS the credential, behind the rate limit and the lockout), or nothing
+  // at all (health). Adding to this list is a decision, so it is written down with the reason.
+  const PUBLIC: Record<string, string> = {
+    'functions/api/health.ts': 'liveness and which optional features exist; no data',
+    'functions/api/join.ts': 'a second parent joins with a one-use invitation token',
+    'functions/api/demo.ts': 'the sandbox door: mints a throwaway household',
+    'functions/api/feed.ts': 'the host calendar feed: a 24-character secret in the path',
+  }
+  const byCode = (f: string) => /^functions\/api\/(r|w|auth)\//.test(f)
+
+  it('puts every other handler behind authed() or on the written list', () => {
+    const open = handlers.filter((f) => !byCode(f) && !PUBLIC[f] && !/authed\(/.test(read(f)))
+    expect(open, 'a handler with no auth guard: wrap it in authed() or add it to PUBLIC with the reason').toEqual([])
+  })
+
+  it('keeps the list honest: every listed file exists and really is open', () => {
+    for (const f of Object.keys(PUBLIC)) {
+      expect(handlers, f).toContain(f)
+      expect(read(f), `${f} is listed as public but uses authed()`).not.toMatch(/authed\(/)
+    }
+  })
+
+  it('rate-limits and locks out every endpoint a code opens', () => {
+    for (const f of handlers.filter((f) => /^functions\/api\/(r|w)\//.test(f))) {
+      const src = read(f)
+      expect(src, `${f} must call overAuthLimit`).toMatch(/overAuthLimit\(/)
+      expect(src, `${f} must call lockedOut`).toMatch(/lockedOut\(/)
+    }
+  })
+})
+
+describe('the client', () => {
+  const client = walk('src').filter((f) => /\.(ts|tsx)$/.test(f))
+
+  it('reaches /api only through api()', () => {
+    const strays = client.filter((f) => f !== 'src/lib/api.ts' && /\bfetch\(/.test(code(f)))
+    expect(strays, 'use api() from src/lib/api.ts: it carries the CSRF token and the error shape').toEqual([])
+  })
+
+  it('never opens a browser confirm() or alert()', () => {
+    // Undo toasts instead (src/lib/toast.tsx). prompt() stays as the last-resort copy-to-clipboard fallback.
+    const dialogs = client.filter((f) => /(^|[^.\w])(confirm|alert)\(/.test(code(f)))
+    expect(dialogs).toEqual([])
+  })
+})

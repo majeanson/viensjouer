@@ -113,6 +113,10 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   expect(await unfurl('/zzzz-yyyy')).toContain('property="og:title" content="Viens jouer"')
   expect(await unfurl('/rencontres')).toContain('property="og:title" content="Viens jouer"')
 
+  // the sample email is refused in a trial: nothing can leave a sandbox, not even to its own address
+  const sample = await host.request.post('/api/test-mail', { data: {}, headers: { 'x-csrf-token': csrf } })
+  expect(sample.status()).toBe(403)
+
   const erase = await host.request.delete('/api/household', { data: {}, headers: { 'x-csrf-token': csrf } })
   expect(erase.status(), await erase.text()).toBe(200)
   expect((await (await host.request.get('/api/auth/me')).json()).signedIn).toBe(false)

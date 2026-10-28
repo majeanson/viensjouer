@@ -426,7 +426,7 @@ export const EN: Dict = {
   },
   agenda: { birthday: (n: string, y: number) => `${n}’s birthday · ${y} year${y > 1 ? 's' : ''}`, free: 'I am free', invited: (h: string) => `Invited by ${h}` },
   avatar: { add: 'Add a photo', change: 'Change the photo', remove: 'Remove the photo' },
-  profile: { title: 'My profile', name: 'My first name', nameHint: 'The first name shown on the invitations you send.', save: 'Save', saved: 'Saved.' },
+  profile: { title: 'My profile', name: 'My first name', nameHint: 'The first name shown on the invitations you send.', save: 'Save', saved: 'Saved.', testMail: 'Email me a test', testMailHint: 'Get a sample of the email the families receive when you edit a get-together. It goes to your own address only.', testMailSent: (to: string) => `Email sent to ${to}.` },
   board: { title: 'The board', hint: 'A note for everyone: where to meet, what to bring, a photo to come and see. It stays here, you can come back to it.', empty: 'Nothing written yet. Write the first note.', closedEmpty: 'Nothing was written.', placeholder: 'Write on the board…', send: 'Post', host: 'Host', mine: 'You', pinned: 'Pinned', pin: 'Pin', unpin: 'Unpin', remove: 'Remove', new: 'New', newCount: (n: number) => `${n} new`, closed: 'The get-together is over: the board stays open to read.' },
   common: { crashed: 'Something broke', crashedHint: 'It is not you. Reload the page: your data is kept on the server.', reload: 'Reload', tryAgain: 'Try again', offline: 'Offline: what you do will not go through until the network is back.', skip: 'Skip to content', loading: 'Loading…', why: 'Why?', error: 'That did not work. Try again.', theme: 'Theme', lang: 'Français' },
 }

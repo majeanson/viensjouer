@@ -267,3 +267,22 @@ test('the new screens hold up at 320px in the dark', async ({ browser }) => {
   }
   await ctx.close()
 })
+
+test('« Courriel d’essai »: one tap sends a sample to my own address, and only when mail is wired for a real account', async ({ page }) => {
+  const calls = await host(page, { 'POST test-mail': () => ({ json: { ok: true, to: 'm@example.com' } }) }, { me: { mail: true } })
+  await page.goto('/compte')
+  await page.getByRole('button', { name: 'M’envoyer un courriel d’essai' }).click()
+  await expect(page.getByText('Courriel envoyé à m@example.com.')).toBeVisible()
+  expect(calls.filter((c) => c.method === 'POST' && c.path === 'test-mail')).toHaveLength(1)
+})
+
+test('no test-mail button without mail, or in a trial', async ({ page }) => {
+  await host(page, {}, { me: { mail: false } })
+  await page.goto('/compte')
+  await expect(page.getByRole('heading', { name: 'Mon profil' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'M’envoyer un courriel d’essai' })).toHaveCount(0)
+  await page.unrouteAll({ behavior: 'ignoreErrors' })
+  await host(page, {}, { me: { mail: true, demo: true } })
+  await page.goto('/compte')
+  await expect(page.getByRole('button', { name: 'M’envoyer un courriel d’essai' })).toHaveCount(0)
+})

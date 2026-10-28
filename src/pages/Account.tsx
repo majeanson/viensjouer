@@ -22,6 +22,8 @@ export function Account() {
   const install = useInstall()
   const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
   const [saved, setSaved] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [testSent, setTestSent] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   async function erase(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -72,6 +74,30 @@ export function Account() {
           <label className="field"><span><Icon name="user" />{t.profile.name}</span><input className="input" name="displayName" required maxLength={60} defaultValue={me.displayName ?? ''} autoComplete="given-name" /><span className="small muted" style={{ fontWeight: 400 }}>{t.profile.nameHint}</span></label>
           <button className="btn btn--primary" style={{ marginTop: '0.5rem' }}>{saved ? t.profile.saved : t.profile.save}</button>
         </form>
+        {me.mail && !me.demo && (
+          <div style={{ marginTop: '1rem' }}>
+            <p className="muted small" style={{ margin: '0 0 0.4rem' }}>{t.profile.testMailHint}</p>
+            <button
+              className="btn"
+              disabled={testing}
+              onClick={async () => {
+                setTesting(true)
+                setErr(null)
+                try {
+                  const r = await api<{ to: string }>('test-mail', { method: 'POST', body: {} })
+                  setTestSent(t.profile.testMailSent(r.to))
+                } catch (ex) {
+                  setErr(ex instanceof Error ? ex.message : t.common.error)
+                } finally {
+                  setTesting(false)
+                }
+              }}
+            >
+              <Icon name="mail" />{t.profile.testMail}
+            </button>
+            {testSent && <p className="small" role="status" style={{ margin: '0.4rem 0 0' }}>{testSent}</p>}
+          </div>
+        )}
       </div>
       {!install.installed && (install.canPrompt || install.ios) && (
         <div className="card">

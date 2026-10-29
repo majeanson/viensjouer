@@ -293,6 +293,18 @@ Two read-only audits produced a ranked list; it is worked through in order, one 
 
 Opening a form or tapping a button never focuses a text field: the three `autoFocus` (group, child, family forms) are gone, and the board's refocus after sending or after an empty send goes through `focusIfFinePointer` (`src/lib/focus.ts`), which only focuses with a mouse-and-keyboard pointer. `noAutofocus.test.ts` fails on any `autoFocus` and on a `.focus()` outside the skip link, the route change and `focus.ts` (planted red once).
 
+### Circles: the door, « Ils t'ont invité », « Inviter dans mon cercle » — 2026-10-29
+
+Decided with Marc: circles stay PAIRS (two linked families, each sees only what concerns it); shared named circles of 3+ are a possible later step (consent per member, member list, much more privacy care).
+- **One door for every code.** A two-word code (`/<code>`, the front page's « Tu as reçu une carte ? ») is a rencontre invitation OR a circle invitation; `GET /api/r/<code>` answers `{ circle }` for the second kind and the page shows `CircleDoor`. New codes are drawn free in invitations, window_targets AND circle_invites (`freshLinkCode`).
+- **`circle_invites`** (migration 0022): host household + which of its children + the book family it is for, a code valid 14 days, `sent_at`, used by whom / when, withdrawn. `POST /api/circle-invite { familyId, childId?, send? }` returns the one open code for that family and child (or makes it), optionally emails it (From « Marc via Viens jouer », Reply-To, unsubscribe, daily budget, five-minute cooldown, never to a stopped or bounced address); `GET` lists the open ones; `DELETE { id }` withdraws. At most 20 open. Nothing is sent by itself.
+- **Host side, Amis**: every family that is not linked has a « Inviter dans mon cercle » fold: make the code, then the same three ways as a rencontre invitation in one line each (email if it has an address, text, the two words on paper), and « Retirer le code ».
+- **The family side**: no account, a quick one is made on the spot and linked at once (`POST /api/r/<code>/claim` accepts circle codes); already signed in, `LinkFamilies` asks for one tap (`POST /api/link-invitation { code }` accepts circle codes). The host is notified (« est sur Viens jouer ») on both paths.
+- **« Ils t'ont invité »** on Amis (`GET /api/invited-by`): hosts who invited me (to a rencontre, or into their circle; by link or by my email) and are not in my circle, one line per host, « Ajouter à mes amis » = the same link in one tap (a child picker when I have several). Nothing shown when nobody.
+- **One implementation of linking** (`_lib/linking.ts`, `linkHouseholds`): bilateral `child_links`, the host's book entry marked linked, the host put in my book already linked, the host told. Idempotent.
+- **« Pourquoi ? » notes moved to their own lazy chunk** (`i18n.why.*.ts`, loaded the first time one is opened): the French dictionary is 10.3 KB again with room for this feature.
+- A crash lesson kept in a test: a list endpoint answering `{}` (the e2e stub's default) must never blank the page; the components read `?? []`.
+
 ### Cross links between accounts — 2026-10-29
 
 Your case: one person, two accounts (marc.jeanson92@… invites marc_jeanson@…) saw nothing on the second one.

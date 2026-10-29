@@ -53,10 +53,12 @@ export function paperCode(token: string): string {
 
 // A code that no row of `table` holds yet. The space is ~4.2e6, so a clash is rare but real, and a
 // UNIQUE violation must never reach a parent as a 500.
-export async function freshLinkCode(db: D1Database, table: 'invitations' | 'window_targets'): Promise<string> {
+// One door opens every kind of code (a rencontre's, a free moment's, a circle invitation's), so a new code must be free in ALL of them.
+export async function freshLinkCode(db: D1Database, _kind: 'invitations' | 'window_targets' | 'circle_invites' = 'invitations'): Promise<string> {
   for (let i = 0; i < 8; i++) {
     const code = newLinkCode()
-    if (!(await db.prepare(`SELECT 1 AS x FROM ${table} WHERE token = ?`).bind(code).first())) return code
+    const taken = await db.prepare('SELECT 1 AS x FROM invitations WHERE token = ?1 UNION ALL SELECT 1 FROM window_targets WHERE token = ?1 UNION ALL SELECT 1 FROM circle_invites WHERE token = ?1 LIMIT 1').bind(code).first()
+    if (!taken) return code
   }
   throw new Error('link code space exhausted')
 }

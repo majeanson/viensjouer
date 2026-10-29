@@ -29,6 +29,37 @@ export function withUnsubscribe(lang: MailLang, origin: string, token: string, m
   }
 }
 
+// « Inviter dans mon cercle »: no rencontre, only « I would like us to be linked ».
+export function circleMail(lang: MailLang, v: { parent: string; host: string; hostChild: string; child: string; link: string }): MailBody {
+  return {
+    subject: pick(lang, `${v.host} t’invite dans son cercle`, `${v.host} invites you into their circle`),
+    text: pick(
+      lang,
+      `Bonjour ${v.parent},
+
+${v.host} aimerait garder ${v.child} et ${v.hostChild} dans le même cercle sur Viens jouer : vous verriez vos rencontres l’un de l’autre et pourriez vous inviter d’un toucher.
+
+Ouvre ce lien (un compte gratuit, ou ton compte actuel) :
+${v.link}
+
+${SIGN}`,
+      `Hello ${v.parent},
+
+${v.host} would like ${v.child} and ${v.hostChild} in the same circle on Viens jouer: you would see each other's get-togethers and could invite each other in one tap.
+
+Open this link (a free account, or your current one):
+${v.link}
+
+${SIGN}`,
+    ),
+    html: pick(
+      lang,
+      p(`Bonjour ${e(v.parent)},`) + p(`${e(v.host)} aimerait garder ${e(v.child)} et ${e(v.hostChild)} dans le même cercle sur Viens jouer : vous verriez vos rencontres l’un de l’autre et pourriez vous inviter d’un toucher.`) + p(`<a href="${v.link}">Ouvrir</a> (un compte gratuit, ou ton compte actuel).`) + p(SIGN),
+      p(`Hello ${e(v.parent)},`) + p(`${e(v.host)} would like ${e(v.child)} and ${e(v.hostChild)} in the same circle on Viens jouer: you would see each other's get-togethers and could invite each other in one tap.`) + p(`<a href="${v.link}">Open</a> (a free account, or your current one).`) + p(SIGN),
+    ),
+  }
+}
+
 export function invitationMail(lang: MailLang, v: { parent: string; host: string; hostChild: string; child: string; title: string; when: string; friendOnly: boolean; link: string }): MailBody {
   const who = pick(
     lang,

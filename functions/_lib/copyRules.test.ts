@@ -5,6 +5,8 @@ import { FR } from '../../src/i18n.fr'
 import { EN } from '../../src/i18n.en'
 import { PRIVACY_FR } from '../../src/i18n.privacy.fr'
 import { PRIVACY_EN } from '../../src/i18n.privacy.en'
+import { WHY_FR } from '../../src/i18n.why.fr'
+import { WHY_EN } from '../../src/i18n.why.en'
 
 // Rules about the words on screen, held by the build like Babillard's glossary tests:
 //   - no dead copy: a dictionary key nothing refers to is removed, not left to rot (the refactors that
@@ -13,8 +15,8 @@ import { PRIVACY_EN } from '../../src/i18n.privacy.en'
 //   - French and English carry the same keys at run time too (tsc already holds the types)
 type Dict = Record<string, unknown>
 // The privacy page's long text lives in its own lazy files (src/i18n.privacy.*.ts); the rules cover it as the "privacy." part of each language.
-const FRALL = { ...FR, privacyText: PRIVACY_FR }
-const ENALL = { ...EN, privacyText: PRIVACY_EN }
+const FRALL = { ...FR, privacyText: PRIVACY_FR, whyText: WHY_FR }
+const ENALL = { ...EN, privacyText: PRIVACY_EN, whyText: WHY_EN }
 
 const walk = (d: string): string[] =>
   readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(d, e.name)) : /\.(tsx?|mjs)$/.test(e.name) && !e.name.endsWith('i18n.ts') && !e.name.includes('copyRules') ? [join(d, e.name)] : []))

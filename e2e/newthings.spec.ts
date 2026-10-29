@@ -366,3 +366,122 @@ test('the card box is straight (never tilted), and is drawn as a ticket with a d
   await inputs.nth(1).fill('miel')
   await expect(paper).toHaveCSS('transform', 'none')
 })
+
+// ---- circles: « Ils t'ont invité », « Inviter dans mon cercle », and the page the code opens ---------------------------------
+
+test('Amis lists the hosts who invited you and adds one in one tap (the same link as « Lier nos familles »)', async ({ page }) => {
+  let hosts = [
+    { hostName: 'Marc', hostChild: 'Noé', title: 'Au parc', startsAt: Math.floor(Date.now() / 1000) + 86_400, token: 'banquet-liseron', kind: 'rencontre' },
+    { hostName: 'Sonia', hostChild: 'Zoé', title: null, startsAt: null, token: 'mince-poche', kind: 'circle' },
+  ]
+  const stub = await host(page, {
+    'GET invited-by': () => ({ json: { hosts } }),
+    'POST link-invitation': (b) => ((hosts = hosts.filter((h) => h.token !== b?.code)), { json: { state: 'linked' } }),
+  })
+  await page.goto('/amis')
+  const box = page.getByRole('region', { name: 'Ils t’ont invité' })
+  await expect(box).toContainText('Marc')
+  await expect(box).toContainText('Au parc')
+  await expect(box).toContainText('Veut te garder dans son cercle')
+  await box.getByRole('button', { name: 'Ajouter à mes amis' }).first().click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'link-invitation')?.body).toEqual({ code: 'banquet-liseron' })
+  await expect(box).not.toContainText('Au parc')
+})
+
+test('with several children, adding a host asks which child first', async ({ page }) => {
+  const stub = await host(page, {
+    'GET children': () => ({ json: { children: [{ ...child, id: 'c1', first_name: 'Noé' }, { ...child, id: 'c2', first_name: 'Alice' }] } }),
+    'GET invited-by': () => ({ json: { hosts: [{ hostName: 'Marc', hostChild: 'Noé', title: 'Au parc', startsAt: Math.floor(Date.now() / 1000) + 86_400, token: 'banquet-liseron', kind: 'rencontre' }] } }),
+    'POST link-invitation': () => ({ json: { state: 'linked' } }),
+  })
+  await page.goto('/amis')
+  const box = page.getByRole('region', { name: 'Ils t’ont invité' })
+  await expect(box.getByRole('button', { name: 'Ajouter à mes amis' })).toBeDisabled()
+  await box.getByLabel('Lequel de tes enfants est invité ?').selectOption('c2')
+  await box.getByRole('button', { name: 'Ajouter à mes amis' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'link-invitation')?.body).toEqual({ code: 'banquet-liseron', childId: 'c2' })
+})
+
+test('nobody invited you: no « Ils t’ont invité » section at all', async ({ page }) => {
+  await host(page, { 'GET invited-by': () => ({ json: { hosts: [] } }) })
+  await page.goto('/amis')
+  await expect(page.getByRole('heading', { name: 'Amis', level: 1 })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Ils t’ont invité' })).toHaveCount(0)
+})
+
+test('« Inviter dans mon cercle »: a code with no rencontre, the two words for paper, a text or an email, and a way to withdraw it', async ({ page }) => {
+  let invites: { id: string; familyId: string; token: string }[] = []
+  const stub = await host(page, {
+    'GET auth/me': () => ({ json: { signedIn: true, email: 'm@example.com', displayName: 'Marc', household: { id: 'h', name: 'H', tz: 'America/Toronto' }, mail: true, demo: false } }),
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie', { email: 'j@example.com' }), fam('f2', 'Max', 'Paul', { linked_household_id: 'h9' })] } }),
+    'GET circle-invite': () => ({ json: { invites } }),
+    'POST circle-invite': (b) => {
+      invites = [{ id: 'ci1', familyId: 'f1', token: 'banquet-liseron' }]
+      return { json: { id: 'ci1', token: 'banquet-liseron', sent: b?.send === true } }
+    },
+    'DELETE circle-invite': () => ((invites = []), { json: { ok: true } }),
+  })
+  await page.goto('/amis')
+  // only a family that is not linked yet can be invited into the circle
+  await expect(page.getByText('Inviter dans mon cercle', { exact: true })).toHaveCount(1)
+  await page.getByText('Inviter dans mon cercle', { exact: true }).click()
+  await expect(page.getByText(/Un code sans rencontre/)).toBeVisible()
+  await page.getByRole('button', { name: 'Créer le code' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'circle-invite')?.body).toEqual({ familyId: 'f1', send: false })
+  await expect(page.locator('.paper', { hasText: 'banquet-liseron' })).toBeVisible()
+  await expect(page.getByText(/Par courriel, par texto ou sur papier/)).toBeVisible()
+  await page.getByRole('button', { name: 'Envoyer par courriel' }).last().click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'circle-invite').at(-1)?.body).toEqual({ familyId: 'f1', send: true })
+  await expect(page.getByText('Courriel envoyé.')).toBeVisible()
+  await page.getByRole('button', { name: 'Retirer le code' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'DELETE' && c.path === 'circle-invite')?.body).toEqual({ id: 'ci1' })
+})
+
+test('a family with no email gets « Envoyer par texto » and the paper words, never the email button', async ({ page }) => {
+  await host(page, {
+    'GET auth/me': () => ({ json: { signedIn: true, email: 'm@example.com', displayName: 'Marc', household: { id: 'h', name: 'H', tz: 'America/Toronto' }, mail: true, demo: false } }),
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }),
+    'GET circle-invite': () => ({ json: { invites: [{ id: 'ci1', familyId: 'f1', token: 'banquet-liseron' }] } }),
+  })
+  await page.goto('/amis')
+  await page.getByText('Inviter dans mon cercle', { exact: true }).click()
+  await expect(page.locator('.paper', { hasText: 'banquet-liseron' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Envoyer par courriel' })).toHaveCount(0)
+  await expect(page.getByText(/Par texto ou sur papier/)).toBeVisible()
+})
+
+const CIRCLE = { circle: { hostName: 'Marc', hostChild: 'Noé', familyChild: 'Léa', used: false } }
+test('a visitor opens a circle code: who invites them, nothing more, and a quick account that links at once', async ({ page }) => {
+  const stub = await host(page, { 'GET r/banquet-liseron': () => ({ json: CIRCLE }), 'POST r/banquet-liseron/claim': () => ({ status: 201, json: { ok: true } }) }, false)
+  await page.goto('/banquet-liseron')
+  await expect(page.getByRole('heading', { name: 'Marc t’invite dans son cercle' })).toBeVisible()
+  await expect(page.getByText(/Noé et Léa dans le même cercle/)).toBeVisible()
+  await expect(page.getByText(/Rien d’autre n’est partagé/)).toBeVisible()
+  await page.getByLabel('Votre prénom').fill('Julie')
+  await page.locator('input[name=email]').fill('julie@example.com')
+  await page.locator('input[name=password]').fill('long-enough-pass')
+  await page.getByRole('button', { name: 'Créer mon compte', exact: true }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'r/banquet-liseron/claim')?.body).toEqual({ displayName: 'Julie', email: 'julie@example.com', password: 'long-enough-pass' })
+  await expect(page.getByRole('link', { name: 'Te connecter' })).toHaveAttribute('href', '/')
+})
+
+test('signed in with an account: the same code asks for one tap, not a new account', async ({ page }) => {
+  const stub = await host(page, {
+    'GET r/banquet-liseron': () => ({ json: CIRCLE }),
+    'GET link-invitation': () => ({ json: { state: 'linkable', hostName: 'Marc', hostChild: 'Noé', familyChild: 'Léa', children: [{ id: 'k0', first_name: 'Léa' }] } }),
+    'POST link-invitation': () => ({ json: { state: 'linked' } }),
+  })
+  await page.goto('/banquet-liseron')
+  await expect(page.getByRole('heading', { name: 'Marc t’invite dans son cercle' })).toBeVisible()
+  await expect(page.getByLabel('Choisissez un mot de passe')).toHaveCount(0)
+  await page.getByRole('region', { name: 'Lier nos familles' }).getByRole('button', { name: 'Lier nos familles' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'link-invitation')?.body).toEqual({ code: 'banquet-liseron' })
+})
+
+test('a code that was already used says so, with the way to sign in', async ({ page }) => {
+  await host(page, { 'GET r/banquet-liseron': () => ({ json: { circle: { ...CIRCLE.circle, used: true } } }) }, false)
+  await page.goto('/banquet-liseron')
+  await expect(page.getByText('Ce lien a déjà servi.')).toBeVisible()
+  await expect(page.getByLabel('Choisissez un mot de passe')).toHaveCount(0)
+})

@@ -14,6 +14,8 @@ import * as families from '../functions/api/families'
 import * as resendWebhook from '../functions/api/resend-webhook'
 import * as pushApi from '../functions/api/push'
 import * as linkInvitation from '../functions/api/link-invitation'
+import * as circleInvite from '../functions/api/circle-invite'
+import * as invitedBy from '../functions/api/invited-by'
 import * as notificationsApi from '../functions/api/notifications'
 import * as encounters from '../functions/api/encounters'
 import * as messages from '../functions/api/messages'
@@ -73,6 +75,8 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['resend-webhook', resendWebhook],
   ['push', pushApi],
   ['link-invitation', linkInvitation],
+  ['circle-invite', circleInvite],
+  ['invited-by', invitedBy],
   ['notifications', notificationsApi],
   ['encounters', encounters],
   ['messages', messages],

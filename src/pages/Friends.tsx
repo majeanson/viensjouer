@@ -8,6 +8,8 @@ import { whenShort } from '../lib/format'
 import { WhyMany } from '../components/WhyMany'
 import { Why } from '../components/Why'
 import { ImportFriends } from '../components/ImportFriends'
+import { InvitedBy } from '../components/InvitedBy'
+import { CircleInvite } from '../components/CircleInvite'
 import { Groups } from '../components/Groups'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
@@ -151,6 +153,7 @@ export function Friends() {
         </form>
       )}
 
+      {!editing && !importing && <InvitedBy />}
       {q.data && fams.length === 0 && !editing && <p className="muted">{t.families.empty}</p>}
       <div className="stack">
         {fams.map((f) => {
@@ -176,6 +179,7 @@ export function Friends() {
               <p className="small muted" style={{ margin: '0.35rem 0 0' }}>{[f.email, f.phone, l ? dates(l) : null, f.allergies && `${t.families.allergies} : ${f.allergies}`, f.notes].filter(Boolean).join(' · ')}</p>
               <Together familyId={f.id} />
               {l && <button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button>}
+              {!f.linked_household_id && <CircleInvite family={f} />}
             </div>
           )
         })}

@@ -6,6 +6,9 @@ import { signInAs, sessionCookies } from '../../_lib/auth'
 import { hashPassword } from '../../_lib/password'
 import { newId, normalizeLinkCode, nowSec } from '../../_lib/ids'
 import { EMAIL_RE } from '../auth/signup'
+import { findByCode } from '../link-invitation'
+import { notify, parentsOf } from '../../_lib/notify'
+import { NOTE } from '../../_lib/notifyCopy'
 
 // THE reciprocity door. POST /api/r/<code>/claim { displayName, email, password } — the
 // invited parent, from the reply page, becomes a household of their own:
@@ -58,8 +61,23 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       host_parent: string | null
       host_email: string | null
     }>()
-  if (!inv) return lookupMiss(ctx.env, ctx.request)
-  if (inv.linked_household_id) return conflict('Cette famille a déjà son compte — connecte-toi.')
+  // A circle invitation is claimed the same way: it names a family of the host's book and a child of the host.
+  const circle = inv ? null : await findByCode(ctx.env, code)
+  if (!inv && !circle?.circle_id) return lookupMiss(ctx.env, ctx.request)
+  const who = inv ?? {
+    family_id: circle!.family_id,
+    child_first_name: circle!.family_child,
+    child_birthdate: circle!.family_birthdate,
+    linked_household_id: circle!.linked_household_id,
+    host_household: circle!.host_household,
+    host_child: circle!.host_child,
+    host_child_name: circle!.host_child_name,
+    host_child_birthdate: circle!.host_child_birthdate,
+    host_household_name: '',
+    host_parent: circle!.host_parent,
+    host_email: circle!.host_email,
+  }
+  if (who.linked_household_id) return conflict('Cette famille a déjà son compte — connecte-toi.')
   if (await ctx.env.DB.prepare('SELECT email FROM parents WHERE email = ?').bind(email).first()) {
     return conflict(ACCOUNT_UNAVAILABLE)
   }
@@ -83,16 +101,16 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
       ctx.env.DB.prepare('INSERT INTO children (id, household_id, first_name, birthdate, colour, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 0, ?, ?)').bind(
         childId,
         householdId,
-        inv.child_first_name,
-        inv.child_birthdate,
+        who.child_first_name,
+        who.child_birthdate,
         '#5b9a8b',
         ts,
         ts,
       ),
       ctx.env.DB.prepare('INSERT INTO child_links (id, household_a, child_a, household_b, child_b, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(
         linkId,
-        inv.host_household,
-        inv.host_child,
+        who.host_household,
+        who.host_child,
         householdId,
         childId,
         ts,
@@ -103,16 +121,18 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
         displayName,
         email,
         ts,
-        inv.family_id,
+        who.family_id,
       ),
       ctx.env.DB.prepare(
         'INSERT INTO friend_families (id, household_id, parent_name, email, child_first_name, child_birthdate, linked_household_id, linked_child_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      ).bind(reciprocalId, householdId, inv.host_parent ?? inv.host_household_name, inv.host_email, inv.host_child_name, inv.host_child_birthdate, inv.host_household, inv.host_child, ts, ts),
+      ).bind(reciprocalId, householdId, who.host_parent ?? who.host_household_name, who.host_email, who.host_child_name, who.host_child_birthdate, who.host_household, who.host_child, ts, ts),
+      ...(circle?.circle_id ? [ctx.env.DB.prepare('UPDATE circle_invites SET accepted_at = ?, accepted_household = ? WHERE id = ? AND accepted_at IS NULL').bind(ts, householdId, circle.circle_id)] : []),
     ])
   } catch {
     return conflict(ACCOUNT_UNAVAILABLE)
   }
 
+  await notify(ctx.env, await parentsOf(ctx.env, who.host_household), { kind: 'linked', url: '/amis', words: (lang) => NOTE.linked(lang, { name: displayName, child: who.child_first_name }) })
   try {
     const { session, csrf } = await signInAs(ctx.env, email)
     const headers = new Headers({ 'content-type': 'application/json; charset=utf-8' })

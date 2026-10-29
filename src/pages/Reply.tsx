@@ -21,6 +21,7 @@ import { Rel } from '../components/Rel'
 import { QueryError } from '../components/QueryError'
 import { Icon } from '../components/Icon'
 import { LinkFamilies } from '../components/LinkFamilies'
+import { CircleDoor, type CircleInfo } from '../components/CircleDoor'
 import { Face } from '../components/Face'
 import { MessageBoard } from '../components/MessageBoard'
 import { OfflineNotice } from '../components/ErrorBoundary'
@@ -40,7 +41,7 @@ function ReplyInner() {
   const t = useT()
   const { lang } = useLang()
   const qc = useQueryClient()
-  const q = useQuery({ queryKey: K.reply(token), queryFn: () => api<Card>(`r/${token}`), retry: false, refetchInterval: 30_000 })
+  const q = useQuery({ queryKey: K.reply(token), queryFn: () => api<Card & { circle?: CircleInfo }>(`r/${token}`), retry: false, refetchInterval: 30_000 })
   const [justAnswered, setJustAnswered] = useState(false)
   const [editing, setEditing] = useState(false)
   const [done, setDone] = useState(false)
@@ -124,6 +125,7 @@ function ReplyInner() {
 
   if (q.isLoading) return <Loading page />
   if (isStatus(q.error, 410)) return <main id="main" className="shell"><div className="notice" role="status">{t.reply.ended((q.error as ApiError).message)}</div></main>
+  if (q.data?.circle) return <CircleDoor token={token} info={q.data.circle} />
   if (!q.data) return <QueryError page error={q.error} dead={t.reply.dead} onRetry={() => void q.refetch()} />
   const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos, changes: rawChanges, cover, guests, bring: rawBring } = q.data
   const bring = rawBring ?? []

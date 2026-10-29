@@ -139,5 +139,30 @@ test('every list page has one big tile for its main action, right under the titl
     await expect(tile, path).toHaveCount(1)
     await expect(tile).toContainText(name)
     await expect(page.locator('h1 + .bigaction'), path).toHaveCount(1)
+    // a link where it goes to another page (ctrl-click, address on hover), a button where it opens a form here
+    await expect(tile).toHaveJSProperty('tagName', path === '/rencontres' ? 'A' : 'BUTTON')
   }
+})
+
+test('the new-rencontre tile is reachable and works from the keyboard, and a modified click is left to the browser', async ({ page }) => {
+  await hostStub(page)
+  await page.route('**/api/encounters', (r) => r.fulfill({ json: { encounters: [enc({})], invitations: [] } }))
+  await page.route('**/api/calendar', (r) => r.fulfill({ json: { busy: [], free: [], windows: [] } }))
+  await page.goto('/rencontres')
+  const tile = page.getByRole('link', { name: 'Proposer une rencontre' })
+  await expect(tile).toHaveAttribute('href', '/rencontres/nouvelle')
+  await tile.focus()
+  await expect(tile).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/\/rencontres\/nouvelle$/)
+})
+
+test('on the new-rencontre form, « Retour » is a plain link at the top and only the create button floats', async ({ page }) => {
+  await hostStub(page)
+  await page.route('**/api/groups', (r) => r.fulfill({ json: { groups: [] } }))
+  await page.goto('/rencontres/nouvelle')
+  await expect(page.getByRole('link', { name: '← Retour' })).toBeVisible()
+  const floating = page.locator('.sticky-actions')
+  await expect(floating.getByRole('button')).toHaveCount(1)
+  await expect(floating.getByRole('link')).toHaveCount(0)
 })

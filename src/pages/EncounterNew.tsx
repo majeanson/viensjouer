@@ -148,6 +148,7 @@ export function EncounterNew() {
 
   return (
     <>
+      <p className="small"><Link to="/rencontres">← {t.encounters.back}</Link></p>
       <h1>{t.encounters.new}</h1>
       <div className="seg" role="tablist" style={{ marginBottom: '0.75rem' }}>
         <button type="button" role="tab" aria-selected={mode === 'plan'} className={`btn ${mode === 'plan' ? 'btn--on' : ''}`} onClick={() => setMode('plan')}>{t.form.plan}</button>
@@ -260,7 +261,6 @@ export function EncounterNew() {
 
           <div className="cluster sticky-actions">
             <button className="btn btn--primary btn--big" disabled={create.isPending || !chosen}>{t.encounters.create}</button>
-            <Link to="/rencontres" className="btn btn--ghost">{t.encounters.back}</Link>
           </div>
 
         </form>

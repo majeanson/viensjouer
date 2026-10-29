@@ -87,7 +87,7 @@ export function Windows({ embedded = false }: { embedded?: boolean }) {
       {!embedded && (
         <>
           <h1>{t.windows.title}</h1>
-          {!adding && <BigAction icon="calendar" onClick={() => setAdding(true)}>{t.windows.new}</BigAction>}
+          {!adding && <BigAction icon="clock" onClick={() => setAdding(true)}>{t.windows.new}</BigAction>}
           <p className="small"><Link to="/rencontres">← {t.nav.home}</Link></p>
         </>
       )}

@@ -114,7 +114,7 @@ export function Encounters() {
   return (
     <>
       <h1>{t.encounters.title}</h1>
-      {!nothing && <BigAction icon="plus" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}
+      {!nothing && <BigAction icon="calendar" href="/rencontres/nouvelle" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}
       {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && (
         <div className="card">

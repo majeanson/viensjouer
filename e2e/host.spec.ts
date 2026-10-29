@@ -32,7 +32,6 @@ test('a new host adds a family inside the form, it ticks itself, and the invitat
 
   // The invitee questions come BEFORE the title, date and place.
   const y = async (text: RegExp | string) => (await page.getByText(text).first().boundingBox())!.y
-  expect(await y('Qui est invité ?')).toBeLessThan(await y('Titre'))
   expect(await y('Qui est invité ?')).toBeLessThan(await y('Quand'))
 
   // Empty book: the add form is already open, no detour to another page.
@@ -43,6 +42,7 @@ test('a new host adds a family inside the form, it ticks itself, and the invitat
   await expect(page.getByRole('checkbox', { name: /Léa/ })).toBeChecked()
   expect(posted.families[0]).toEqual({ childFirstName: 'Léa', parentName: 'Julie' })
 
+  await page.getByText('Plus de choix', { exact: true }).click()
   await page.getByLabel('Titre').fill('Au parc')
   await page.getByRole('button', { name: 'Créer et obtenir les liens' }).click()
   await expect.poll(() => posted.encounters.length).toBe(1)

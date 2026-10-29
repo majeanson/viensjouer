@@ -146,7 +146,7 @@ export function EncounterNew() {
     )
   }
 
-  const moreOpen = !!(prev && (prev.address || prev.note || prev.map_url || prev.ends_at))
+  const moreOpen = !!(prev && (prev.title || prev.address || prev.note || prev.map_url || prev.ends_at))
   const quick: [string, number][] = [
     [t.form.quick.sat, nextAt(6)],
     [t.form.quick.sun, nextAt(0)],
@@ -248,11 +248,10 @@ export function EncounterNew() {
                 setReused(did)
               }}
             /><datalist id="past-places">{(placesQ.data?.places ?? []).map((p) => <option key={p.place} value={p.place} />)}</datalist>{reused && <span className="small muted" style={{ fontWeight: 400 }}>{t.form.reused}</span>}</label>
-            <label className="field"><span><Icon name="edit" />{t.encounters.titleField}</span><input className="input" name="title" maxLength={120} defaultValue={prev?.title ?? ''} placeholder={`${t.form.autoTitle[kind]}, ${dayHour(fromLocalInput(start) ?? nextSaturdayTen(), lang)}`} /><span className="small muted" style={{ fontWeight: 400 }}>{t.form.titleAuto}</span></label>
-            <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.form.moreHint}</p>
             <details className="why" open={moreOpen} style={{ marginTop: '0.5rem' }}>
               <summary>{t.form.more}</summary>
               <div style={{ marginTop: '0.75rem' }}>
+                <label className="field"><span><Icon name="edit" />{t.encounters.titleField}</span><input className="input" name="title" maxLength={120} defaultValue={prev?.title ?? ''} placeholder={`${t.form.autoTitle[kind]}, ${dayHour(fromLocalInput(start) ?? nextSaturdayTen(), lang)}`} /></label>
                 <label className="field"><span><Icon name="clock" />{t.encounters.until}</span><input className="input" name="endsAt" type="time" defaultValue={prevEnd} /><span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.untilHint}</span></label>
                 <label className="field">
                   <span><Icon name="repeat" />{t.encounters.repeat}</span>

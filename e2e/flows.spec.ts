@@ -45,16 +45,16 @@ test('three tabs only, and a brand-new host is told the next step each time', as
   await page.goto('/rencontres')
   const nav = page.getByRole('navigation', { name: 'Navigation' })
   await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Amis', 'Ma famille'])
-  await expect(page.getByText('Commence par ajouter ton enfant')).toBeVisible()
+  await expect(page.getByText('Ajoute ton enfant.')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Ajouter mon enfant' })).toBeVisible()
   // three steps, the first is the one to do
   await expect(page.locator('.steps li')).toHaveCount(3)
-  await expect(page.locator('.steps li.now')).toHaveText(/Commence par ajouter ton enfant/)
+  await expect(page.locator('.steps li.now')).toHaveText(/Ajoute ton enfant/)
 
   await page.unrouteAll({ behavior: 'ignoreErrors' })
   await host(page)
   await page.goto('/rencontres')
-  await expect(page.getByText('Ajoute un ami à inviter')).toBeVisible()
+  await expect(page.getByText('Ajoute un ami.')).toBeVisible()
 
   await page.unrouteAll({ behavior: 'ignoreErrors' })
   await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }) })

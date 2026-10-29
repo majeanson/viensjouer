@@ -90,7 +90,7 @@ export function Account() {
                 }
               }}
             >
-              <label className="field"><span><Icon name="user" />{t.profile.name}</span><input className="input" name="displayName" required maxLength={60} defaultValue={me.displayName ?? ''} autoComplete="given-name" /><span className="small muted" style={{ fontWeight: 400 }}>{t.profile.nameHint}</span></label>
+              <label className="field"><span><Icon name="user" />{t.profile.name}</span><input className="input" name="displayName" required maxLength={60} defaultValue={me.displayName ?? ''} autoComplete="given-name" /></label>
               <button className="btn btn--primary" style={{ marginTop: '0.5rem' }}>{saved ? t.profile.saved : t.profile.save}</button>
             </form>
             {err && <div className="notice notice--err" style={{ marginTop: '0.75rem' }}>{err}</div>}

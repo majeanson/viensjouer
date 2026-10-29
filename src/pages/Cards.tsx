@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
@@ -23,13 +23,16 @@ export function Cards() {
   const { lang } = useLang()
   const q = useQuery({ queryKey: K.encounter(id), queryFn: () => api<{ encounter: Encounter; invitations: Invitation[] }>(`encounters?id=${id}`) })
   const kids = useQuery({ queryKey: K.children, queryFn: () => api<{ children: Child[] }>('children') })
-  const [off, setOff] = useState<Set<string>>(new Set())
+  // `?family=` (from a family's page on Amis) starts with only that family's card ticked; any tick after that is the host's.
+  const only = useSearchParams()[0].get('family')
+  const [chosenOff, setOff] = useState<Set<string> | null>(null)
   if (q.isLoading) return <Loading />
   if (!q.data) return <QueryError error={q.error} onRetry={() => void q.refetch()} />
   const { encounter: e, invitations } = q.data
+  const off = chosenOff ?? new Set(only ? invitations.filter((i) => i.friend_family_id !== only).map((i) => i.id) : [])
   const hostChild = kids.data?.children.find((c) => c.id === e.child_id)?.first_name ?? ''
   const picked = invitations.filter((i) => !off.has(i.id))
-  const toggle = (iid: string) => setOff((s) => { const n = new Set(s); if (!n.delete(iid)) n.add(iid); return n })
+  const toggle = (iid: string) => setOff(() => { const n = new Set(off); if (!n.delete(iid)) n.add(iid); return n })
 
   return (
     <>

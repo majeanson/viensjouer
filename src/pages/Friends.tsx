@@ -36,11 +36,12 @@ function Together({ familyId }: { familyId: string }) {
   const t = useT()
   const { lang } = useLang()
   const [open, setOpen] = useState(false)
-  const q = useQuery({ queryKey: ['family-history', familyId], queryFn: () => api<{ past: Past[] }>(`family-history?id=${familyId}`), enabled: open })
+  const q = useQuery({ queryKey: ['family-history', familyId], queryFn: () => api<{ past: Past[]; next: { id: string; startsAt: number } | null }>(`family-history?id=${familyId}`), enabled: open })
   return (
     <details className="fold" onToggle={(e) => setOpen(e.currentTarget.open)} style={{ marginTop: '0.35rem' }}>
       <summary><span><Icon name="calendar" />{t.friends.together}</span></summary>
       <div>
+        {q.data?.next && <p className="small" style={{ margin: '0.25rem 0' }}>{whenShort(q.data.next.startsAt, lang)} <Link to={`/rencontres/${q.data.next.id}/cartes?family=${familyId}`} className="btn btn--small"><Icon name="note" />{t.friends.printCard}</Link></p>}
         {q.data && q.data.past.length === 0 && <p className="muted small">{t.friends.togetherNone}</p>}
         {q.data?.past.map((p) => (
           <p key={p.id} className="small" style={{ margin: '0.25rem 0' }}>

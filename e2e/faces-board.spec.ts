@@ -292,7 +292,7 @@ test('no test-mail button without mail, or in a trial', async ({ page }) => {
 test('« Déjà ensemble »: a friend opens the past get-togethers and starts the same again from one', async ({ page }) => {
   const calls = await host(page, {
     'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }),
-    'GET family-history': () => ({ json: { past: [{ id: 'e7', title: 'Au parc', kind: 'park', startsAt: now - 86400 * 9, place: 'Parc Lafontaine' }] } }),
+    'GET family-history': () => ({ json: { past: [{ id: 'e7', title: 'Au parc', kind: 'park', startsAt: now - 86400 * 9, place: 'Parc Lafontaine' }], next: { id: 'e8', startsAt: now + 86400 * 2 } } }),
   })
   await page.goto('/amis')
   expect(calls.filter((c) => c.path === 'family-history')).toHaveLength(0) // nothing is fetched until it is opened

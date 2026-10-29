@@ -469,6 +469,7 @@ export const FR = {
     othersHint: 'Des familles qui t’ont ajouté de leur côté.',
     groupsFold: 'Groupes',
     together: 'Déjà ensemble',
+    printCard: 'Carte à imprimer pour la prochaine rencontre',
     togetherNone: 'Pas encore de rencontre passée avec cette famille.',
   },
   agenda: { birthday: (n: string, y: number) => `Anniversaire de ${n} · ${y} an${y > 1 ? 's' : ''}`, free: 'Je suis libre', invited: (h: string) => `Invité par ${h}` },

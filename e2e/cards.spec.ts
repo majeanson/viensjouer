@@ -40,6 +40,16 @@ test('the cards: one per family, the two words on them, never the place or the t
   await expect(page.getByRole('article', { name: 'Pour Zoé' })).toHaveCount(0)
 })
 
+test('a card opened from a family’s page starts with only that family ticked, and the host can tick more', async ({ page }) => {
+  await hostStub(page)
+  await page.goto('/rencontres/e1/cartes?family=f2')
+  await expect(page.getByRole('article', { name: 'Pour Zoé' })).toBeVisible()
+  await expect(page.getByRole('article', { name: 'Pour Léa' })).toHaveCount(0)
+  await page.getByRole('checkbox', { name: 'Léa' }).check()
+  await expect(page.getByRole('article', { name: 'Pour Léa' })).toBeVisible()
+  await expect(page.getByRole('article', { name: 'Pour Zoé' })).toBeVisible()
+})
+
 test('the host notes an answer given on paper or in person', async ({ page }) => {
   const patches = await hostStub(page)
   await page.goto('/rencontres/e1')

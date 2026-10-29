@@ -471,6 +471,7 @@ export const EN: Dict = {
     othersHint: 'Families who added you on their side.',
     groupsFold: 'Groups',
     together: 'Already together',
+    printCard: 'Printable card for the next get-together',
     togetherNone: 'No past get-together with this family yet.',
   },
   agenda: { birthday: (n: string, y: number) => `${n}’s birthday · ${y} year${y > 1 ? 's' : ''}`, free: 'I am free', invited: (h: string) => `Invited by ${h}` },

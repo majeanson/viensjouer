@@ -29,6 +29,11 @@ export interface Env {
   // OPTIONAL: where the app emails the owner when the whole app nears Resend's free daily limit (once a day).
   ADMIN_EMAIL?: string
 
+  // OPTIONAL Web Push (_lib/webpush.ts): the page gets the public key from /api/health; the private key is a JWK (JSON) secret.
+  VAPID_PUBLIC_KEY?: string
+  VAPID_PRIVATE_KEY?: string
+  VAPID_SUBJECT?: string
+
   // OPTIONAL Turnstile bot check on signup and forgot-password (_lib/turnstile.ts). Both unset → no check, no widget.
   TURNSTILE_SITE_KEY?: string
   // Comma-separated frontend hostnames siteverify may report. Unset: the request's own hostname.

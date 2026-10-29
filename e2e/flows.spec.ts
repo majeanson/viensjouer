@@ -671,7 +671,7 @@ test('an answered family is one calm line: no send buttons until it is needed', 
   })
   await page.goto('/rencontres/e1')
   await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toHaveCount(1) // only Max, who has not answered (no email: the text message is his one button)
-  await expect(page.getByText('Plus de choix')).toHaveCount(2) // every family keeps its options
+  await expect(page.getByText('Plus de choix', { exact: true })).toHaveCount(2) // every family keeps its options
 })
 
 test('after cancelling, the host can tell the families why, on the board they see', async ({ page }) => {

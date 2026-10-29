@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useT } from '../i18n'
+import { useLang, useT } from '../i18n'
+import type { PRIVACY_FR } from '../i18n.privacy.fr'
 import { Header } from '../components/Header'
 import { Icon } from '../components/Icon'
 
@@ -7,42 +9,54 @@ import { Icon } from '../components/Icon'
 // optional extra with what it unlocks. Public, no account needed.
 export function Privacy() {
   const t = useT()
+  const { lang } = useLang()
+  // The long text is its own chunk (it is most of the French dictionary, and only this page reads it).
+  const [text, setText] = useState<typeof PRIVACY_FR | null>(null)
+  useEffect(() => {
+    let live = true
+    void (lang === 'fr' ? import('../i18n.privacy.fr').then((m) => m.PRIVACY_FR) : import('../i18n.privacy.en').then((m) => m.PRIVACY_EN)).then((x) => live && setText(x))
+    return () => {
+      live = false
+    }
+  }, [lang])
   return (
     <div className="shell">
       <Header />
       <main id="main" tabIndex={-1}>
       <h1>{t.privacy.title}</h1>
-      <p className="muted">{t.privacy.lead}</p>
+      {!text ? <p className="muted" aria-busy="true">{t.common.loading}</p> : <>
+      <p className="muted">{text.lead}</p>
       <div className="card">
-        <h2><Icon name="info" />{t.privacy.purposeTitle}</h2>
-        <p style={{ margin: 0 }}>{t.privacy.purpose}</p>
+        <h2><Icon name="info" />{text.purposeTitle}</h2>
+        <p style={{ margin: 0 }}>{text.purpose}</p>
       </div>
       <div className="card">
-        <h2><Icon name="check" />{t.privacy.requiredTitle}</h2>
-        <ul>{t.privacy.required.map((x) => <li key={x}>{x}</li>)}</ul>
+        <h2><Icon name="check" />{text.requiredTitle}</h2>
+        <ul>{text.required.map((x) => <li key={x}>{x}</li>)}</ul>
       </div>
       <div className="card">
-        <h2><Icon name="sparkle" />{t.privacy.optionalTitle}</h2>
-        <p className="muted small">{t.privacy.optionalLead}</p>
+        <h2><Icon name="sparkle" />{text.optionalTitle}</h2>
+        <p className="muted small">{text.optionalLead}</p>
         <dl className="why-list">
-          {t.privacy.optional.map(([what, gives]) => (
+          {text.optional.map(([what, gives]) => (
             <div key={what}><dt>{what}</dt><dd>{gives}</dd></div>
           ))}
         </dl>
       </div>
       <div className="card">
-        <h2><Icon name="users" />{t.privacy.sharedTitle}</h2>
-        <ul>{t.privacy.shared.map((x) => <li key={x}>{x}</li>)}</ul>
+        <h2><Icon name="users" />{text.sharedTitle}</h2>
+        <ul>{text.shared.map((x) => <li key={x}>{x}</li>)}</ul>
       </div>
       <div className="card">
-        <h2><Icon name="lock" />{t.privacy.hostTitle}</h2>
-        <ul>{t.privacy.host.map((x) => <li key={x}>{x}</li>)}</ul>
+        <h2><Icon name="lock" />{text.hostTitle}</h2>
+        <ul>{text.host.map((x) => <li key={x}>{x}</li>)}</ul>
       </div>
       <div className="card">
-        <h2><Icon name="trash" />{t.privacy.removeTitle}</h2>
-        <ul>{t.privacy.remove.map((x) => <li key={x}>{x}</li>)}</ul>
+        <h2><Icon name="trash" />{text.removeTitle}</h2>
+        <ul>{text.remove.map((x) => <li key={x}>{x}</li>)}</ul>
         <Link to="/compte" className="btn">{t.account.title}</Link>
       </div>
+      </>}
       <p className="small"><Link to="/">{t.encounters.back}</Link></p>
       </main>
     </div>

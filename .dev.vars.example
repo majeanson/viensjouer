@@ -17,3 +17,5 @@ SESSION_SECRET=replace-with-at-least-32-random-characters-xx
 RESEND_WEBHOOK_SECRET=
 # OPTIONAL: where the app emails you when it nears Resend's free daily limit.
 ADMIN_EMAIL=
+# OPTIONAL Web Push: a JWK as one line of JSON (the public key and subject are in wrangler.toml).
+VAPID_PRIVATE_KEY=

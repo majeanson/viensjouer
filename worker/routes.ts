@@ -12,6 +12,8 @@ import * as authMe from '../functions/api/auth/me'
 import * as children from '../functions/api/children'
 import * as families from '../functions/api/families'
 import * as resendWebhook from '../functions/api/resend-webhook'
+import * as pushApi from '../functions/api/push'
+import * as notificationsApi from '../functions/api/notifications'
 import * as encounters from '../functions/api/encounters'
 import * as messages from '../functions/api/messages'
 import * as invitations from '../functions/api/invitations'
@@ -68,6 +70,8 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['children', children],
   ['families', families],
   ['resend-webhook', resendWebhook],
+  ['push', pushApi],
+  ['notifications', notificationsApi],
   ['encounters', encounters],
   ['messages', messages],
   ['invitations', invitations],

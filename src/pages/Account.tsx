@@ -11,10 +11,11 @@ import { CalendarFeed } from '../components/CalendarFeed'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { useQuery } from '@tanstack/react-query'
 import { Icon } from '../components/Icon'
+import { NotificationsCard } from '../components/NotificationsCard'
 
 // « Mon compte » — one tab at a time, kept in the address (?tab=) so a link or a refresh lands on it:
 // who I am, my household, my calendar and the app, my security, my data (what is kept, a download, « tout effacer »).
-const TABS = ['profile', 'home', 'calendar', 'security', 'data'] as const
+const TABS = ['profile', 'notifications', 'home', 'calendar', 'security', 'data'] as const
 type Tab = (typeof TABS)[number]
 
 export function Account() {
@@ -60,6 +61,7 @@ export function Account() {
         ))}
       </div>
       <div role="tabpanel" id="account-panel" aria-labelledby={`tab-${tab}`}>
+        {tab === 'notifications' && <NotificationsCard />}
         {tab === 'profile' && (
           <div className="card">
             <AvatarPicker

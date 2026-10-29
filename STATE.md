@@ -12,12 +12,13 @@
 
 **Open, in order:**
 1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
-2. **Human steps that switch things on** (each is optional, nothing breaks without it): the Resend bounce webhook (`RESEND_WEBHOOK_SECRET`), Turnstile (`TURNSTILE_SITE_KEY` in wrangler.toml + `wrangler secret put TURNSTILE_SECRET`), the owner's mail alert (`ADMIN_EMAIL`). Details in the « Everything else on the list » entry.
-3. The same « Bâti par marc.portal » line in the other repos (see memory), and the Babillard export/plan bridge (to discuss first).
+2. **Turn push on**: `wrangler secret put VAPID_PRIVATE_KEY` (the JWK of the key pair whose public half is in `wrangler.toml`). Until then phone notifications are off and the in-app « Nouveau » list works on its own. Other optional switches follow.
+3. **Human steps that switch things on** (each is optional, nothing breaks without it): the Resend bounce webhook (`RESEND_WEBHOOK_SECRET`), Turnstile (`TURNSTILE_SITE_KEY` in wrangler.toml + `wrangler secret put TURNSTILE_SECRET`), the owner's mail alert (`ADMIN_EMAIL`). Details in the « Everything else on the list » entry.
+4. The same « Bâti par marc.portal » line in the other repos (see memory), and the Babillard export/plan bridge (to discuss first).
 
 **Budgets (`npm run check:bundle`):** entry 85.0 / 86 KB, lazy chunks 12 KB (French dictionary 11.1), stylesheet 5.5 / 6 KB. The dictionary and stylesheet caps were raised on purpose on 2026-10-29 (reasoning in `scripts/check-bundle.mjs`); the entry did not move. Read the output for « exceeded », not only « ok ».
 
-**Don't re-open (decided):** SMS, native app, push, discovery, ranking, hosts choosing their own two words, a class-wide shared code, the reply page opening offline (an answer tapped with no signal is already kept and sent later; the page itself needs a network).
+**Don't re-open (decided):** SMS, native app, discovery, ranking, hosts choosing their own two words, a class-wide shared code, the reply page opening offline (an answer tapped with no signal is already kept and sent later; the page itself needs a network).
 
 ---
 
@@ -291,6 +292,16 @@ Two read-only audits produced a ranked list; it is worked through in order, one 
 ### No keyboard pops by itself — 2026-10-29
 
 Opening a form or tapping a button never focuses a text field: the three `autoFocus` (group, child, family forms) are gone, and the board's refocus after sending or after an empty send goes through `focusIfFinePointer` (`src/lib/focus.ts`), which only focuses with a mouse-and-keyboard pointer. `noAutofocus.test.ts` fails on any `autoFocus` and on a `.focus()` outside the skip link, the route change and `focus.ts` (planted red once).
+
+### Notifications — 2026-10-29 (the « no push » decision was reversed by Marc)
+
+- **In the app, always**: `notifications` (migration 0021) holds what a signed-in parent was told; « Nouveau » on Rencontres lists the unread (`NewForYou`), a tap opens it and marks it read. No permission, no email needed: this is what the second test account was missing.
+- **Events** (`_lib/notifyEvents.ts`, words in `notifyCopy.ts`, FR/EN per recipient): invited (new invitation), changed / cancelled / postponed (to invited families that did not say no), answered (every parent of the host household, once per invitation per ten minutes), the day-before reminder (alongside the email, for the same people), and a test one. Only to accounts: the household a friend family is linked to, AND any account whose email equals the friend's email (so a host who typed a registered address reaches it; the same exposure as an email). Never to a sandbox. 50 kept per parent, 30 days.
+- **On the phone, optional** (`push_subscriptions`, `_lib/webpush.ts`): Web Push with NO payload. The server wakes the device with an empty push (VAPID ES256, WebCrypto, nothing to encrypt); `public/sw.js` then asks `GET /api/notifications?push=1` with the person's own session and shows it (each push always shows something: a phone refuses silent ones). Nothing readable crosses Apple's or Google's push service. A dead subscription (404/410) is deleted. Compte, Notifications: one switch per device, a test notification, and plain words (iPhone: add to the home screen first). Off until `VAPID_PRIVATE_KEY` is set.
+- **Explained on the site**: « Comment ça marche » (four steps + who gets what) at the foot of the front page; the Notifications tab in Compte; one sentence on the privacy page.
+- **Privacy page text moved to its own lazy chunk** (`i18n.privacy.fr/en.ts`, loaded by `Privacy.tsx`): the French dictionary fell from 12.1 to 10.6 KB gzip and the chunk cap went back to 11 KB (the 12 KB raise earlier that day was a bridge). `copyRules.test` reads the privacy text too.
+- Tests: VAPID signature verified against its public key, push 201/404/410, notify on a real database (language, linked or same-email, no sandbox, dedupe, cap, dead device deleted), the endpoints behind a real session, the create-a-rencontre-inviting-a-registered-account path end to end, `sw.js` run against a stand-in scope, and the browser (Nouveau, Compte, front page).
+- **Not done / to try on a real phone**: an actual push to an iPhone (needs the key set and the app on the home screen) and Android Chrome. Families with only a link stay on email (decided: accounts only).
 
 ### Sending invitations made easy — 2026-10-29
 

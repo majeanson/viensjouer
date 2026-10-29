@@ -1,5 +1,6 @@
 import type { Env } from '../../_lib/env'
 import { notifyHostOfAnswer } from '../../_lib/answerNotice'
+import { notifyAnswered } from '../../_lib/notifyEvents'
 import { requestLang } from '../../_lib/lang'
 import { lockedOut, lookupMiss } from '../../_lib/guessLimit'
 import { badRequest, gone, ok, readJson, str, tooManyRequests } from '../../_lib/json'
@@ -251,6 +252,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   await ctx.env.DB.batch(stmts)
   // The host asked to hear about answers: tell them, once per change of mind per ten minutes, off the response path.
   if (isReply(body.reply) && body.reply !== r.invitation.reply) {
+    ctx.waitUntil(notifyAnswered(ctx.env, { householdId: r.encounter.household_id, invitationId: r.invitation.id, encounterId: r.encounter.id, title: r.encounter.title, reply: body.reply, guestParent: str(body.parentName, 60) ?? r.family.parent_name, guestChild: r.family.child_first_name }))
     ctx.waitUntil(notifyHostOfAnswer(ctx.env, new URL(ctx.request.url).origin, { householdId: r.encounter.household_id, invitationId: r.invitation.id, encounterId: r.encounter.id, title: r.encounter.title, startsAt: r.encounter.starts_at, tz: r.host.tz, reply: body.reply, guestParent: str(body.parentName, 60) ?? r.family.parent_name, guestChild: r.family.child_first_name }))
   }
   return ok()

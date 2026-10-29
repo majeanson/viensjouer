@@ -11,6 +11,7 @@ import type { Child, Encounter, Family, InvitationSummary } from '../lib/types'
 import { Icon, BigAction, kindIcon } from '../components/Icon'
 import { PartnerNudge } from '../components/PartnerNudge'
 import { InstallOffer } from '../components/InstallOffer'
+import { NewForYou } from '../components/NewForYou'
 
 type Reply = 'yes' | 'no' | 'maybe' | null
 type CalItem =
@@ -116,6 +117,7 @@ export function Encounters() {
   return (
     <>
       <h1>{t.encounters.title}</h1>
+      <NewForYou />
       <PartnerNudge ready={past.length > 0} />
       <InstallOffer />
       {!nothing && <BigAction icon="calendar" href="/rencontres/nouvelle" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}

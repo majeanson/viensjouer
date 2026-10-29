@@ -11,6 +11,7 @@ import { MAX_MESSAGES } from '../_lib/board'
 import { updateMail, withUnsubscribe } from '../_lib/mailCopy'
 import { isDemoEmail } from '../_lib/demo'
 import { sendEncounterInvitations } from '../_lib/inviteMail'
+import { notifyChanged, notifyInvited } from '../_lib/notifyEvents'
 import { mailRoom, recordMail } from '../_lib/mailBudget'
 import { cleanDetails, defaultScope, hereAllowed, isScope, parseDetails, type Scope } from '../_lib/kinds'
 
@@ -118,8 +119,8 @@ type Body = {
   invite?: string[]
 }
 
-async function mintInvitations(db: D1Database, householdId: string, encounterId: string, familyIds: string[], scope: Scope): Promise<void> {
-  if (!familyIds.length) return
+async function mintInvitations(db: D1Database, householdId: string, encounterId: string, familyIds: string[], scope: Scope): Promise<{ familyId: string; token: string }[]> {
+  if (!familyIds.length) return []
   // Only families from THIS household's book, and not one already on the card.
   const { results: owned } = await db
     .prepare(`SELECT id FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND id IN (${familyIds.map(() => '?').join(',')})`)
@@ -129,8 +130,10 @@ async function mintInvitations(db: D1Database, householdId: string, encounterId:
   const skip = new Set(already.map((r) => r.friend_family_id))
   const ts = nowSec()
   const stmts: D1PreparedStatement[] = []
+  const minted: { familyId: string; token: string }[] = []
   for (const r of owned.filter((x) => !skip.has(x.id))) {
     const code = await freshLinkCode(db, 'invitations')
+    minted.push({ familyId: r.id, token: code })
     stmts.push(
       db
         .prepare('INSERT INTO invitations (id, encounter_id, friend_family_id, token, scope, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
@@ -138,6 +141,7 @@ async function mintInvitations(db: D1Database, householdId: string, encounterId:
     )
   }
   if (stmts.length) await db.batch(stmts)
+  return minted
 }
 
 // The occurrence times of a (possibly recurring) creation, or null when the list is not
@@ -173,6 +177,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   const mapUrl = cleanMapUrl(body?.mapUrl)
   if (typeof body?.mapUrl === 'string' && body.mapUrl.trim() && !mapUrl) return badRequest('Lien de carte invalide.')
   const ids: string[] = []
+  let firstMinted: { familyId: string; token: string }[] = []
   for (const at of times) {
     const id = newId()
     ids.push(id)
@@ -181,8 +186,12 @@ export const onRequestPost = authed(async (ctx, actor) => {
     )
       .bind(id, actor.householdId, childId, body!.kind, title, at, endsAt ? at + (endsAt - startsAt) : null, str(body?.place, 120), str(body?.address, 200), mapUrl, str(body?.note, 1000), seriesId, JSON.stringify(cleanDetails(body!.kind as Kind, body?.details)), scope, ts, ts)
       .run()
-    await mintInvitations(ctx.env.DB, actor.householdId, id, invite, scope)
+    const minted = await mintInvitations(ctx.env.DB, actor.householdId, id, invite, scope)
+    if (id === ids[0]) firstMinted = minted
   }
+  // « Marc t'invite »: the families that have an account hear about it in the app (and on their phone if they allowed it), whether or
+  // not an email goes out. The first date only: a series' later dates have their own links, listed on each family's page.
+  if (!isDemoEmail(actor.email)) await notifyInvited(ctx.env, actor, { title, startsAt: times[0] }, firstMinted)
   // « Envoyer tout de suite »: the invitations of the FIRST date go by email now (a series' later dates have their own links,
   // listed on each family's page). Off unless asked, and never in a trial.
   const mailed = body?.sendNow === true && invite.length > 0 && !isDemoEmail(actor.email) ? await sendEncounterInvitations(ctx.env, ctx.request, { householdId: actor.householdId, displayName: actor.displayName, email: actor.email }, ids[0]) : { sent: 0, skipped: 0 }
@@ -290,7 +299,12 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   const main = plans.find((p) => p.id === id)!
   const changes = diffEncounter(main.before, main.after)
   const after = main.after
-  if (Array.isArray(body?.invite)) await mintInvitations(ctx.env.DB, actor.householdId, id, body!.invite.filter((v) => typeof v === 'string').slice(0, 40), isScope(body?.scope) ? body.scope : own.default_scope)
+  // The families that already had an invitation hear about the change; the ones added just below are told they are invited.
+  if (changes.length && !isDemoEmail(actor.email)) await notifyChanged(ctx.env, actor, { id, title: after.title, startsAt: after.starts_at, status: after.status, statusChanged: changes.some((c) => c.field === 'status'), changes })
+  if (Array.isArray(body?.invite)) {
+    const minted = await mintInvitations(ctx.env.DB, actor.householdId, id, body!.invite.filter((v) => typeof v === 'string').slice(0, 40), isScope(body?.scope) ? body.scope : own.default_scope)
+    if (!isDemoEmail(actor.email)) await notifyInvited(ctx.env, actor, { title: after.title, startsAt: after.starts_at }, minted)
+  }
   // « Prévenir les familles »: one email to each family that has an address and did not say no.
   let notified = 0
   let notifiedSkipped = 0

@@ -23,7 +23,9 @@ const ENTRY_GZ = 86 * KB
 // unsubscribe, digest, Reporté, bounce). The cap goes to 12 KB: the text IS the product, and both dictionaries load in parallel
 // before the first render, so a KB there costs less than a KB of entry. The stylesheet goes 5.5 -> 6 KB (date pickers on iOS, the
 // credit line, large-text fixes). The entry stays at 86 KB (85.0 now): the next feature that grows it pays for itself elsewhere.
-const CHUNK_GZ = 12 * KB
+// Later the same day the privacy page's long text moved to its own lazy chunk (src/i18n.privacy.*.ts), the French dictionary fell to 10.6 KB
+// and the cap went back down to 11 KB: it was a bridge, not a new floor.
+const CHUNK_GZ = 11 * KB
 const CSS_GZ = 6 * KB
 
 const files = readdirSync(ASSETS)

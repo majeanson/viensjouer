@@ -200,3 +200,64 @@ test('without ticking it, nothing is asked to be sent', async ({ page }) => {
   await page.getByRole('button', { name: 'Créer et obtenir les liens' }).click()
   await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')?.body).toMatchObject({ sendNow: false })
 })
+
+// ---- notifications --------------------------------------------------------------------------------------------------
+
+test('« Nouveau » on Rencontres lists what happened, opens it and marks it read, or marks everything read', async ({ page }) => {
+  let list = [
+    { id: 'n1', kind: 'invited', title: 'Marc t’invite', body: 'Au parc, samedi', url: '/lune-miel' },
+    { id: 'n2', kind: 'answered', title: 'Léa : oui', body: 'Julie · Au parc', url: '/rencontres/e1#i1' },
+  ]
+  const stub = await host(page, {
+    'GET notifications': () => ({ json: { notifications: list } }),
+    'POST notifications': (b) => ((list = b?.readAll ? [] : list.filter((n) => n.id !== b?.id)), { json: { ok: true } }),
+  })
+  await page.goto('/rencontres')
+  const card = page.getByRole('region', { name: 'Nouveau' })
+  await expect(card).toContainText('Marc t’invite')
+  await expect(card).toContainText('Au parc, samedi')
+  await expect(card.getByRole('link', { name: 'Marc t’invite' })).toHaveAttribute('href', '/lune-miel')
+  await card.getByRole('link', { name: 'Léa : oui' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'notifications')?.body).toEqual({ id: 'n2' })
+  await page.goto('/rencontres')
+  await card.getByRole('button', { name: 'Tout marquer comme lu' }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'notifications').at(-1)?.body).toEqual({ readAll: true })
+  await expect(page.getByRole('region', { name: 'Nouveau' })).toHaveCount(0)
+})
+
+test('no « Nouveau » card when there is nothing new', async ({ page }) => {
+  await host(page, { 'GET notifications': () => ({ json: { notifications: [] } }) })
+  await page.goto('/rencontres')
+  await expect(page.getByRole('heading', { name: 'Rencontres', level: 1 })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Nouveau' })).toHaveCount(0)
+})
+
+test('Compte, Notifications says in plain words what you are told and where, and sends a test', async ({ page }) => {
+  const stub = await host(page, { 'GET health': () => ({ json: { ok: true, mail: false, photos: false, invite: false, push: 'BKEY' } }), 'POST push': () => ({ json: { ok: true } }) })
+  await page.goto('/compte?tab=notifications')
+  await expect(page.getByRole('heading', { name: 'Notifications', level: 2 })).toBeVisible()
+  for (const line of ['une famille t’invite à une rencontre', 'une rencontre où tu es invité change, est reportée ou annulée', 'une famille répond à ta rencontre', 'une rencontre approche (le rappel de la veille)']) await expect(page.getByText(line)).toBeVisible()
+  await expect(page.getByText(/dans « Nouveau », sans permission/)).toBeVisible()
+  await expect(page.getByText(/Rien de lisible ne passe par Apple ou Google/)).toBeVisible()
+  await page.getByRole('button', { name: 'M’envoyer une notification d’essai' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'push')?.body).toEqual({ test: true })
+  await expect(page.getByText(/Envoyée : regarde « Nouveau »/)).toBeVisible()
+})
+
+test('Compte, Notifications: with phone push not switched on yet, it says so and the app list still works', async ({ page }) => {
+  await host(page, { 'GET health': () => ({ json: { ok: true, mail: false, photos: false, invite: false, push: null } }) })
+  await page.goto('/compte?tab=notifications')
+  await expect(page.getByText('Pas encore branchées sur téléphone. Tout reste dans « Nouveau ».')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Activer sur cet appareil' })).toHaveCount(0)
+})
+
+test('the front page explains how it works, including that nothing is sent unless you decide', async ({ page }) => {
+  await host(page, {}, false)
+  await page.goto('/')
+  const how = page.getByRole('region', { name: 'Comment ça marche' })
+  await expect(how).toBeVisible()
+  await expect(how.getByRole('listitem')).toHaveCount(4)
+  await expect(how).toContainText('par courriel, par texto, ou avec une carte à imprimer. Rien n’est envoyé sans que tu le décides.')
+  await expect(how).toContainText('Pas de compte, pas d’application à installer.')
+  await expect(how).toContainText('reçoit les nouvelles dans l’appli, et sur son téléphone si elle le permet')
+})

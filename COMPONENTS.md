@@ -30,6 +30,8 @@
 | `Credit` | The « Bâti par marc.portal » line under every screen | Plain link out, hidden in print. |
 | `InstallOffer` | One card, after three different days of use: keep it on the home screen | Native prompt where the browser has one, the iPhone steps otherwise; « Plus tard » is final. |
 | `Turnstile` | The Cloudflare bot check on signup and forgot-password | Mounted only when /api/health reports a site key; hands its token to the form in a hidden `turnstile` field. |
+| `NewForYou` | « Nouveau » on Rencontres: what happened that you have not read (invited, changed, answered, reminder) | Needs no permission; the same list the phone notification is made from. |
+| `NotificationsCard` | Compte, Notifications: what you are told, and the switch for this device | In plain words; on iPhone it says to add the app to the home screen first. |
 | `PartnerNudge` | The one line on Rencontres asking a solo host to invite the other parent | |
 | `CardCode` | Home page: the two words of a card, one box each (a space jumps, a paste spreads); focus moves only while typing | |
 | `CalendarFeed` | The host's secret calendar feed | |

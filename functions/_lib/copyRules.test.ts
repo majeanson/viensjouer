@@ -3,6 +3,8 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { FR } from '../../src/i18n.fr'
 import { EN } from '../../src/i18n.en'
+import { PRIVACY_FR } from '../../src/i18n.privacy.fr'
+import { PRIVACY_EN } from '../../src/i18n.privacy.en'
 
 // Rules about the words on screen, held by the build like Babillard's glossary tests:
 //   - no dead copy: a dictionary key nothing refers to is removed, not left to rot (the refactors that
@@ -10,6 +12,9 @@ import { EN } from '../../src/i18n.en'
 //   - no em-dash and no emoji in what a person reads (the house style: plain words, icons from Icon.tsx)
 //   - French and English carry the same keys at run time too (tsc already holds the types)
 type Dict = Record<string, unknown>
+// The privacy page's long text lives in its own lazy files (src/i18n.privacy.*.ts); the rules cover it as the "privacy." part of each language.
+const FRALL = { ...FR, privacyText: PRIVACY_FR }
+const ENALL = { ...EN, privacyText: PRIVACY_EN }
 
 const walk = (d: string): string[] =>
   readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(d, e.name)) : /\.(tsx?|mjs)$/.test(e.name) && !e.name.endsWith('i18n.ts') && !e.name.includes('copyRules') ? [join(d, e.name)] : []))
@@ -23,7 +28,7 @@ const SOURCE = [...walk('src'), ...walk('functions'), ...walk('e2e')].map((f) =>
 
 describe('copy rules', () => {
   it('has no dictionary key that nothing refers to', () => {
-    const unused = leaves(FR)
+    const unused = leaves(FRALL)
       .map(([p]) => p)
       .filter((p) => {
         const name = p.split('.').pop()!
@@ -33,7 +38,7 @@ describe('copy rules', () => {
   })
 
   it('has no em-dash and no emoji in any string, in either language', () => {
-    for (const [lang, dict] of [['FR', FR], ['EN', EN]] as const) {
+    for (const [lang, dict] of [['FR', FRALL], ['EN', ENALL]] as const) {
       for (const [path, v] of leaves(dict)) {
         const texts = typeof v === 'string' ? [v] : Array.isArray(v) ? v.flat().filter((x): x is string => typeof x === 'string') : typeof v === 'function' ? [String((v as (...a: never[]) => unknown)(...([1, 2, 3, 4] as never[])))] : []
         for (const text of texts) {
@@ -45,6 +50,6 @@ describe('copy rules', () => {
   })
 
   it('has the same keys in French and in English', () => {
-    expect(leaves(EN).map(([p]) => p)).toEqual(leaves(FR).map(([p]) => p))
+    expect(leaves(ENALL).map(([p]) => p)).toEqual(leaves(FRALL).map(([p]) => p))
   })
 })

@@ -85,6 +85,11 @@ export function Door() {
         <button type="button" className="btn" disabled={busy} onClick={() => void go('demo')}>{t.trial.button}</button>
         <p className="muted small">{t.trial.hint}</p>
       </div>
+      <section className="how" aria-labelledby="how-title">
+        <h2 id="how-title">{t.door.how.title}</h2>
+        <ol>{t.door.how.steps.map((x) => <li key={x}>{x}</li>)}</ol>
+        <p className="muted small">{t.door.how.note}</p>
+      </section>
       <p className="small" style={{ textAlign: 'center' }}><Link to="/confidentialite">{t.privacy.link}</Link></p>
       </main>
     </div>

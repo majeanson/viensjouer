@@ -19,6 +19,8 @@ export async function tidy(env: Env, now = nowSec()): Promise<void> {
       env.DB.prepare('DELETE FROM parent_invites WHERE expires_at < ?').bind(cutoff),
     ])],
     ['mail ledger', () => purgeMailLedger(env)],
+    // A notification is news, not a record: read or not, it goes after 30 days.
+    ['notifications', () => env.DB.prepare('DELETE FROM notifications WHERE created_at < ?').bind(now - 30 * 86_400).run()],
     ['sandboxes', () => sweepDemos(env, now)],
     ['removed rows', () => purgeRemoved(env, now)],
     ['ended links', () => retireLinks(env, now)],

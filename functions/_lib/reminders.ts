@@ -9,6 +9,8 @@ import { mailRoom, recordMail } from './mailBudget'
 import { mailLang } from './lang'
 import { hostReminderMail, reminderMail, withUnsubscribe } from './mailCopy'
 import { nowSec, paperCode, whenLong } from './ids'
+import { accountsOfFamily, parentsOf } from './notify'
+import { notifyReminder } from './notifyEvents'
 
 interface Due {
   id: string
@@ -22,6 +24,7 @@ interface Due {
   tz: string
   host_child: string
   lang: string | null
+  linked_household_id: string | null
 }
 
 export const REMIND_LEAD_SEC = 24 * 3600
@@ -60,7 +63,7 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
   }
   const now = nowSec()
   const { results } = await env.DB.prepare(
-    `SELECT i.id, e.household_id, i.token, f.email, f.lang, f.parent_name, e.title, e.starts_at, e.place, h.tz, c.first_name AS host_child
+    `SELECT i.id, e.household_id, i.token, f.email, f.lang, f.linked_household_id, f.parent_name, e.title, e.starts_at, e.place, h.tz, c.first_name AS host_child
        FROM invitations i
        JOIN encounters e ON e.id = i.encounter_id
        JOIN friend_families f ON f.id = i.friend_family_id
@@ -90,6 +93,8 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
       sent++
       rooms.set(d.household_id, (rooms.get(d.household_id) ?? 1) - 1)
       await recordMail(env, d.household_id)
+      // The same reminder as a notification, for a family that has an account.
+      await notifyReminder(env, await accountsOfFamily(env, { linked_household_id: d.linked_household_id, email: d.email }, d.household_id), `/${paperCode(d.token)}`, { title: d.title, startsAt: d.starts_at, place: d.place, tz: d.tz }, now)
     } catch (err) {
       console.error('[reminders] send', d.id, err)
     }
@@ -151,6 +156,7 @@ export async function sendHostReminders(env: Env, origin: string): Promise<numbe
       sent++
       rooms.set(d.household_id, (rooms.get(d.household_id) ?? 1) - 1)
       await recordMail(env, d.household_id)
+      await notifyReminder(env, (await parentsOf(env, d.household_id)).filter((r) => r.email === d.email), `/rencontres/${d.id}`, { title: d.title, startsAt: d.starts_at, place: d.place, tz: d.tz }, now)
     } catch (err) {
       console.error('[reminders] host send', d.id, err)
     }

@@ -6,6 +6,7 @@ import { inviteRequired } from '../_lib/signupGate'
 import { photosEnabled } from '../_lib/photos'
 import { turnstileSiteKey } from '../_lib/turnstile'
 import { beatAge } from '../_lib/beats'
+import { pushEnabled } from '../_lib/webpush'
 
 // Liveness + which optional bindings are wired, so the SPA hides a door honestly
 // instead of discovering it by failing. Open to the unauthenticated signup page.
@@ -22,6 +23,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     invite: inviteRequired(ctx.env),
     rateLimit: rateLimitEnabled(ctx.env),
     turnstile: turnstileSiteKey(ctx.env),
+    push: pushEnabled(ctx.env) ? ctx.env.VAPID_PUBLIC_KEY : null,
     sessionSecret: !!ctx.env.SESSION_SECRET && ctx.env.SESSION_SECRET.length >= 32,
   })
 }

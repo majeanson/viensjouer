@@ -42,6 +42,10 @@ TURNSTILE_SITE_KEY = "0x4AAAAAAFrYMbkilKTmCzp2"
 # The frontend hostnames siteverify may report (the page the widget was solved on): production only, never localhost.
 # Unset, the request's own hostname is expected.
 TURNSTILE_HOSTNAMES = "jouer.marcportal.com"
+# Web Push (notifications on a phone). The PUBLIC key and the contact live here; the private key is a secret:
+# `wrangler secret put VAPID_PRIVATE_KEY` (a JWK as JSON). Any of the three unset -> push is off, the in-app list still works.
+VAPID_PUBLIC_KEY = "BPL7YmoxNBIn8REM6rft24-RrxKiOG8sXwxkcaUrZ0L82GvTfEyL1vI_vhTLKsSr_IAUUIYL-6SKGnmKdr6vo-A"
+VAPID_SUBJECT = "mailto:marc.jeanson92@gmail.com"
 # Outbound mail sender. Only half the switch: nothing is sent until RESEND_API_KEY is set
 # (`wrangler secret put RESEND_API_KEY` — a « Sending access » key of this app's own, so
 # revoking one app's key never silences the other). marcportal.com is verified in Resend.

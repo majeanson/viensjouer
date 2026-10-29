@@ -1,0 +1,32 @@
+// « Ce qu'on garde »: the long text of the privacy page, in its own lazy chunk so it is not downloaded with the dictionary every screen needs
+// (only the page's title and the link to it stay in src/i18n.fr.ts). src/pages/Privacy.tsx loads it on demand.
+export const PRIVACY_FR = {
+  lead: 'Un prénom et un courriel suffisent pour tout faire. Le reste est facultatif, et chaque case dit à quoi elle sert et ce que tu perds en la sautant.',
+  requiredTitle: 'Obligatoire',
+  required: ['Ton prénom et ton courriel (avec un mot de passe) pour avoir un compte.', 'Le prénom de ton enfant et ceux des amis, un surnom suffit.', 'Un titre et une heure pour chaque rencontre.', 'Pour répondre à un lien : rien du tout, juste « oui », « peut-être » ou « non ».'],
+  optionalTitle: 'Facultatif, et ce que ça débloque',
+  optionalLead: 'Sauter un de ces champs ne bloque jamais le reste.',
+  optional: [
+    ['Date de naissance', 'L’âge et les anniversaires au calendrier.'],
+    ['Courriel d’un ami', 'L’envoi du lien et du rappel par courriel (sinon, tu copies le lien).'],
+    ['Allergies', 'Une alerte sur la fiche avant la collation.'],
+    ['Adresse', 'Le lieu exact, montré seulement aux familles qui disent oui.'],
+    ['Téléphone et notes', 'Rien dans l’appli : ce sont des notes pour toi.'],
+    ['Carte « chez nous »', 'Répondre d’avance : chien, piscine, écrans, sans noix.'],
+    ['Fiche de relais', 'Des nouvelles après une visite (disparaît en une semaine).'],
+    ['Photos', 'Les souvenirs partagés avec les familles qui y étaient.'],
+    ['Image de la rencontre', 'Illustre l’invitation ; visible de toute famille qui a le lien.'],
+    ['Photo d’un enfant ou d’un parent', 'Les familles invitées la voient sur la page de leur lien, rien de plus.'],
+    ['Le tableau', 'Les mots écrits sur une rencontre sont lus par les familles invitées ; l’hôte peut tout retirer, chacun retire les siens.'],
+    ['À apporter', 'Le prénom du parent s’affiche à côté de ce qu’il apporte, pour les familles invitées.'],
+    ['Mon calendrier', 'Un lien secret vers tes rencontres, que tu peux changer ou couper.'],
+  ] as [string, string][],
+  sharedTitle: 'Qui voit quoi',
+  shared: ['Chaque famille ne voit que ce qui la concerne : ses rencontres, ses invitations, et les prénoms des enfants qui viennent aux mêmes rencontres (l’hôte peut le désactiver).', 'Un lien de réponse ne montre l’adresse qu’après un « oui ».', 'Quand un lien est texté, l’aperçu montre seulement le titre, la date, le lieu et l’image : ce que la page montre déjà à qui a le lien.', 'Rien n’est public, rien ne se cherche, aucune carte de familles.', 'Un essai sans compte s’efface après 24 heures.'],
+  purposeTitle: 'À quoi ça sert',
+  purpose: 'Viens jouer sert à une seule chose : aider les parents de tout-petits à organiser des rencontres, au parc, chez soi, à une fête, et à y répondre sans compte. Pas de publicité, pas de vente de données, pas de profil public, pas de carte des familles.',
+  hostTitle: 'Où sont les données',
+  host: ['Hébergé chez Cloudflare : le site, la base de données (placée dans l’est de l’Amérique du Nord) et les photos y sont stockés.', 'Les courriels d’invitation et de rappel partent par Resend (États-Unis), seulement quand tu le demandes.', 'Cloudflare peut mesurer le trafic de façon agrégée. À l’inscription et au « mot de passe oublié », un contrôle anti-robot de Cloudflare (Turnstile) peut s’afficher. Aucun autre service tiers, aucun traqueur publicitaire.', 'Notifications : si tu les permets, on garde seulement l’adresse technique de ton appareil pour le réveiller. Le texte ne passe pas par Apple ni Google. Les nouveautés s’effacent après 30 jours.', 'La langue de ton appareil (français ou anglais) est gardée pour t’écrire dans ta langue. Un compteur de courriels envoyés par famille hôte, sans adresse ni texte, limite l’envoi à 60 par jour et s’efface en deux jours.'],
+  removeTitle: 'Tout enlever',
+  remove: ['« Mon compte » → « Tout effacer » : la famille, les enfants, les familles amies, les rencontres, les messages, les photos et le compte de chaque parent partent d’un coup, pour de bon, tout de suite. Il faut ton mot de passe.', '« Télécharger mes données » te donne tout dans un fichier avant d’effacer.', 'Retirer un enfant, une famille ou une rencontre ailleurs dans l’appli le cache aussitôt ; au bout de 30 jours tout est effacé pour de vrai (si une rencontre passée le nomme encore, seul le prénom reste dans son historique), ou tout de suite avec « Tout effacer ».', 'Une famille qui répond sans compte : ses réponses sont dans le carnet de l’hôte. Elle peut lui demander de la retirer, ou créer un compte et tout effacer.', 'Un essai sans compte s’efface seul après 24 heures.'],
+}

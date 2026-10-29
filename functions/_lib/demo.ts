@@ -37,6 +37,8 @@ export const SWEEP_ORDER: { table: string; sql: (ids: string) => string }[] = [
   { table: 'children', sql: (i) => `DELETE FROM children WHERE household_id IN (${i})` },
   { table: 'home_cards', sql: (i) => `DELETE FROM home_cards WHERE household_id IN (${i})` },
   { table: 'mail_sends', sql: (i) => `DELETE FROM mail_sends WHERE household_id IN (${i})` },
+  { table: 'notifications', sql: (i) => `DELETE FROM notifications WHERE household_id IN (${i})` },
+  { table: 'push_subscriptions', sql: (i) => `DELETE FROM push_subscriptions WHERE household_id IN (${i})` },
   { table: 'parent_invites', sql: (i) => `DELETE FROM parent_invites WHERE household_id IN (${i})` },
   { table: 'password_resets', sql: (i) => `DELETE FROM password_resets WHERE email IN (SELECT email FROM parents WHERE household_id IN (${i}))` },
   { table: 'parents', sql: (i) => `DELETE FROM parents WHERE household_id IN (${i})` },

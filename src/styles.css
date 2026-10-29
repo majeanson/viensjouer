@@ -389,3 +389,7 @@ main:focus { outline: none; }
    chrome off (the picker still opens on tap), let it shrink with its box and keep an empty one as tall as a full one. */
 input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-width: 0; max-width: 100%; text-align: start; }
 input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value { text-align: start; min-height: 1.4em; margin: 0; }
+
+/* « Comment ça marche » at the foot of the door */
+.how { margin: 2rem 0 1rem; }
+.how ol { margin: 0.5rem 0; padding-left: 1.25rem; display: grid; gap: 0.4rem; }

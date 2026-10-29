@@ -24,6 +24,21 @@ interface Due {
 
 export const REMIND_LEAD_SEC = 24 * 3600
 
+// Nobody wants a reminder at midnight, with a toddler finally asleep. Between 21 h and 7 h in the host household's own
+// time zone the hourly cron holds both kinds back (unstamped, so the first run after 7 h picks them up). A rencontre
+// that starts before then simply gets none: a 6 h start is not worth a 3 h buzz.
+export const QUIET_FROM = 21
+export const QUIET_UNTIL = 7
+export function inQuietHours(nowSecs: number, tz: string): boolean {
+  let hour: number
+  try {
+    hour = Number(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hourCycle: 'h23', timeZone: tz }).format(new Date(nowSecs * 1000)))
+  } catch {
+    return false // an unknown zone must not silence reminders for good
+  }
+  return hour >= QUIET_FROM || hour < QUIET_UNTIL
+}
+
 export async function sendDueReminders(env: Env, origin: string): Promise<number> {
   if (!mailEnabled(env)) {
     console.warn('[reminders] mail not wired; nothing sent')
@@ -45,6 +60,7 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
     .all<Due>()
   let sent = 0
   for (const d of results) {
+    if (inQuietHours(now, d.tz)) continue
     // Stamp first: a crash between the stamp and the send loses one reminder, the other
     // order sends it every hour until the cron dies.
     const stamped = await env.DB.prepare('UPDATE invitations SET reminded_at = ? WHERE id = ? AND reminded_at IS NULL').bind(now, d.id).run()
@@ -94,6 +110,7 @@ export async function sendHostReminders(env: Env, origin: string): Promise<numbe
   let sent = 0
   const stamped = new Set<string>()
   for (const d of results) {
+    if (inQuietHours(now, d.tz)) continue
     if (!stamped.has(d.id)) {
       const r = await env.DB.prepare('UPDATE encounters SET host_reminded_at = ? WHERE id = ? AND host_reminded_at IS NULL').bind(now, d.id).run()
       if (!r.meta.changes) continue

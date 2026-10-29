@@ -622,7 +622,7 @@ test('the host screens have no serious accessibility violation in dark mode', as
 
 const MAIL_ME = { signedIn: true, email: 'm@example.com', displayName: 'Marc', household: { id: 'h', name: 'Les Jeanson', tz: 'America/Toronto' }, mail: true, demo: false }
 
-test('the host sees where the answers stand and can nudge everyone who is still silent in one tap', async ({ page }) => {
+test('the host sees where the answers stand, emails every family not yet told in one tap', async ({ page }) => {
   const stub = await host(page, {
     'GET auth/me': () => ({ json: MAIL_ME }),
     'POST invitations': () => ({ json: { ok: true } }),
@@ -635,8 +635,34 @@ test('the host sees where the answers stand and can nudge everyone who is still 
   const tally = page.getByRole('group', { name: 'Les réponses reçues' })
   await expect(tally).toContainText('Oui · 1')
   await expect(tally).toContainText('Pas de réponse · 3')
+  // Nobody has been told yet: ONE primary button emails the two who have an address (Eli has none: text or card).
+  await page.getByRole('button', { name: 'Envoyer à 2 familles par courriel' }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'invitations').map((c) => c.body?.id)).toEqual(['i2', 'i3'])
+  await expect(page.getByRole('button', { name: /^Renvoyer aux/ })).toHaveCount(0)
+})
+
+test('once they were emailed, the silent ones can be nudged in one tap, and a family that stopped or bounced is never offered the email', async ({ page }) => {
+  const stub = await host(page, {
+    'GET auth/me': () => ({ json: MAIL_ME }),
+    'POST invitations': () => ({ json: { ok: true } }),
+    'GET encounters': (_b, url) =>
+      url.searchParams.get('id')
+        ? {
+            json: detail([
+              inv('i2', 'f2', 'Max', 'Paul', null, { email: 'p@example.com', sent_at: now - 3600 }),
+              inv('i3', 'f3', 'Zoé', 'Anne', null, { email: 'a@example.com', sent_at: now - 3600 }),
+              inv('i4', 'f4', 'Eli', 'Sam', null, { email: 's@example.com', mail_stopped_at: now - 100 }),
+              inv('i5', 'f5', 'Noa', 'Dan', null, { email: 'd@example.com', email_bounced_at: now - 100 }),
+            ]),
+          }
+        : { json: { encounters: [enc()], invitations: [] } },
+  })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByRole('button', { name: /^Envoyer à \d+ famille/ })).toHaveCount(0) // nobody is left to tell
   await page.getByRole('button', { name: 'Renvoyer aux 2 familles sans réponse' }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'invitations').map((c) => c.body?.id)).toEqual(['i2', 'i3'])
+  // Eli stopped the emails and Noa's address bounced: for both the one button is the text message, never the email.
+  await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toHaveCount(2)
 })
 
 test('an answered family is one calm line: no send buttons until it is needed', async ({ page }) => {
@@ -644,7 +670,7 @@ test('an answered family is one calm line: no send buttons until it is needed', 
     'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes'), inv('i2', 'f2', 'Max', 'Paul', null)]) } : { json: { encounters: [enc()], invitations: [] } }),
   })
   await page.goto('/rencontres/e1')
-  await expect(page.getByRole('button', { name: 'Envoyer l’invitation' })).toHaveCount(1) // only Max, who has not answered
+  await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toHaveCount(1) // only Max, who has not answered (no email: the text message is his one button)
   await expect(page.getByText('Plus de choix')).toHaveCount(2) // every family keeps its options
 })
 

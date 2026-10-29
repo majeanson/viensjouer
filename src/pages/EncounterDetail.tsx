@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
@@ -54,7 +54,9 @@ export function EncounterDetail() {
   const [relaisFor, setRelaisFor] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
   const [postponing, setPostponing] = useState(false)
-  const [flash, setFlash] = useState<string | null>(null)
+  // Straight from « Envoyer tout de suite » on the new-rencontre form: say what went out.
+  const justSent = (useLocation().state as { sent?: number; skipped?: number } | null) ?? null
+  const [flash, setFlash] = useState<string | null>(() => (justSent?.sent ? t.encounters.sentNow(justSent.sent) + (justSent.skipped ? ` ${t.common.mailCapped}` : '') : null))
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: K.encounter(id) })
     void qc.invalidateQueries({ queryKey: K.encounters })
@@ -189,7 +191,11 @@ export function EncounterDetail() {
     [t.roster.none, invitations.filter((i) => !i.reply), 'none'],
   ]
   const silent = invitations.filter((i) => !i.reply)
-  const silentWithMail = silent.filter((i) => i.email)
+  // Who can be emailed right now: an address, mail wired, no « ne plus recevoir », no bounce.
+  const canMail = (i: Invitation) => !!me.mail && !!i.email && !i.email_bounced_at && !i.mail_stopped_at
+  const unsentMail = invitations.filter((i) => !i.reply && !i.sent_at && canMail(i))
+  const silentWithMail = invitations.filter((i) => !i.reply && !!i.sent_at && canMail(i))
+  const anyEmail = invitations.some(canMail)
   const who = (i: Invitation) => `${i.child_first_name} (${i.parent_name})`
 
   return (
@@ -280,25 +286,24 @@ export function EncounterDetail() {
                 {silent.length > 0 && <span className="chip">{t.encounters.reply.none} · {silent.length}</span>}
               </div>
             )}
+            {unsentMail.length > 0 && <p style={{ margin: '0 0 0.75rem' }}><button className="btn btn--primary" disabled={resendAll.isPending} onClick={() => resendAll.mutate(unsentMail.map((i) => i.id))}><Icon name="mail" />{t.encounters.sendAll(unsentMail.length)}</button></p>}
             {invitations.map((i) => (
               <div key={i.id} className="linkrow">
                 <div className="row">
-                  <span className="cluster"><span><strong>{i.child_first_name}</strong> <span className="muted small">· {i.parent_name}</span></span>{i.email_bounced_at && <span className="chip chip--cancelled">{t.families.bounced}</span>}{i.mail_stopped_at && <span className="chip">{t.families.stopped}</span>}</span>
+                  <span className="cluster"><span><strong>{i.child_first_name}</strong> <span className="muted small">· {i.parent_name}</span></span>{i.email_bounced_at && <span className="chip chip--cancelled">{t.families.bounced}</span>}{i.mail_stopped_at && <span className="chip">{t.families.stopped}</span>}{i.sent_at && !i.reply && <span className="chip">{t.encounters.sentChip}</span>}</span>
                   <span className={`chip ${i.reply ? `chip--${i.reply}` : ''}`}>{i.reply ? t.encounters.reply[i.reply] : t.encounters.reply.none}</span>
                 </div>
                 {i.reply_note && <p className="small" style={{ margin: 0 }}>« {i.reply_note} »</p>}
                 {i.allergies && <p className="small" style={{ margin: 0 }}>{t.families.allergies} : {i.allergies}</p>}
                 {i.reply === 'yes' && <p className="small muted" style={{ margin: 0 }}>{t.kinds.birthday.theyCome(kidsComing(i.scope, i.kids), i.adults ?? 0)}</p>}
                 <div className="cluster">
-                  {!i.reply && (
-                    <>
-                      <button className={`btn btn--small ${!i.email || !me.mail ? 'btn--primary' : ''}`} onClick={() => void shareMessage(i)}>{copied === 's' + i.id ? t.encounters.copied : t.share.button}</button>
-                      {me.mail && i.email && <button className="btn btn--small" disabled={send.isPending} onClick={() => send.mutate(i.id)}>{i.sent_at ? t.encounters.resend : t.encounters.send}</button>}
-                    </>
-                  )}
+                  {!i.reply && (canMail(i)
+                    ? <button className={`btn btn--small ${i.sent_at ? '' : 'btn--primary'}`} disabled={send.isPending} onClick={() => send.mutate(i.id)}><Icon name="mail" />{i.sent_at ? t.encounters.resend : t.encounters.send}</button>
+                    : <button className="btn btn--small btn--primary" onClick={() => void shareMessage(i)}><Icon name="share" />{copied === 's' + i.id ? t.encounters.copied : t.encounters.byText}</button>)}
                   <details className="more">
                     <summary>{t.form.more}</summary>
                     <div className="stack">
+                      {canMail(i) && !i.reply && <div><button className="btn btn--small" onClick={() => void shareMessage(i)}><Icon name="share" />{copied === 's' + i.id ? t.encounters.copied : t.encounters.byText}</button></div>}
                       <div>
                         <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.share.preview}</p>
                         <blockquote className="msgpreview">{messageFor(i)}</blockquote>
@@ -355,8 +360,18 @@ export function EncounterDetail() {
                 )}
               </div>
             ))}
-            {me.mail && silentWithMail.length > 0 && <p style={{ margin: '0.75rem 0 0' }}><button className="btn" disabled={resendAll.isPending} onClick={() => resendAll.mutate(silentWithMail.map((i) => i.id))}><Icon name="mail" />{t.encounters.resendAll(silentWithMail.length)}</button></p>}
-            {invitations.length > 0 && <p style={{ margin: '0.75rem 0 0' }}><Link to={`/rencontres/${e.id}/cartes`} className="btn btn--small"><Icon name="note" />{t.cards.title}</Link></p>}
+            {silentWithMail.length > 0 && <p style={{ margin: '0.75rem 0 0' }}><button className="btn" disabled={resendAll.isPending} onClick={() => resendAll.mutate(silentWithMail.map((i) => i.id))}><Icon name="mail" />{t.encounters.resendAll(silentWithMail.length)}</button></p>}
+            {invitations.length > 0 && silent.length > 0 && (
+              <details className="more" open={!anyEmail} style={{ marginTop: '0.75rem' }}>
+                <summary>{t.encounters.howTitle}</summary>
+                <ul className="small" style={{ margin: '0.5rem 0', paddingLeft: '1.1rem' }}>
+                  <li>{t.encounters.howMail}</li>
+                  <li>{t.encounters.howText}</li>
+                  <li>{t.encounters.howPaper}</li>
+                </ul>
+                <Link to={`/rencontres/${e.id}/cartes`} className="btn btn--small"><Icon name="note" />{t.cards.title}</Link>
+              </details>
+            )}
             {notYet.length > 0 && (addMore ? (
               <div className="stack" style={{ marginTop: '0.75rem' }}>
                 {notYet.map((f) => (

@@ -133,8 +133,10 @@ test('a family with no email gets a ready-to-send message with the short link', 
   await expect(page.locator('.paper').getByText(/\/lune-miel$/)).toBeVisible()
   // the message that goes out is shown before it is sent
   await expect(page.locator('.msgpreview').first()).toContainText('/lune-miel')
-  await expect(page.getByRole('button', { name: 'Envoyer l’invitation' })).toHaveCount(2)
-  await page.getByRole('button', { name: 'Envoyer l’invitation' }).first().click()
+  // Léa has no email: « Envoyer par texto » is her ONE button. Paul has one: « Envoyer par courriel » is his, the text option sits under « Plus de choix ».
+  await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toHaveCount(1)
+  await expect(page.getByRole('button', { name: 'Envoyer par courriel' })).toHaveCount(1)
+  await page.getByRole('button', { name: 'Envoyer par texto' }).first().click()
   const text = await page.evaluate(() => navigator.clipboard.readText())
   expect(text).toContain('Salut Julie !')
   expect(text).toContain('Marc organise « Au parc Lafontaine »')

@@ -10,6 +10,7 @@ import { mailLang, requestLang } from '../_lib/lang'
 import { MAX_MESSAGES } from '../_lib/board'
 import { updateMail, withUnsubscribe } from '../_lib/mailCopy'
 import { isDemoEmail } from '../_lib/demo'
+import { sendEncounterInvitations } from '../_lib/inviteMail'
 import { mailRoom, recordMail } from '../_lib/mailBudget'
 import { cleanDetails, defaultScope, hereAllowed, isScope, parseDetails, type Scope } from '../_lib/kinds'
 
@@ -105,6 +106,7 @@ type Body = {
   scope?: string
   notify?: boolean
   showGuests?: boolean
+  sendNow?: boolean
   endsAt?: number | null
   place?: string
   address?: string | null
@@ -181,7 +183,10 @@ export const onRequestPost = authed(async (ctx, actor) => {
       .run()
     await mintInvitations(ctx.env.DB, actor.householdId, id, invite, scope)
   }
-  return created({ id: ids[0], ids })
+  // « Envoyer tout de suite »: the invitations of the FIRST date go by email now (a series' later dates have their own links,
+  // listed on each family's page). Off unless asked, and never in a trial.
+  const mailed = body?.sendNow === true && invite.length > 0 && !isDemoEmail(actor.email) ? await sendEncounterInvitations(ctx.env, ctx.request, { householdId: actor.householdId, displayName: actor.displayName, email: actor.email }, ids[0]) : { sent: 0, skipped: 0 }
+  return created({ id: ids[0], ids, sent: mailed.sent, skipped: mailed.skipped })
 })
 
 export const onRequestPatch = authed(async (ctx, actor) => {

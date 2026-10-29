@@ -81,10 +81,11 @@ test('the home page takes the two words of a card, with a space, a capital or an
   await page.route('**/api/**', (r) => r.fulfill({ status: 404, json: { error: 'x' } }))
   await page.route('**/api/auth/me', (r) => r.fulfill({ json: { signedIn: false } }))
   await page.goto('/')
-  await page.getByLabel('Les deux mots').fill('bonjour')
+  await page.getByLabel('Premier mot').fill('bonjour')
   await page.getByRole('button', { name: 'Ouvrir' }).click()
   await expect(page.getByRole('alert')).toContainText('Il faut deux mots')
-  await page.getByLabel('Les deux mots').fill('Lune  Miel')
+  await page.getByLabel('Premier mot').fill('Lune  Miel') // both words in one go spread over the two boxes
+  await expect(page.getByLabel('Deuxième mot')).toHaveValue('miel')
   await page.getByRole('button', { name: 'Ouvrir' }).click()
   await expect(page).toHaveURL(/\/lune-miel$/)
 })

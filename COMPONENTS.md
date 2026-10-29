@@ -31,6 +31,7 @@
 | `InstallOffer` | One card, after three different days of use: keep it on the home screen | Native prompt where the browser has one, the iPhone steps otherwise; « Plus tard » is final. |
 | `Turnstile` | The Cloudflare bot check on signup and forgot-password | Mounted only when /api/health reports a site key; hands its token to the form in a hidden `turnstile` field. |
 | `PartnerNudge` | The one line on Rencontres asking a solo host to invite the other parent | |
+| `CardCode` | Home page: the two words of a card, one box each (a space jumps, a paste spreads); focus moves only while typing | |
 | `CalendarFeed` | The host's secret calendar feed | |
 
 ## Styles (`src/styles.css`)

@@ -15,6 +15,7 @@ import type { Child, Encounter, Family, Group, Invitation, Kind } from '../lib/t
 import { WhenInput } from '../components/WhenInput'
 import { Icon, kindIcon } from '../components/Icon'
 import { Face } from '../components/Face'
+import { useAuth } from '../lib/auth'
 
 type Scope = 'friend' | 'family'
 // A birthday starts as « the friend only », everything else as « the whole family ».
@@ -33,6 +34,7 @@ interface Source {
 export function EncounterNew() {
   const t = useT()
   const { lang } = useLang()
+  const { me } = useAuth()
   const nav = useNavigate()
   const qc = useQueryClient()
   const [params] = useSearchParams()
@@ -76,7 +78,7 @@ export function EncounterNew() {
   }, [src.data])
 
   const create = useMutation({
-    mutationFn: (body: unknown) => api<{ id: string; ids: string[] }>('encounters', { method: 'POST', body }),
+    mutationFn: (body: unknown) => api<{ id: string; ids: string[]; sent?: number; skipped?: number }>('encounters', { method: 'POST', body }),
     onSuccess: async (r) => {
       // The picture is best effort: the rencontre exists either way, and the host page can add it again.
       if (coverFile) {
@@ -89,7 +91,7 @@ export function EncounterNew() {
       }
       void qc.invalidateQueries({ queryKey: K.encounters })
       void qc.invalidateQueries({ queryKey: K.calendar })
-      nav(`/rencontres/${r.id}`, { replace: true })
+      nav(`/rencontres/${r.id}`, { replace: true, state: r.sent ? { sent: r.sent, skipped: r.skipped ?? 0 } : undefined })
     },
     onError: (e) => setErr(e.message),
   })
@@ -130,6 +132,7 @@ export function EncounterNew() {
       details: { planB: f.get('planB'), ...(kind === 'birthday' ? { gift: f.get('gift') } : {}) },
       scope,
       invite: [...picked],
+      sendNow: f.get('sendNow') === 'on',
     })
   }
 
@@ -150,6 +153,8 @@ export function EncounterNew() {
     [t.form.quick.tomorrow, nextAt(-1)],
   ]
 
+  // Families picked that can be emailed right now (an address, no stop, no bounce).
+  const mailable = (fams.data?.families ?? []).filter((f) => picked.has(f.id) && f.email && !f.mail_stopped_at && !f.email_bounced_at).length
   const slots = napSlots([children.find((c) => c.id === chosen) ?? {}, ...(fams.data?.families ?? []).filter((f) => picked.has(f.id))])
   const napChips: [string, string][] = [
     [t.form.quick.beforeNap(clockLabel(slots.before, lang)), slots.before],
@@ -192,6 +197,14 @@ export function EncounterNew() {
             <h3><Icon name="users" />{t.encounters.invite}</h3>
             {lastIds.length > 0 && !lastIds.every((id) => picked.has(id)) && <button type="button" className="btn btn--small" onClick={() => setPicked((p) => new Set([...p, ...lastIds]))}><Icon name="history" />{t.form.sameAsLast}</button>}
             <FamilyPicker loaded={!!fams.data} families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
+            {me.mail && picked.size > 0 && (mailable > 0 ? (
+              <label className="check" style={{ marginTop: '0.75rem' }}>
+                <input type="checkbox" name="sendNow" />
+                <span><Icon name="mail" />{t.encounters.sendNow}<span className="small muted" style={{ display: 'block', fontWeight: 400 }}>{t.encounters.sendNowHint(mailable)}</span></span>
+              </label>
+            ) : (
+              <p className="muted small" style={{ margin: '0.75rem 0 0' }}><Icon name="note" />{t.encounters.sendNowNone}</p>
+            ))}
             <h3 style={{ marginTop: '1rem' }}><Icon name="users" />{t.scope.label}</h3>
             <div className="seg" role="radiogroup" aria-label={t.scope.label}>
               {(['friend', 'family'] as Scope[]).map((x) => (

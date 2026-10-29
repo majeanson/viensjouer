@@ -12,7 +12,7 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await host.getByRole('button', { name: 'Essayer sans compte' }).click()
   await expect(host).toHaveURL(/\/rencontres$/)
   await expect(host.getByRole('heading', { name: 'Rencontres' })).toBeVisible()
-  await host.getByRole('link', { name: 'Proposer une rencontre' }).first().click()
+  await host.locator('a, button').filter({ hasText: 'Proposer une rencontre' }).first().click()
   await host.getByRole('checkbox', { name: /Léa/ }).check()
   await host.getByLabel('Où').fill('Parc Lafontaine')
   await host.getByRole('button', { name: 'Créer et obtenir les liens' }).click()

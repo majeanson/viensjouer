@@ -658,3 +658,46 @@ test('after cancelling, the host can tell the families why, on the board they se
   await page.locator('form', { hasText: 'Dis-leur pourquoi' }).getByRole('button', { name: 'Publier' }).click()
   await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'messages')?.body).toMatchObject({ text: 'Annulée : La pluie, on se reprend samedi' })
 })
+
+// iOS draws a date or time input at its own width and let it spill out of its card (and the two nap pickers overlap).
+// Chromium cannot reproduce the spill, so this pins the cause (native chrome off, free to shrink) AND the outcome
+// (every picker inside its card and the screen, side-by-side pickers never overlapping), at two phone widths.
+for (const width of [320, 375]) {
+  test(`date and time pickers stay inside their card at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 })
+    await host(page)
+    const check = async (where: string) => {
+      const r = await page.evaluate(() => {
+        const vw = document.documentElement.clientWidth
+        const inputs = [...document.querySelectorAll<HTMLInputElement>('input[type="date"], input[type="time"]')].filter((el) => el.offsetParent !== null)
+        const boxes = inputs.map((el) => {
+          const b = el.getBoundingClientRect()
+          const card = (el.closest('.card') ?? document.body).getBoundingClientRect()
+          const cs = getComputedStyle(el)
+          return { name: el.name || el.type, left: b.left, right: b.right, cardRight: card.right, cardLeft: card.left, appearance: cs.appearance, minWidth: cs.minWidth, vw }
+        })
+        return boxes
+      })
+      expect(r.length, where).toBeGreaterThan(0)
+      for (const b of r) {
+        expect(b.appearance, `${where} ${b.name} appearance`).toBe('none')
+        expect(b.minWidth, `${where} ${b.name} min-width`).toBe('0px')
+        expect(b.right, `${where} ${b.name} past its card`).toBeLessThanOrEqual(b.cardRight + 0.5)
+        expect(b.left, `${where} ${b.name} before its card`).toBeGreaterThanOrEqual(b.cardLeft - 0.5)
+        expect(b.right, `${where} ${b.name} past the screen`).toBeLessThanOrEqual(b.vw + 0.5)
+      }
+      // Neighbours on one row (day|hour, nap from|to) never overlap.
+      const sorted = [...r].sort((a, b) => a.left - b.left)
+      for (let i = 1; i < sorted.length; i++) if (Math.abs(sorted[i].left - sorted[i - 1].left) > 1 && sorted[i].left < sorted[i - 1].right - 0.5 && sorted[i].left > sorted[i - 1].left + 1) expect(sorted[i].left, `${where} overlap`).toBeGreaterThanOrEqual(sorted[i - 1].right - 0.5)
+    }
+    await page.goto('/rencontres/nouvelle')
+    await expect(page.getByText('Quand', { exact: true }).first()).toBeVisible()
+    await check('nouvelle rencontre')
+    await page.goto('/enfants')
+    await page.getByRole('button', { name: 'Ajouter un enfant' }).click()
+    await check('enfant')
+    await page.goto('/amis')
+    await page.getByRole('button', { name: 'Nouvelle famille' }).click()
+    await check('famille')
+  })
+}

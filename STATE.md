@@ -292,3 +292,7 @@ Two read-only audits produced a ranked list; it is worked through in order, one 
 ### No keyboard pops by itself — 2026-10-29
 
 Opening a form or tapping a button never focuses a text field: the three `autoFocus` (group, child, family forms) are gone, and the board's refocus after sending or after an empty send goes through `focusIfFinePointer` (`src/lib/focus.ts`), which only focuses with a mouse-and-keyboard pointer. `noAutofocus.test.ts` fails on any `autoFocus` and on a `.focus()` outside the skip link, the route change and `focus.ts` (planted red once).
+
+### Date and time pickers on iOS — 2026-10-29
+
+A native date or time input spilled out of its card on iOS (the « Heure » picker, the birthdate) and the two nap pickers overlapped (bare labels around inputs set to 100 % width). `input[type=date|time]` now has the native chrome off, `min-width: 0`, and a minimum value height so an empty one is not collapsed; the nap pair is a `.when.when--even` grid of two `.field`s. Guards: `dateInputs.test.ts`, and an e2e at 320 and 375 px on the new-rencontre, child and family forms (every picker inside its card and the screen, pickers on one row never overlapping; chromium cannot reproduce the spill, so it also pins the cause: planted red by reverting the CSS). Not tried on a real iPhone: please look once. Stylesheet budget is now 5.4 / 5.5 KB.

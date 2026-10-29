@@ -368,3 +368,8 @@ main:focus { outline: none; }
 .when > *, .when .input { min-width: 0; }
 .when .input { width: 100%; }
 @media (max-width: 380px) { .when { grid-template-columns: 1fr; } }
+.when--even { grid-template-columns: 1fr 1fr; }
+/* iOS draws a date or time input at its own intrinsic width and, empty, collapses its value line: take the native
+   chrome off (the picker still opens on tap), let it shrink with its box and keep an empty one as tall as a full one. */
+input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-width: 0; max-width: 100%; text-align: start; }
+input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-date-and-time-value { text-align: start; min-height: 1.4em; margin: 0; }

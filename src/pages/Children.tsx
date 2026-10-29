@@ -95,9 +95,9 @@ export function Children() {
           <label className="field"><span><Icon name="cake" />{t.children.birthdate}</span><input className="input" name="birthdate" type="date" defaultValue={cur?.birthdate ?? ''} /><Why k="childBirthdate" /></label>
           <div className="field">
             <span><Icon name="clock" />{t.children.nap}</span>
-            <div className="cluster">
-              <label className="small">{t.children.napFrom} <input className="input" name="napStart" type="time" step={900} defaultValue={cur?.nap_start ?? ''} /></label>
-              <label className="small">{t.children.napTo} <input className="input" name="napEnd" type="time" step={900} defaultValue={cur?.nap_end ?? ''} /></label>
+            <div className="when when--even">
+              <label className="field"><span>{t.children.napFrom}</span><input className="input" name="napStart" type="time" step={900} defaultValue={cur?.nap_start ?? ''} /></label>
+              <label className="field"><span>{t.children.napTo}</span><input className="input" name="napEnd" type="time" step={900} defaultValue={cur?.nap_end ?? ''} /></label>
             </div>
             <Why k="nap" />
           </div>

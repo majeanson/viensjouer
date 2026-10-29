@@ -52,7 +52,7 @@
 
 ### Household time zone — 2026-10-29
 
-`households.tz` is now written: signup sends the browser's zone (`cleanTz` refuses anything the runtime does not know, default Toronto), and Compte > Profil has a « Mon fuseau horaire » select (PATCH `/api/profile { tz }`, household-wide whichever parent sets it). Households created before this stay on Toronto until their host picks a zone there; nothing guesses it for them.
+`households.tz` is now written: signup sends the browser's zone (`cleanTz` refuses anything the runtime does not know, default Toronto), and `PATCH /api/profile { tz }` can change it (household-wide), but there is deliberately NO select on the account page: a local playdate app assumes host and guests share a zone. Households created before this stay on Toronto.
 
 ### Dead links, mail budget, series, Reporté — 2026-10-29
 

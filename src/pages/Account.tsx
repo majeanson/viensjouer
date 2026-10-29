@@ -14,12 +14,6 @@ import { Icon } from '../components/Icon'
 
 // « Mon compte » — one tab at a time, kept in the address (?tab=) so a link or a refresh lands on it:
 // who I am, my household, my calendar and the app, my security, my data (what is kept, a download, « tout effacer »).
-// Every zone the browser knows, the household's current one included even if the list lacks it.
-const zones = (current: string): string[] => {
-  const all = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : []
-  return all.includes(current) ? all : [current, ...all]
-}
-
 const TABS = ['profile', 'home', 'calendar', 'security', 'data'] as const
 type Tab = (typeof TABS)[number]
 
@@ -96,27 +90,6 @@ export function Account() {
               <label className="field"><span><Icon name="user" />{t.profile.name}</span><input className="input" name="displayName" required maxLength={60} defaultValue={me.displayName ?? ''} autoComplete="given-name" /><span className="small muted" style={{ fontWeight: 400 }}>{t.profile.nameHint}</span></label>
               <button className="btn btn--primary" style={{ marginTop: '0.5rem' }}>{saved ? t.profile.saved : t.profile.save}</button>
             </form>
-            {!me.demo && me.household && (
-              <label className="field" style={{ marginTop: '0.75rem' }}>
-                <span><Icon name="clock" />{t.profile.tz}</span>
-                <select
-                  className="input"
-                  defaultValue={me.household.tz}
-                  onChange={async (ev) => {
-                    setErr(null)
-                    try {
-                      await api('profile', { method: 'PATCH', body: { tz: ev.currentTarget.value } })
-                      await refresh()
-                    } catch (ex) {
-                      setErr(ex instanceof Error ? ex.message : t.common.error)
-                    }
-                  }}
-                >
-                  {zones(me.household.tz).map((z) => <option key={z} value={z}>{z.replace(/_/g, ' ')}</option>)}
-                </select>
-                <span className="small muted" style={{ fontWeight: 400 }}>{t.profile.tzHint}</span>
-              </label>
-            )}
             {err && <div className="notice notice--err" style={{ marginTop: '0.75rem' }}>{err}</div>}
             {me.mail && !me.demo && (
               <>

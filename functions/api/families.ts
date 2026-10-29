@@ -2,6 +2,8 @@ import { badRequest, conflict, created, notFound, ok, readJson, str } from '../_
 import { FULL, roomFor } from '../_lib/ceilings'
 import { authed } from '../_lib/route'
 import { newId, nowSec } from '../_lib/ids'
+import { napValue } from '../_lib/nap'
+import { cleanImportRows, insertFamilies } from '../_lib/importFamilies'
 
 // « Les familles amies » — the book. GET list · POST add · PATCH edit · DELETE (soft).
 // A reply on a link also updates the family's contact fields (functions/api/r/[token]).
@@ -18,7 +20,7 @@ export interface FamilyRow {
   linked_household_id: string | null
 }
 
-const FIELDS = 'id, parent_name, email, phone, child_first_name, child_birthdate, allergies, notes, linked_household_id, email_bounced_at'
+const FIELDS = 'id, parent_name, email, phone, child_first_name, child_birthdate, allergies, notes, linked_household_id, email_bounced_at, mail_stopped_at, nap_start, nap_end'
 
 export const onRequestGet = authed(async (ctx, actor) => {
   const { results } = await ctx.env.DB.prepare(`SELECT ${FIELDS} FROM friend_families WHERE household_id = ? AND deleted_at IS NULL ORDER BY child_first_name`)
@@ -27,7 +29,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
   return ok({ families: results })
 })
 
-type Body = { id?: string; parentName?: string; email?: string; phone?: string; childFirstName?: string; childBirthdate?: string | null; allergies?: string; notes?: string }
+type Body = { import?: unknown; id?: string; parentName?: string; email?: string; phone?: string; childFirstName?: string; childBirthdate?: string | null; allergies?: string; notes?: string; napStart?: string | null; napEnd?: string | null }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 function cleanDate(v: unknown): string | null {
@@ -42,16 +44,26 @@ function cleanEmail(v: unknown): string | null {
 
 export const onRequestPost = authed(async (ctx, actor) => {
   const body = await readJson<Body>(ctx.request)
+  // « Importer une liste »: many at once, all or nothing, a name already in the book is skipped.
+  if (body?.import !== undefined) {
+    const rows = cleanImportRows(body.import)
+    if (!rows) return badRequest('Liste invalide : prénom du parent, prénom de l’enfant, courriel facultatif, 40 lignes au plus.')
+    if ((await roomFor(ctx.env, 'families', actor.householdId)) < rows.length) return conflict(FULL.families)
+    return created(await insertFamilies(ctx.env.DB, actor.householdId, rows))
+  }
   const parentName = str(body?.parentName, 60)
   const childFirstName = str(body?.childFirstName, 40)
   if (!parentName || !childFirstName) return badRequest('Le prénom du parent et celui de l’enfant sont requis.')
+  const napStart = napValue(body?.napStart)
+  const napEnd = napValue(body?.napEnd)
+  if (napStart === false || napEnd === false) return badRequest('Heure invalide.')
   if ((await roomFor(ctx.env, 'families', actor.householdId)) < 1) return conflict(FULL.families)
   const id = newId()
   const ts = nowSec()
   await ctx.env.DB.prepare(
-    'INSERT INTO friend_families (id, household_id, parent_name, email, phone, child_first_name, child_birthdate, allergies, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO friend_families (id, household_id, parent_name, email, phone, child_first_name, child_birthdate, allergies, notes, nap_start, nap_end, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
   )
-    .bind(id, actor.householdId, parentName, cleanEmail(body?.email), str(body?.phone, 30), childFirstName, cleanDate(body?.childBirthdate), str(body?.allergies, 300), str(body?.notes, 1000), ts, ts)
+    .bind(id, actor.householdId, parentName, cleanEmail(body?.email), str(body?.phone, 30), childFirstName, cleanDate(body?.childBirthdate), str(body?.allergies, 300), str(body?.notes, 1000), napStart ?? null, napEnd ?? null, ts, ts)
     .run()
   return created({ id })
 })
@@ -60,6 +72,9 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   const body = await readJson<Body>(ctx.request)
   const id = str(body?.id, 20)
   if (!id) return badRequest('id requis.')
+  const napStart = napValue(body?.napStart)
+  const napEnd = napValue(body?.napEnd)
+  if (napStart === false || napEnd === false) return badRequest('Heure invalide.')
   const res = await ctx.env.DB.prepare(
     `UPDATE friend_families SET
        parent_name = COALESCE(?, parent_name),
@@ -70,6 +85,8 @@ export const onRequestPatch = authed(async (ctx, actor) => {
        child_birthdate = CASE WHEN ? THEN ? ELSE child_birthdate END,
        allergies = CASE WHEN ? THEN ? ELSE allergies END,
        notes = CASE WHEN ? THEN ? ELSE notes END,
+       nap_start = CASE WHEN ? THEN ? ELSE nap_start END,
+       nap_end = CASE WHEN ? THEN ? ELSE nap_end END,
        updated_at = ?
      WHERE id = ? AND household_id = ? AND deleted_at IS NULL`,
   )
@@ -87,6 +104,10 @@ export const onRequestPatch = authed(async (ctx, actor) => {
       str(body?.allergies, 300),
       body?.notes !== undefined ? 1 : 0,
       str(body?.notes, 1000),
+      napStart !== undefined ? 1 : 0,
+      napStart ?? null,
+      napEnd !== undefined ? 1 : 0,
+      napEnd ?? null,
       nowSec(),
       id,
       actor.householdId,

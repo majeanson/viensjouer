@@ -19,8 +19,12 @@ const ENTRY_GZ = 86 * KB
 // 2026-10-28: the shared chunk that held the French dictionary hit 16.5 KB after two raises, so French became its own
 // lazy chunk (i18n.fr, 9.8 KB), as English already was. The shared Icon chunk fell from 16.3 to 6.4 KB; the cap
 // ratcheted down to 11 KB. The entry did not move: both dictionaries load before the first render, in parallel.
-const CHUNK_GZ = 11 * KB
-const CSS_GZ = 5.5 * KB
+// 2026-10-29, decided on purpose and not a quiet raise: the French dictionary reached 11.1 KB with the features of that day (import,
+// unsubscribe, digest, Reporté, bounce). The cap goes to 12 KB: the text IS the product, and both dictionaries load in parallel
+// before the first render, so a KB there costs less than a KB of entry. The stylesheet goes 5.5 -> 6 KB (date pickers on iOS, the
+// credit line, large-text fixes). The entry stays at 86 KB (85.0 now): the next feature that grows it pays for itself elsewhere.
+const CHUNK_GZ = 12 * KB
+const CSS_GZ = 6 * KB
 
 const files = readdirSync(ASSETS)
 const gz = (f) => gzipSync(readFileSync(join(ASSETS, f))).length

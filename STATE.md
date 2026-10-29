@@ -12,9 +12,10 @@
 
 **Open, in order:**
 1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
-2. **Turn the bounce webhook on** (one human step, see the 2026-10-29 « last four » entry): add the endpoint in Resend and `wrangler secret put RESEND_WEBHOOK_SECRET`.
+2. **Human steps that switch things on** (each is optional, nothing breaks without it): the Resend bounce webhook (`RESEND_WEBHOOK_SECRET`), Turnstile (`TURNSTILE_SITE_KEY` in wrangler.toml + `wrangler secret put TURNSTILE_SECRET`), the owner's mail alert (`ADMIN_EMAIL`). Details in the « Everything else on the list » entry.
+3. The same « Bâti par marc.portal » line in the other repos (see memory), and the Babillard export/plan bridge (to discuss first).
 
-**Budgets (`npm run check:bundle`):** entry 84.8 / 86 KB, every other chunk under 11 KB, stylesheet 5.3 / 5.5 KB. Both dictionaries are lazy chunks (`i18n.fr`, `i18n.en`). Read the output for « exceeded », not only « ok ».
+**Budgets (`npm run check:bundle`):** entry 85.0 / 86 KB, lazy chunks 12 KB (French dictionary 11.1), stylesheet 5.5 / 6 KB. The dictionary and stylesheet caps were raised on purpose on 2026-10-29 (reasoning in `scripts/check-bundle.mjs`); the entry did not move. Read the output for « exceeded », not only « ok ».
 
 **Don't re-open (decided):** SMS, native app, push, discovery, ranking, hosts choosing their own two words, a class-wide shared code, the reply page opening offline (an answer tapped with no signal is already kept and sent later; the page itself needs a network).
 
@@ -290,6 +291,23 @@ Two read-only audits produced a ranked list; it is worked through in order, one 
 ### No keyboard pops by itself — 2026-10-29
 
 Opening a form or tapping a button never focuses a text field: the three `autoFocus` (group, child, family forms) are gone, and the board's refocus after sending or after an empty send goes through `focusIfFinePointer` (`src/lib/focus.ts`), which only focuses with a mouse-and-keyboard pointer. `noAutofocus.test.ts` fails on any `autoFocus` and on a `.focus()` outside the skip link, the route change and `focus.ts` (planted red once).
+
+### Everything else on the list — 2026-10-29
+
+- **Credit line**: `Credit` under every screen, « Bâti par marc.portal » linking to https://marcportal.com, as Horizon does; hidden in print.
+- **Naps of friends**: `friend_families.nap_start/nap_end` (migration 0020), typed by the host on the friend's form. The new-rencontre slots clear the EARLIEST nap start and the LATEST nap end of the host's child and every family picked (`napSlots` takes a list).
+- **Import friends**: « Importer une liste » on Amis (paste « parent, enfant, courriel », or the phone's contact picker where the browser has one). The page reads the paste first and names the lines it cannot read (`src/lib/importList.ts`); `POST /api/families { import: [...] }` re-checks, is all-or-nothing, skips a family already in the book (`_lib/importFamilies.ts`). The first-steps card links straight to it (`/amis?importer=1`).
+- **Home-screen offer**: `InstallOffer` on Rencontres after three different days, once (« Plus tard » is final), reusing `lib/install.ts`.
+- **CASL**: every email to a friend family ends with « ne plus recevoir » (`withUnsubscribe`: a link to `/stop/<code>` and the one-click `List-Unsubscribe` headers). `friend_families.mail_stopped_at` is set by `POST /api/r/<code>/stop-mail` (an invitation's or a window's code) and undone from the same page. Nothing is emailed to a stopped family or one whose address bounced (invitation, window, update, thanks, reminders); the host sees « Ne veut plus de courriels » / « Courriel non reçu » on the card and on Amis. Editing the address clears the bounce, never the stop.
+- **A real From**: mail a host sends to a friend reads « Marc via Viens jouer », with Reply-To set to the host's own sign-in address (so the guest sees it). The sending address is still the app's.
+- **Monday digest**: opt-in (Compte, Profil), one email Monday 7 h to 11 h in the household's zone, the coming week with who said what, nothing when the week is empty, counted in the mail budget (`_lib/digest.ts`).
+- **Turnstile**: on signup and forgot-password, only when `TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET` are both set (fails closed when the check cannot be made). The CSP now allows challenges.cloudflare.com (script + frame) and the privacy page says so. **To turn on**: create a Turnstile widget for jouer.marcportal.com, put its site key in `wrangler.toml` [vars], `wrangler secret put TURNSTILE_SECRET`.
+- **Ops**: the hourly cron stamps `cron_beats`, `/api/health` reports `cronAgeSec`, and the production check (`stranger.yml`, now nightly) fails when it is over three hours, so GitHub emails you. With `ADMIN_EMAIL` set, the app also emails you once a day when the last 24 h pass 80 of Resend's 100.
+- **WebKit in CI**: Playwright has a second project on WebKit (the iPhone engine) running the tests tagged `@webkit` (date pickers, 320 px and 200 % text fits). Locally it cannot reproduce the iOS spill, so those tests also pin the cause.
+- **Large text**: the host screens and the reply page are tested at 200 % text on a 375 px screen; the roster row was spilling and is fixed.
+- **Shared API shape**: `src/lib/replyCard.ts` is the page's card type plus its key lists; `replyCard.test.ts` runs the real handler and compares.
+- **Checked and not done**: « faster unit tests » (the 150 s was summed across parallel workers; the whole suite runs in about ten seconds).
+- **Budgets** raised on purpose, see the front door.
 
 ### The last four — 2026-10-29
 

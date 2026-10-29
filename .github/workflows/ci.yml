@@ -43,7 +43,7 @@ jobs:
           node-version: 26
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm run e2e:ci
 
   # The real walk: the built app on the real Worker with a real local D1/R2, a host and an invited parent in two

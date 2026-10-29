@@ -4,7 +4,7 @@ import { authed } from '../_lib/route'
 import { freshLinkCode, newId, nowSec, paperCode, whenLong } from '../_lib/ids'
 import { mailEnabled, sendMail } from '../_lib/mail'
 import { mailLang } from '../_lib/lang'
-import { windowMail } from '../_lib/mailCopy'
+import { windowMail, withUnsubscribe } from '../_lib/mailCopy'
 import { isDemoEmail } from '../_lib/demo'
 
 // « Une fenêtre ouverte » — host side. An offer of time (we are free Sunday afternoon) to
@@ -79,7 +79,7 @@ export const onRequestPut = authed(async (ctx, actor) => {
   const targetId = str(body?.targetId, 20)
   if (!targetId) return badRequest('targetId requis.')
   const row = await ctx.env.DB.prepare(
-    `SELECT t.token, f.lang, f.email, f.parent_name, f.child_first_name, w.starts_at, w.ends_at, w.note, c.first_name AS host_child, h.tz
+    `SELECT t.token, f.lang, f.email, f.mail_stopped_at, f.email_bounced_at, f.parent_name, f.child_first_name, w.starts_at, w.ends_at, w.note, c.first_name AS host_child, h.tz
        FROM window_targets t
        JOIN open_windows w ON w.id = t.window_id
        JOIN friend_families f ON f.id = t.friend_family_id
@@ -88,14 +88,16 @@ export const onRequestPut = authed(async (ctx, actor) => {
       WHERE t.id = ? AND w.household_id = ? AND w.deleted_at IS NULL`,
   )
     .bind(targetId, actor.householdId)
-    .first<{ token: string; lang: string | null; email: string | null; parent_name: string; child_first_name: string; starts_at: number; ends_at: number; note: string | null; host_child: string; tz: string }>()
+    .first<{ token: string; lang: string | null; email: string | null; mail_stopped_at: number | null; email_bounced_at: number | null; parent_name: string; child_first_name: string; starts_at: number; ends_at: number; note: string | null; host_child: string; tz: string }>()
   if (!row) return notFound()
   if (!row.email) return badRequest('Cette famille n’a pas de courriel — copie le lien.')
+  if (row.mail_stopped_at) return badRequest('Cette famille ne veut plus de courriels de l’app — copie le lien.')
+  if (row.email_bounced_at) return badRequest('Le dernier courriel à cette adresse n’est pas arrivé : vérifie l’adresse, ou copie le lien.')
   if ((await mailRoom(ctx.env, actor.householdId)) < 1) return tooManyRequests(MAIL_CAP_MESSAGE)
   const link = `${new URL(ctx.request.url).origin}/w/${paperCode(row.token)}`
   const lang = mailLang(row.lang, ctx.request)
   const when = whenLong(row.starts_at, lang, row.tz)
-  await sendMail(ctx.env, { to: row.email, ...windowMail(lang, { parent: row.parent_name, host: actor.displayName, hostChild: row.host_child, child: row.child_first_name, when, note: row.note, link }) })
+  await sendMail(ctx.env, { to: row.email, fromName: actor.displayName, replyTo: actor.email, ...withUnsubscribe(lang, new URL(ctx.request.url).origin, row.token, windowMail(lang, { parent: row.parent_name, host: actor.displayName, hostChild: row.host_child, child: row.child_first_name, when, note: row.note, link })) })
   await recordMail(ctx.env, actor.householdId)
   return ok()
 })

@@ -1,6 +1,7 @@
 import type { Env } from '../../_lib/env'
 import { badRequest, ok, readJson, serviceUnavailable, tooManyRequests } from '../../_lib/json'
-import { overAuthLimit } from '../../_lib/rateLimit'
+import { clientIp, overAuthLimit } from '../../_lib/rateLimit'
+import { TURNSTILE_MESSAGE, turnstilePasses } from '../../_lib/turnstile'
 import { mailEnabled, sendMail } from '../../_lib/mail'
 import { mailLang } from '../../_lib/lang'
 import { resetMail } from '../../_lib/mailCopy'
@@ -16,7 +17,8 @@ const RESET_MAX_OPEN = 3
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (!mailEnabled(ctx.env)) return serviceUnavailable('L’envoi de courriels n’est pas branché.')
   if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
-  const body = await readJson<{ email?: string }>(ctx.request)
+  const body = await readJson<{ email?: string; turnstile?: string }>(ctx.request)
+  if (!(await turnstilePasses(ctx.env, body?.turnstile, clientIp(ctx.request)))) return badRequest(TURNSTILE_MESSAGE)
   const email = body?.email?.trim().toLowerCase()
   if (!email || !EMAIL_RE.test(email)) return badRequest('Courriel invalide.')
   if (await overAuthLimit(ctx.env, ctx.request, `forgot:${email}`)) return tooManyRequests()

@@ -96,6 +96,7 @@ export function Account() {
                 {([
                   ['remindHost', !!me.remindHost, t.profile.remindHost, t.profile.remindHostHint],
                   ['notifyAnswers', !!me.notifyAnswers, t.profile.notifyAnswers, t.profile.notifyAnswersHint],
+                  ['weeklyDigest', !!me.weeklyDigest, t.profile.weeklyDigest, t.profile.weeklyDigestHint],
                 ] as const).map(([key, on, label, hint]) => (
                   <label key={key} className="check" style={{ marginTop: '1rem' }}>
                     <input

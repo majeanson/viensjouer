@@ -7,7 +7,7 @@ import type { Env } from './env'
 import { mailEnabled, sendMail } from './mail'
 import { mailRoom, recordMail } from './mailBudget'
 import { mailLang } from './lang'
-import { hostReminderMail, reminderMail } from './mailCopy'
+import { hostReminderMail, reminderMail, withUnsubscribe } from './mailCopy'
 import { nowSec, paperCode, whenLong } from './ids'
 
 interface Due {
@@ -67,7 +67,7 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
        JOIN households h ON h.id = e.household_id
        JOIN children c ON c.id = e.child_id
       WHERE i.remind_at IS NOT NULL AND i.remind_at <= ? AND i.reminded_at IS NULL
-        AND f.deleted_at IS NULL AND (i.reply IS NULL OR i.reply != 'no')
+        AND f.deleted_at IS NULL AND f.mail_stopped_at IS NULL AND f.email_bounced_at IS NULL AND (i.reply IS NULL OR i.reply != 'no')
         AND e.deleted_at IS NULL AND e.status NOT IN ('cancelled', 'postponed') AND e.starts_at > ?
       LIMIT 100`,
   )
@@ -86,7 +86,7 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
     const when = whenLong(d.starts_at, lang, d.tz)
     const link = `${origin}/${paperCode(d.token)}`
     try {
-      await sendMail(env, { to: d.email, ...reminderMail(lang, { parent: d.parent_name, title: d.title, hostChild: d.host_child, when, place: d.place, link }) })
+      await sendMail(env, { to: d.email, ...withUnsubscribe(lang, origin, d.token, reminderMail(lang, { parent: d.parent_name, title: d.title, hostChild: d.host_child, when, place: d.place, link })) })
       sent++
       rooms.set(d.household_id, (rooms.get(d.household_id) ?? 1) - 1)
       await recordMail(env, d.household_id)

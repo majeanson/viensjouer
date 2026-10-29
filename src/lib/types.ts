@@ -19,9 +19,12 @@ export interface Family {
   parent_name: string
   email: string | null
   email_bounced_at?: number | null
+  mail_stopped_at?: number | null
   phone: string | null
   child_first_name: string
   child_birthdate: string | null
+  nap_start?: string | null
+  nap_end?: string | null
   allergies: string | null
   notes: string | null
   linked_household_id: string | null
@@ -69,6 +72,7 @@ export interface Invitation {
   child_first_name: string
   email: string | null
   email_bounced_at?: number | null
+  mail_stopped_at?: number | null
   allergies: string | null
   adults: number | null
   kids: number | null

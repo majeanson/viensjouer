@@ -139,6 +139,9 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .linkrow:first-of-type { border-top: 0; }
 .paper { font-family: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace; font-size: 1.05rem; letter-spacing: 0.03em; padding: 0.4rem 0.6rem; border: 1px dashed var(--muted); border-radius: var(--radius); background: var(--paper); word-break: break-all; user-select: all; }
 .footer { text-align: center; padding: 2rem 0; }
+.credit { max-width: 640px; margin: 0 auto; padding: 0 var(--gutter); text-align: center; }
+.shell + .credit { margin-top: -3rem; padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
+@media print { .credit { display: none; } }
 
 .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem; }
 .photo { position: relative; margin: 0; aspect-ratio: 1; border-radius: var(--radius); overflow: hidden; background: var(--paper); }
@@ -177,8 +180,8 @@ textarea.input { min-height: 5rem; resize: vertical; }
 /* Who is coming. */
 .roster__row { display: flex; gap: 0.6rem; padding: 0.4rem 0; border-top: 1px solid var(--line); align-items: baseline; }
 .roster__row:first-of-type { border-top: 0; }
-.roster__row > strong { flex: 0 0 8.5rem; }
-.roster__names { color: var(--ink); }
+.roster__row > strong { flex: 0 0 min(8.5rem, 40%); }
+.roster__names { color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
 
 /* A fold: one summary line, the rest on demand. */
 .fold { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--card); margin-bottom: 0.75rem; }

@@ -10,6 +10,7 @@ const Children = lazy(() => import('./pages/Children').then((m) => ({ default: m
 const Friends = lazy(() => import('./pages/Friends').then((m) => ({ default: m.Friends })))
 const Reply = lazy(() => import('./pages/Reply').then((m) => ({ default: m.Reply })))
 const Join = lazy(() => import('./pages/Join').then((m) => ({ default: m.Join })))
+const StopMail = lazy(() => import('./pages/StopMail').then((m) => ({ default: m.StopMail })))
 const Keep = lazy(() => import('./pages/Keep').then((m) => ({ default: m.Keep })))
 const Privacy = lazy(() => import('./pages/Privacy').then((m) => ({ default: m.Privacy })))
 const Account = lazy(() => import('./pages/Account').then((m) => ({ default: m.Account })))
@@ -18,6 +19,7 @@ const WindowReply = lazy(() => import('./pages/WindowReply').then((m) => ({ defa
 const Forgot = lazy(() => import('./pages/Forgot').then((m) => ({ default: m.Forgot })))
 const Reset = lazy(() => import('./pages/Forgot').then((m) => ({ default: m.Reset })))
 import { Shell } from './components/Shell'
+import { Credit } from './components/Credit'
 import { useT } from './i18n'
 import { CODE_RE } from './lib/link'
 import { usePageTitle } from './lib/pageTitle'
@@ -60,6 +62,7 @@ export function AppRoutes() {
       <Route path="/confidentialite" element={<Privacy />} />
       <Route path="/compte" element={<Private><Account /></Private>} />
       <Route path="/garder" element={<Keep />} />
+      <Route path="/stop/:token" element={<StopMail />} />
       <Route path="/rejoindre" element={<Join />} />
       <Route path="/oubli" element={<Forgot />} />
       <Route path="/reinitialiser" element={<Reset />} />
@@ -67,6 +70,7 @@ export function AppRoutes() {
       <Route path="/:token" element={<CodeOrHome />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    <Credit />
     </Suspense>
     </ErrorBoundary>
   )

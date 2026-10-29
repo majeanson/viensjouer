@@ -22,3 +22,14 @@ describe('clockLabel', () => {
     expect(clockLabel('00:15', 'en')).toBe('12:15 am')
   })
 })
+
+describe('napSlots with several children', () => {
+  it('clears the earliest start and the latest end of everyone picked', () => {
+    const slots = napSlots([{ nap_start: '13:00', nap_end: '14:30' }, { nap_start: '12:00', nap_end: '15:00' }])
+    expect(slots).toEqual({ before: '10:00', after: '15:00' })
+  })
+  it('ignores a child with no nap, and falls back when nobody has one', () => {
+    expect(napSlots([{}, { nap_start: '13:00', nap_end: '14:30' }])).toEqual({ before: '11:00', after: '14:30' })
+    expect(napSlots([{}, { nap_start: null, nap_end: null }])).toEqual({ before: '10:00', after: '15:00' })
+  })
+})

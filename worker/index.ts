@@ -8,6 +8,8 @@ import { forbidden, notFound, serverError } from '../functions/_lib/json'
 import { withSecurityHeaders } from '../functions/_lib/securityHeaders'
 import { sendDueReminders, sendHostReminders } from '../functions/_lib/reminders'
 import { tidy } from '../functions/_lib/lifecycle'
+import { sendWeeklyDigests } from '../functions/_lib/digest'
+import { beat } from '../functions/_lib/beats'
 import { warnIfMailNearFree } from '../functions/_lib/mailBudget'
 import { csrfExempt, matchRoute, type RouteMod } from './routes'
 import { previewFor, withPreview } from './preview'
@@ -96,7 +98,9 @@ export default {
     const jobs: [string, Promise<unknown>][] = [
       ['reminders', sendDueReminders(env, 'https://jouer.marcportal.com')],
       ['host reminders', sendHostReminders(env, 'https://jouer.marcportal.com')],
+      ['weekly digest', sendWeeklyDigests(env, 'https://jouer.marcportal.com')],
       ['tidy', tidy(env)],
+      ['heartbeat', beat(env, 'cron')],
       ['mail headroom', warnIfMailNearFree(env)],
     ]
     // One job failing is named in the log and never stops the others.

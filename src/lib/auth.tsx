@@ -14,6 +14,7 @@ interface Me {
   soloHost?: boolean
   remindHost?: boolean
   notifyAnswers?: boolean
+  weeklyDigest?: boolean
 }
 
 interface AuthState {

@@ -10,6 +10,7 @@ import { paperCode } from '../lib/link'
 import type { Child, Encounter, Family, InvitationSummary } from '../lib/types'
 import { Icon, BigAction, kindIcon } from '../components/Icon'
 import { PartnerNudge } from '../components/PartnerNudge'
+import { InstallOffer } from '../components/InstallOffer'
 
 type Reply = 'yes' | 'no' | 'maybe' | null
 type CalItem =
@@ -116,6 +117,7 @@ export function Encounters() {
     <>
       <h1>{t.encounters.title}</h1>
       <PartnerNudge ready={past.length > 0} />
+      <InstallOffer />
       {!nothing && <BigAction icon="calendar" href="/rencontres/nouvelle" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}
       {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && (
@@ -127,6 +129,7 @@ export function Encounters() {
             <li className={noChild || noFriend ? '' : 'now'}>{noChild || noFriend ? t.first.later : t.first.go}</li>
           </ol>
           {noChild ? <Link to="/enfants" className="btn btn--primary">{t.first.childBtn}</Link> : noFriend ? <Link to="/amis" className="btn btn--primary">{t.first.friendBtn}</Link> : <Link to="/rencontres/nouvelle" className="btn btn--primary">{t.encounters.new}</Link>}
+          {!noChild && noFriend && <Link to="/amis?importer=1" className="btn" style={{ marginLeft: '0.5rem' }}>{t.families.importOpen}</Link>}
         </div>
       )}
       {ready && !nothing && ahead.length === 0 && <p className="muted">{t.encounters.empty}</p>}

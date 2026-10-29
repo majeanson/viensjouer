@@ -87,3 +87,27 @@ describe('sendDueReminders', () => {
     expect(await sendDueReminders(e, 'https://x.test')).toBe(0)
   })
 })
+
+describe('sendDueReminders suppression', () => {
+  const run = async (sql: string) => {
+    const { db, env } = realDb()
+    seed(db, dayZone())
+    db.exec(sql)
+    vi.stubGlobal('fetch', async () => new Response('{"id":"x"}', { status: 200 }))
+    const e = { ...env, RESEND_API_KEY: 'k', MAIL_FROM: 'a@b.c' } as typeof env
+    return sendDueReminders(e, 'https://x.test')
+  }
+  it('sends nothing to a family that asked to stop, or whose address bounced', async () => {
+    expect(await run("UPDATE friend_families SET mail_stopped_at = 5 WHERE id = 'ok'")).toBe(0)
+    expect(await run("UPDATE friend_families SET email_bounced_at = 5 WHERE id = 'ok'")).toBe(0)
+  })
+  it('puts the unsubscribe link and header in the reminder', async () => {
+    const { db, env } = realDb()
+    seed(db, dayZone())
+    let seen: { headers?: Record<string, string>; text?: string } = {}
+    vi.stubGlobal('fetch', async (_u: string, init: { body: string }) => ((seen = JSON.parse(init.body)), new Response('{"id":"x"}', { status: 200 })))
+    await sendDueReminders({ ...env, RESEND_API_KEY: 'k', MAIL_FROM: 'a@b.c' } as typeof env, 'https://x.test')
+    expect(seen.headers?.['List-Unsubscribe']).toContain('/api/r/tok-i-ok/stop-mail')
+    expect(seen.text).toContain('/stop/')
+  })
+})

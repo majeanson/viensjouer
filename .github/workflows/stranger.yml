@@ -1,11 +1,11 @@
 name: Stranger walk (production)
 
-# Once a week, and on demand: the same walk as `npm run e2e:real` (host + invited parent, board, bring, edit,
+# Every night, and on demand: the same walk as `npm run e2e:real` (host + invited parent, board, bring, edit,
 # pictures, erasure) but against the DEPLOYED app, through « Essayer sans compte ». The sandbox it makes can send
 # no mail and erases itself, so nothing leaves and nothing stays. Signal only.
 on:
   schedule:
-    - cron: '17 9 * * 1'
+    - cron: '17 9 * * *'
   workflow_dispatch:
 
 jobs:
@@ -19,6 +19,13 @@ jobs:
           node-version: 26
           cache: npm
       - run: npm ci
+      # The hourly cron stamps a heartbeat; /api/health says how long ago. More than three hours (or never) fails this run, so
+      # GitHub emails you instead of a parent finding out that a reminder never came.
+      - name: The hourly cron is alive
+        run: |
+          age=$(curl -fsS https://jouer.marcportal.com/api/health | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).cronAgeSec ?? 'null'))")
+          echo "the cron last ran $age seconds ago"
+          [ "$age" != "null" ] && [ "$age" -lt 10800 ]
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e:prod
         env:

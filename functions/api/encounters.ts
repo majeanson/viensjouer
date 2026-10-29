@@ -8,7 +8,7 @@ import { REMIND_LEAD_SEC } from '../_lib/reminders'
 import { mailEnabled, sendMail } from '../_lib/mail'
 import { mailLang, requestLang } from '../_lib/lang'
 import { MAX_MESSAGES } from '../_lib/board'
-import { updateMail } from '../_lib/mailCopy'
+import { updateMail, withUnsubscribe } from '../_lib/mailCopy'
 import { isDemoEmail } from '../_lib/demo'
 import { mailRoom, recordMail } from '../_lib/mailBudget'
 import { cleanDetails, defaultScope, hereAllowed, isScope, parseDetails, type Scope } from '../_lib/kinds'
@@ -34,6 +34,7 @@ interface InviteRow {
   child_first_name: string
   email: string | null
   email_bounced_at: number | null
+  mail_stopped_at: number | null
   allergies: string | null
   adults: number | null
   kids: number | null
@@ -41,7 +42,7 @@ interface InviteRow {
 }
 
 const INVITE_SELECT = `SELECT i.id, i.friend_family_id, i.token, i.reply, i.reply_note, i.reply_at, i.sent_at,
-                              f.parent_name, f.child_first_name, f.email, f.email_bounced_at, f.allergies, i.adults, i.kids, i.scope
+                              f.parent_name, f.child_first_name, f.email, f.email_bounced_at, f.mail_stopped_at, f.allergies, i.adults, i.kids, i.scope
                          FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id`
 
 export const onRequestGet = authed(async (ctx, actor) => {
@@ -200,7 +201,7 @@ export const onRequestPatch = authed(async (ctx, actor) => {
     const now = await ctx.env.DB.prepare('SELECT title, status FROM encounters WHERE id = ?').bind(id).first<{ title: string; status: Status }>()
     if (!now || (now.status !== 'cancelled' && now.status !== 'postponed')) return badRequest('Rien à annoncer.')
     if (!mailEnabled(ctx.env) || isDemoEmail(actor.email)) return ok({ notified: 0, notifiedSkipped: 0 })
-    const r = await notifyChange(ctx.env, ctx.request, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, now.title, [{ field: 'status', old: null, new: now.status }], str(body.reason, 200))
+    const r = await notifyChange(ctx.env, ctx.request, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, now.title, [{ field: 'status', old: null, new: now.status }], str(body.reason, 200), actor.email)
     return ok({ notified: r.sent, notifiedSkipped: r.skipped })
   }
   if (typeof body?.showGuests === 'boolean') await ctx.env.DB.prepare('UPDATE encounters SET show_guests = ?, updated_at = ? WHERE id = ?').bind(body.showGuests ? 1 : 0, nowSec(), id).run()
@@ -288,17 +289,17 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   // « Prévenir les familles »: one email to each family that has an address and did not say no.
   let notified = 0
   let notifiedSkipped = 0
-  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) ({ sent: notified, skipped: notifiedSkipped } = await notifyChange(ctx.env, ctx.request, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes, reasonText))
+  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) ({ sent: notified, skipped: notifiedSkipped } = await notifyChange(ctx.env, ctx.request, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes, reasonText, actor.email))
   return ok({ changed: changes.length, notified, notifiedSkipped })
 })
 
-async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Request, householdId: string, origin: string, hostName: string, encounterId: string, title: string, changes: Change[], reason: string | null = null): Promise<{ sent: number; skipped: number }> {
+async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Request, householdId: string, origin: string, hostName: string, encounterId: string, title: string, changes: Change[], reason: string | null = null, hostEmail?: string): Promise<{ sent: number; skipped: number }> {
   const { results } = await env.DB.prepare(
     `SELECT i.token, f.email, f.lang, f.parent_name, h.tz FROM invitations i
        JOIN friend_families f ON f.id = i.friend_family_id
        JOIN encounters e ON e.id = i.encounter_id
        JOIN households h ON h.id = e.household_id
-      WHERE i.encounter_id = ? AND f.email IS NOT NULL AND f.deleted_at IS NULL AND (i.reply IS NULL OR i.reply != 'no') LIMIT 40`,
+      WHERE i.encounter_id = ? AND f.email IS NOT NULL AND f.mail_stopped_at IS NULL AND f.email_bounced_at IS NULL AND f.deleted_at IS NULL AND (i.reply IS NULL OR i.reply != 'no') LIMIT 40`,
   )
     .bind(encounterId)
     .all<{ token: string; email: string; lang: string | null; parent_name: string; tz: string }>()
@@ -308,7 +309,7 @@ async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Req
     const lang = mailLang(r.lang, request)
     const link = `${origin}/${paperCode(r.token)}`
     try {
-      await sendMail(env, { to: r.email, ...updateMail(lang, { parent: r.parent_name, host: hostName, title, lines: [...changeLines(changes, r.tz, lang), ...(reason ? [`${lang === 'fr' ? 'Le mot de l’hôte' : 'A word from the host'} : ${reason}`] : [])], link }) })
+      await sendMail(env, { to: r.email, fromName: hostName, replyTo: hostEmail, ...withUnsubscribe(lang, origin, r.token, updateMail(lang, { parent: r.parent_name, host: hostName, title, lines: [...changeLines(changes, r.tz, lang), ...(reason ? [`${lang === 'fr' ? 'Le mot de l’hôte' : 'A word from the host'} : ${reason}`] : [])], link })) })
       sent++
     } catch (err) {
       console.error('[mail] change', err)

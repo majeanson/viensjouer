@@ -225,7 +225,7 @@ test('the friends list is one list: groups as tags, the app badge, and the circl
   await expect(page).toHaveURL(/\/rencontres$/)
 })
 
-test('the host screens have no serious accessibility violation and nothing bleeds off a 320px screen', async ({ page }) => {
+test('the host screens have no serious accessibility violation and nothing bleeds off a 320px screen @webkit', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 })
   await host(page, {
     'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie', { linked_household_id: 'hh2', email: 'j@example.com' })] } }),
@@ -663,7 +663,7 @@ test('after cancelling, the host can tell the families why, on the board they se
 // Chromium cannot reproduce the spill, so this pins the cause (native chrome off, free to shrink) AND the outcome
 // (every picker inside its card and the screen, side-by-side pickers never overlapping), at two phone widths.
 for (const width of [320, 375]) {
-  test(`date and time pickers stay inside their card at ${width}px`, async ({ page }) => {
+  test(`date and time pickers stay inside their card at ${width}px @webkit`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 })
     await host(page)
     const check = async (where: string) => {
@@ -774,4 +774,37 @@ test('a family whose email bounced is marked on the card and in the friends list
   await page.goto('/amis')
   await expect(page.getByText('Courriel non reçu')).toBeVisible()
   await expect(page.getByText('Vérifie l’adresse, ou envoie-lui le lien par texto.')).toBeVisible()
+});
+
+// Large text: people set their phone's text to 200 % and the app must still fit its screen (nothing past the right edge,
+// no sideways scroll). Emulated by doubling the root font size, which every rem in the stylesheet follows.
+test('the host screens still fit a 375px screen with the text at 200% @webkit', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 800 })
+  await host(page, {
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie', { email: 'j@example.com' })] } }),
+    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes', { email: 'j@example.com' })]) } : { json: { encounters: [enc()], invitations: [] } }),
+  })
+  const stretch = () => page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+  const overflowing = () =>
+    page.evaluate(() => {
+      const vw = document.documentElement.clientWidth
+      return [...document.querySelectorAll<HTMLElement>('body *')]
+        .filter((el) => el.offsetParent !== null && !el.closest('.toasts') && !el.closest('.nav'))
+        .map((el) => ({ tag: el.tagName, cls: el.className?.toString?.() ?? '', right: Math.round(el.getBoundingClientRect().right) }))
+        .filter((x) => x.right > vw + 1)
+    })
+  for (const path of ['/rencontres', '/rencontres/e1', '/rencontres/nouvelle', '/amis', '/enfants', '/compte']) {
+    await page.goto(path)
+    await expect(page.locator('h1').first()).toBeVisible()
+    await stretch()
+    expect(await overflowing(), path).toEqual([])
+  }
+  await page.goto('/amis')
+  await page.getByRole('button', { name: 'Nouvelle famille' }).click()
+  await stretch()
+  expect(await overflowing(), 'amis form').toEqual([])
+  await page.goto('/enfants')
+  await page.getByRole('button', { name: 'Ajouter un enfant' }).click()
+  await stretch()
+  expect(await overflowing(), 'enfants form').toEqual([])
 });

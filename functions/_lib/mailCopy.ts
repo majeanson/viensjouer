@@ -2,6 +2,7 @@
 // Plain text and HTML are built together so they cannot drift. French is the house language; English is the
 // same message, not a different one.
 import { escapeHtml } from './mail'
+import { paperCode } from './ids'
 import type { MailLang } from './lang'
 
 export interface MailBody {
@@ -14,6 +15,19 @@ const pick = (lang: MailLang, fr: string, en: string) => (lang === 'fr' ? fr : e
 const p = (s: string) => `<p>${s}</p>`
 const e = escapeHtml
 const SIGN = '— Viens jouer'
+
+// Every email to a friend family ends with a way to stop them (CASL): a plain link to /stop/<code>, and the one-click
+// List-Unsubscribe header mail apps show as an « Unsubscribe » button. The code is the family's own invitation / window code.
+export function withUnsubscribe(lang: MailLang, origin: string, token: string, mail: MailBody): MailBody & { headers: Record<string, string> } {
+  const page = `${origin}/stop/${paperCode(token)}`
+  const line = pick(lang, 'Tu ne veux plus recevoir de courriels de Viens jouer ?', 'No longer want email from Viens jouer?')
+  return {
+    ...mail,
+    text: `${mail.text}\n\n${line} ${page}`,
+    html: `${mail.html}<p style="font-size:12px;color:#777">${e(line)} <a href="${page}">${pick(lang, 'Ne plus en recevoir', 'Stop these emails')}</a></p>`,
+    headers: { 'List-Unsubscribe': `<${origin}/api/r/${token}/stop-mail>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+  }
+}
 
 export function invitationMail(lang: MailLang, v: { parent: string; host: string; hostChild: string; child: string; title: string; when: string; friendOnly: boolean; link: string }): MailBody {
   const who = pick(
@@ -169,5 +183,20 @@ ${SIGN}`,
       p(`Bonjour ${e(v.name)},`) + p(`${e(v.guestParent)} a répondu <strong>« ${e(word)} »</strong> pour ${e(v.guestChild)} : ${e(v.title)}, ${e(v.when)}.`) + p(`<a href="${v.link}">La page de la rencontre</a>`) + `<p class="small">${e(foot)}</p>` + p(SIGN),
       p(`Hello ${e(v.name)},`) + p(`${e(v.guestParent)} answered <strong>“${e(word)}”</strong> for ${e(v.guestChild)}: ${e(v.title)}, ${e(v.when)}.`) + p(`<a href="${v.link}">The get-together page</a>`) + `<p class="small">${e(foot)}</p>` + p(SIGN),
     ),
+  }
+}
+
+// The Monday digest to a host who asked for it: the coming week, rencontre by rencontre, with who said what.
+export function digestMail(lang: MailLang, v: { name: string; items: { title: string; when: string; yes: number; maybe: number; waiting: number; link: string }[]; link: string }): MailBody {
+  const count = (i: { yes: number; maybe: number; waiting: number }) =>
+    pick(lang, `${i.yes} oui, ${i.maybe} peut-être, ${i.waiting} sans réponse`, `${i.yes} yes, ${i.maybe} maybe, ${i.waiting} no answer yet`)
+  const n = v.items.length
+  const lines = v.items.map((i) => `• ${i.when} : ${i.title} (${count(i)})\n  ${i.link}`).join('\n')
+  const intro = pick(lang, `Bonjour ${v.name}, voici ta semaine.`, `Hello ${v.name}, here is your week.`)
+  const off = pick(lang, 'Tu peux couper ce courriel du lundi dans Compte, Profil.', 'You can turn this Monday email off in Account, Profile.')
+  return {
+    subject: pick(lang, `Ta semaine : ${n} rencontre${n > 1 ? 's' : ''}`, `Your week: ${n} get-together${n > 1 ? 's' : ''}`),
+    text: `${intro}\n\n${lines}\n\n${v.link}\n\n${off}\n\n${SIGN}`,
+    html: p(e(intro)) + `<ul>${v.items.map((i) => `<li><a href="${i.link}">${e(i.when)} : ${e(i.title)}</a> (${e(count(i))})</li>`).join('')}</ul>` + p(`<a href="${v.link}">${pick(lang, 'Ouvrir Viens jouer', 'Open Viens jouer')}</a>`) + p(e(off)) + p(SIGN),
   }
 }

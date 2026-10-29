@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth'
 import { useT } from '../i18n'
 import { Header } from '../components/Header'
 import { Icon } from '../components/Icon'
+import { Turnstile } from '../components/Turnstile'
 import { CODE_RE } from '../lib/link'
 
 // The front door: one sentence, sign in or create an account, or try it. A signed-in parent
@@ -27,7 +28,7 @@ export function Door() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [cardErr, setCardErr] = useState(false)
-  const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ invite: boolean; mail: boolean }>('health'), staleTime: 60_000 })
+  const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ invite: boolean; mail: boolean; turnstile?: string | null }>('health'), staleTime: 60_000 })
 
   useEffect(() => {
     if (!loading && me.signedIn) nav('/rencontres', { replace: true })
@@ -87,6 +88,7 @@ export function Door() {
         {mode === 'signup' && <label className="field"><span><Icon name="user" />{t.auth.displayName}</span><input className="input" name="displayName" required maxLength={60} autoComplete="given-name" /></label>}
         <label className="field"><span><Icon name="mail" />{t.auth.email}</span><input className="input" name="email" type="email" required autoComplete="email" /></label>
         <label className="field"><span><Icon name="lock" />{t.auth.password}</span><input className="input" name="password" type="password" required minLength={8} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} /></label>
+        {mode === 'signup' && health.data?.turnstile && <Turnstile siteKey={health.data.turnstile} />}
         {mode === 'signup' && health.data?.invite && <label className="field"><span>{t.auth.invite}</span><input className="input" name="invite" required /></label>}
         {err && <div className="notice notice--err">{err}</div>}
         <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : mode === 'login' ? t.auth.submitLogin : t.auth.submitSignup}</button>

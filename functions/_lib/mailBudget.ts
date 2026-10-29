@@ -5,6 +5,8 @@
 // skipped until a later run. Not counted: the test mail (to oneself, rate-limited). Callers ask `mailRoom` first, send at most that many, then `recordMail` what actually left.
 import type { Env } from './env'
 import { newId, nowSec } from './ids'
+import { mailEnabled, sendMail } from './mail'
+import { beat, beatAge } from './beats'
 
 export const MAIL_DAILY_CAP = 60
 export const MAIL_KEEP_SEC = 2 * 24 * 3600
@@ -32,7 +34,15 @@ export const HEADROOM_WARN_AT = 80
 export async function warnIfMailNearFree(env: Env): Promise<number> {
   const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM mail_sends WHERE created_at > ?').bind(nowSec() - DAY).first<{ n: number }>()
   const n = row?.n ?? 0
-  if (n >= HEADROOM_WARN_AT) console.warn(`[mail] ${n} of ${RESEND_FREE_DAILY} free emails used in the last 24 h`)
+  if (n >= HEADROOM_WARN_AT) {
+    console.warn(`[mail] ${n} of ${RESEND_FREE_DAILY} free emails used in the last 24 h`)
+    // And one email to the owner, at most once a day, when ADMIN_EMAIL is set (a log line nobody reads is not an alert).
+    const last = await beatAge(env, 'mail80')
+    if (env.ADMIN_EMAIL && mailEnabled(env) && (last === null || last > 20 * 3600)) {
+      await beat(env, 'mail80')
+      await sendMail(env, { to: env.ADMIN_EMAIL, subject: `Viens jouer : ${n} courriels sur ${RESEND_FREE_DAILY} aujourd’hui`, text: `${n} courriels sont partis ces dernières 24 h, sur ${RESEND_FREE_DAILY} gratuits chez Resend. Au-delà, les envois échouent jusqu’au lendemain.` }).catch((err) => console.error('[mail] admin alert', err))
+    }
+  }
   return n
 }
 

@@ -1,3 +1,4 @@
+import { napValue } from '../_lib/nap'
 import { badRequest, conflict, created, notFound, ok, readJson, str } from '../_lib/json'
 import { FULL, roomFor } from '../_lib/ceilings'
 import { authed } from '../_lib/route'
@@ -20,11 +21,6 @@ export interface ChildRow {
 
 const COLOURS = ['#f2a03d', '#5b9a8b', '#c76b6b', '#7c83c9', '#b98b3a', '#4f8fbf']
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
-
-// A nap time is 'HH:MM', or null/'' to clear. `undefined` means keep; false means refuse.
-const napValue = (v: unknown): string | null | undefined | false => (v === undefined ? undefined : v === null || v === '' ? null : typeof v === 'string' && TIME_RE.test(v) ? v : false)
-
 export const onRequestGet = authed(async (ctx, actor) => {
   const { results } = await ctx.env.DB.prepare(
     'SELECT id, first_name, birthdate, colour, position, nap_start, nap_end, photo_key FROM children WHERE household_id = ? AND deleted_at IS NULL ORDER BY position, created_at',

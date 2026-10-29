@@ -21,6 +21,9 @@ describe('security headers', () => {
 
   it('allows no third party the app does not use (the privacy page promises none)', () => {
     expect(csp).not.toMatch(/googleapis|gstatic/)
+    // The one allowed addition: Cloudflare's Turnstile bot check (signup, forgot-password), named on the privacy page.
+    expect(directive('frame-src')).toBe('frame-src https://challenges.cloudflare.com')
+    expect(directive('script-src')).toContain('https://challenges.cloudflare.com')
     expect(directive('img-src')).not.toMatch(/https:/)
     expect(directive('connect-src')).toBe("connect-src 'self'")
     expect(directive('default-src')).toBe("default-src 'self'")

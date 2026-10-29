@@ -150,7 +150,7 @@ export function EncounterNew() {
     [t.form.quick.tomorrow, nextAt(-1)],
   ]
 
-  const slots = napSlots(children.find((c) => c.id === chosen) ?? { nap_start: null, nap_end: null })
+  const slots = napSlots([children.find((c) => c.id === chosen) ?? {}, ...(fams.data?.families ?? []).filter((f) => picked.has(f.id))])
   const napChips: [string, string][] = [
     [t.form.quick.beforeNap(clockLabel(slots.before, lang)), slots.before],
     [t.form.quick.afterNap(clockLabel(slots.after, lang)), slots.after],

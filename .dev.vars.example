@@ -15,3 +15,5 @@ SESSION_SECRET=replace-with-at-least-32-random-characters-xx
 # MAIL_FROM=Viens jouer <viensjouer@marcportal.com>
 # OPTIONAL: Svix secret of the Resend webhook (Resend dashboard, Webhooks, whsec_...). Unset: /api/resend-webhook answers 503.
 RESEND_WEBHOOK_SECRET=
+# OPTIONAL: where the app emails you when it nears Resend's free daily limit.
+ADMIN_EMAIL=

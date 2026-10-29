@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { whenShort } from '../lib/format'
 import { WhyMany } from '../components/WhyMany'
+import { Why } from '../components/Why'
+import { ImportFriends } from '../components/ImportFriends'
 import { Groups } from '../components/Groups'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
@@ -66,6 +68,9 @@ export function Friends() {
   const grp = useQuery({ queryKey: K.groups, queryFn: () => api<{ groups: Group[] }>('groups') })
   const circle = useQuery({ queryKey: K.circle, queryFn: () => api<CircleData>('circle') })
   const [editing, setEditing] = useState<Family | 'new' | null>(null)
+  // « Importer une liste » can be opened straight from the first-steps card (/amis?importer=1).
+  const [params] = useSearchParams()
+  const [importing, setImporting] = useState(params.get('importer') === '1')
   const [err, setErr] = useState<string | null>(null)
   const invalidate = () => qc.invalidateQueries({ queryKey: K.families })
 
@@ -107,7 +112,9 @@ export function Friends() {
   return (
     <>
       <h1>{t.friends.title}</h1>
-      {!editing && <BigAction icon="users" onClick={() => setEditing('new')}>{t.families.add}</BigAction>}
+      {!editing && !importing && <BigAction icon="users" onClick={() => setEditing('new')}>{t.families.add}</BigAction>}
+      {!editing && !importing && <button type="button" className="btn btn--small" onClick={() => setImporting(true)}>{t.families.importOpen}</button>}
+      {importing && <ImportFriends onClose={() => setImporting(false)} />}
       <p className="muted small">{t.friends.hint}</p>
       {err && <div className="notice notice--err">{err}</div>}
 
@@ -118,6 +125,14 @@ export function Friends() {
           <label className="field"><span><Icon name="mail" />{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /></label>
           <label className="field"><span><Icon name="cake" />{t.families.birthdate}</span><input className="input" name="childBirthdate" type="date" defaultValue={cur?.child_birthdate ?? ''} /></label>
           <label className="field"><span><Icon name="phone" />{t.families.phone}</span><input className="input" name="phone" type="tel" defaultValue={cur?.phone ?? ''} /></label>
+          <div className="field">
+            <span><Icon name="clock" />{t.children.nap}</span>
+            <div className="when when--even">
+              <label className="field"><span>{t.children.napFrom}</span><input className="input" name="napStart" type="time" step={900} defaultValue={cur?.nap_start ?? ''} /></label>
+              <label className="field"><span>{t.children.napTo}</span><input className="input" name="napEnd" type="time" step={900} defaultValue={cur?.nap_end ?? ''} /></label>
+            </div>
+            <Why k="nap" />
+          </div>
           <label className="field"><span><Icon name="alert" />{t.families.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={cur?.allergies ?? ''} /></label>
           <label className="field"><span><Icon name="note" />{t.families.notes}</span><input className="input" name="notes" maxLength={1000} defaultValue={cur?.notes ?? ''} /></label>
           <WhyMany
@@ -156,6 +171,7 @@ export function Friends() {
                   {l && <span className="chip chip--yes">{t.friends.onApp}</span>}
                 </div>
               )}
+              {f.mail_stopped_at && <p className="small" style={{ margin: '0.35rem 0 0' }}><span className="chip">{t.families.stopped}</span></p>}
               {f.email_bounced_at && <p className="small" style={{ margin: '0.35rem 0 0' }}><span className="chip chip--cancelled">{t.families.bounced}</span> {t.families.bouncedHint}</p>}
               <p className="small muted" style={{ margin: '0.35rem 0 0' }}>{[f.email, f.phone, l ? dates(l) : null, f.allergies && `${t.families.allergies} : ${f.allergies}`, f.notes].filter(Boolean).join(' · ')}</p>
               <Together familyId={f.id} />

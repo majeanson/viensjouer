@@ -26,6 +26,13 @@ export interface Env {
   // « courriel non reçu » mark never appears; nothing else changes.
   RESEND_WEBHOOK_SECRET?: string
 
+  // OPTIONAL: where the app emails the owner when the whole app nears Resend's free daily limit (once a day).
+  ADMIN_EMAIL?: string
+
+  // OPTIONAL Turnstile bot check on signup and forgot-password (_lib/turnstile.ts). Both unset → no check, no widget.
+  TURNSTILE_SITE_KEY?: string
+  TURNSTILE_SECRET?: string
+
   // OPTIONAL rate-limit bindings (wrangler.toml [[ratelimits]]). Unset → allow.
   LIMIT_IP?: RateLimit
   LIMIT_KEY?: RateLimit

@@ -26,6 +26,10 @@
 | `EncounterEdit` | « Modifier » with a live preview of what families see | |
 | `HomeCard` | The « Chez nous » card: form and read-only view | |
 | `ParentInvite` | Inviting the other parent | |
+| `ImportFriends` | Adding many friend families from one paste (or the contact picker) | Says what it understood before saving; a line it cannot read stays a line to fix. |
+| `Credit` | The « Bâti par marc.portal » line under every screen | Plain link out, hidden in print. |
+| `InstallOffer` | One card, after three different days of use: keep it on the home screen | Native prompt where the browser has one, the iPhone steps otherwise; « Plus tard » is final. |
+| `Turnstile` | The Cloudflare bot check on signup and forgot-password | Mounted only when /api/health reports a site key; hands its token to the form in a hidden `turnstile` field. |
 | `PartnerNudge` | The one line on Rencontres asking a solo host to invite the other parent | |
 | `CalendarFeed` | The host's secret calendar feed | |
 

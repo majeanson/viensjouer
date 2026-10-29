@@ -57,3 +57,18 @@ describe('mail language', () => {
     expect(mailLang(undefined)).toBe('fr')
   })
 })
+
+describe('fromHeader and sendMail (a host writing to a friend)', () => {
+  it('says who it is from, keeps the app’s address, and strips anything that could break the header', async () => {
+    const { fromHeader, sendMail } = await import('./mail')
+    expect(fromHeader('Viens jouer <noreply@x.test>', 'Marc')).toBe('Marc via Viens jouer <noreply@x.test>')
+    expect(fromHeader('noreply@x.test', 'Marc')).toBe('Marc via Viens jouer <noreply@x.test>')
+    expect(fromHeader('noreply@x.test', 'Ma"rc <evil@x>\r\nBcc: z')).not.toMatch(/["\r\n]|evil@x>/)
+    expect(fromHeader('noreply@x.test')).toBe('noreply@x.test')
+    let sent: Record<string, unknown> = {}
+    const fake = (async (_u: string, init: { body: string }) => ((sent = JSON.parse(init.body)), new Response('{"id":"1"}'))) as unknown as typeof fetch
+    await sendMail({ RESEND_API_KEY: 'k', MAIL_FROM: 'noreply@x.test' } as never, { to: 'a@b.co', subject: 's', text: 't', fromName: 'Marc', replyTo: 'marc@x.org' }, fake)
+    expect(sent.from).toBe('Marc via Viens jouer <noreply@x.test>')
+    expect(sent.reply_to).toEqual(['marc@x.org'])
+  })
+})

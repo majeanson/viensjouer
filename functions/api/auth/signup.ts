@@ -3,6 +3,8 @@ import { requestLang } from '../../_lib/lang'
 import { badRequest, conflict, forbidden, readJson, serverError, str, tooManyRequests, ACCOUNT_UNAVAILABLE } from '../../_lib/json'
 import { overAuthLimit, overKeyLimit } from '../../_lib/rateLimit'
 import { signInAs, sessionCookies } from '../../_lib/auth'
+import { TURNSTILE_MESSAGE, turnstilePasses } from '../../_lib/turnstile'
+import { clientIp } from '../../_lib/rateLimit'
 import { hashPassword, verifyPassword } from '../../_lib/password'
 import { inviteAccepted } from '../../_lib/signupGate'
 import { DEFAULT_TZ, cleanTz, newId, nowSec } from '../../_lib/ids'
@@ -13,7 +15,8 @@ export const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 // signed in. Who may: _lib/signupGate.ts. CSRF-exempt (no session yet).
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
-  const body = await readJson<{ email?: string; password?: string; displayName?: string; householdName?: string; invite?: string; tz?: string }>(ctx.request)
+  const body = await readJson<{ email?: string; password?: string; displayName?: string; householdName?: string; invite?: string; tz?: string; turnstile?: string }>(ctx.request)
+  if (!(await turnstilePasses(ctx.env, body?.turnstile, clientIp(ctx.request)))) return badRequest(TURNSTILE_MESSAGE)
   const email = body?.email?.trim().toLowerCase()
   if (!email || !EMAIL_RE.test(email)) return badRequest('Courriel invalide.')
   const password = body?.password ?? ''

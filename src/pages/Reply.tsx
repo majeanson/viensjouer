@@ -13,7 +13,8 @@ import { HomeCardView } from '../components/HomeCard'
 import { PhotoGrid } from '../components/PhotoGrid'
 import { Why } from '../components/Why'
 import { WhyMany } from '../components/WhyMany'
-import type { Encounter, HomeCard, Message, Reply as ReplyKind } from '../lib/types'
+import type { Reply as ReplyKind } from '../lib/types'
+import type { ReplyCard as Card } from '../lib/replyCard'
 import { Header } from '../components/Header'
 import { Loading } from '../components/Loading'
 import { Rel } from '../components/Rel'
@@ -22,25 +23,6 @@ import { Icon } from '../components/Icon'
 import { Face } from '../components/Face'
 import { MessageBoard } from '../components/MessageBoard'
 import { OfflineNotice } from '../components/ErrorBoundary'
-
-interface Card {
-  alive: boolean
-  encounter: Omit<Encounter, 'address'> & { address: string | null }
-  host: { child_first_name: string; parent_name: string; household_name: string; tz: string; childPhoto?: string | null; parentPhoto?: string | null }
-  you: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null; reply: ReplyKind | null; replyNote: string | null; remind: boolean; adults: number | null; kids: number | null; scope: 'friend' | 'family' }
-  homeCard: HomeCard | null
-  relais: { nap: string | null; ate: string | null; mood: string | null; note: string | null } | null
-  souvenirs: { id: string; author_label: string }[]
-  souvenirsOpen: boolean
-  photos: boolean
-  messages: Message[]
-  series: { token: string; starts_at: number; reply: ReplyKind | null }[]
-  siblings?: { token: string; child: string; reply: ReplyKind | null }[]
-  changes: ChangeRow[]
-  cover: string | null
-  guests: { yes: string[]; maybe: string[]; waiting: number } | null
-  bring: { id: string; label: string; by: string | null; mine: boolean }[]
-}
 
 // THE install-free page. A parent opens it from a text, sees the plan, answers in one
 // tap, leaves their details once. No account, no app, no cookie.
@@ -458,6 +440,7 @@ function ReplyInner() {
       <footer className="footer muted small">
         <p>{t.reply.whatIs}</p>
         <p><Link to="/confidentialite">{t.privacy.link}</Link></p>
+        <p><Link to={`/stop/${token}`}>{t.stop.confirm}</Link></p>
         {me.signedIn || offerAccount ? null : claiming ? claimForm : <button className="btn" onClick={() => setClaiming(true)}>{t.reply.create}</button>}
       </footer>
 

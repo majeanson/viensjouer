@@ -15,6 +15,13 @@ export default defineConfig({
   retries: 0,
   forbidOnly: !!process.env.CI,
   reporter: [['list']],
-  use: { baseURL: `http://localhost:${PORT}`, ...devices['iPhone 13'], defaultBrowserType: 'chromium', locale: 'fr-CA', reducedMotion: 'reduce' },
+  use: { baseURL: `http://localhost:${PORT}`, locale: 'fr-CA', reducedMotion: 'reduce' },
+  // Two engines. Chromium runs everything. WebKit (the engine under every iPhone browser) runs only the layout checks tagged
+  // @webkit: date and time pickers, nothing bleeding off a 320 px screen. A bug that only the iPhone's engine shows (the
+  // pickers spilling out of their card) cannot be seen from Chromium alone.
+  projects: [
+    { name: 'chromium', use: { ...devices['iPhone 13'], defaultBrowserType: 'chromium' } },
+    { name: 'webkit', use: { ...devices['iPhone 13'] }, grep: /@webkit/ },
+  ],
   webServer: { command: `npx vite --port ${PORT} --strictPort`, port: PORT, reuseExistingServer: false, timeout: 60_000 },
 })

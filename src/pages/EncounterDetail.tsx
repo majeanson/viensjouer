@@ -283,7 +283,7 @@ export function EncounterDetail() {
             {invitations.map((i) => (
               <div key={i.id} className="linkrow">
                 <div className="row">
-                  <span className="cluster"><span><strong>{i.child_first_name}</strong> <span className="muted small">· {i.parent_name}</span></span>{i.email_bounced_at && <span className="chip chip--cancelled">{t.families.bounced}</span>}</span>
+                  <span className="cluster"><span><strong>{i.child_first_name}</strong> <span className="muted small">· {i.parent_name}</span></span>{i.email_bounced_at && <span className="chip chip--cancelled">{t.families.bounced}</span>}{i.mail_stopped_at && <span className="chip">{t.families.stopped}</span>}</span>
                   <span className={`chip ${i.reply ? `chip--${i.reply}` : ''}`}>{i.reply ? t.encounters.reply[i.reply] : t.encounters.reply.none}</span>
                 </div>
                 {i.reply_note && <p className="small" style={{ margin: 0 }}>« {i.reply_note} »</p>}

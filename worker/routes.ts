@@ -17,6 +17,7 @@ import * as messages from '../functions/api/messages'
 import * as invitations from '../functions/api/invitations'
 import * as replyCard from '../functions/api/r/[token]'
 import * as replyIcs from '../functions/api/r/ics'
+import * as replyStop from '../functions/api/r/stop-mail'
 import * as replyClaim from '../functions/api/r/claim'
 import * as authForgot from '../functions/api/auth/forgot'
 import * as authReset from '../functions/api/auth/reset'
@@ -103,6 +104,7 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['souvenirs', souvenirs],
   ['souvenirs/:id', souvenirImg],
   ['r/:token/ics', replyIcs],
+  ['r/:token/stop-mail', replyStop],
   ['r/:token/cover', replyCover],
   ['r/:token/avatar/:who', replyAvatar],
   ['r/:token/bring', replyBring],

@@ -97,7 +97,7 @@ test('a dead link says so calmly', async ({ page }) => {
   await expect(page.getByText(/ne mène nulle part/)).toBeVisible()
 })
 
-test('nothing bleeds off the right edge, even at 320px (per-child bounds, not scrollWidth)', async ({ page }) => {
+test('nothing bleeds off the right edge, even at 320px (per-child bounds, not scrollWidth) @webkit', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await stub(page, card({ series: [{ token: 'aaaabbbb', starts_at: soon + 7 * 86_400, reply: null }] }))
   await page.goto(`/${CODE}`)
@@ -498,3 +498,17 @@ test('a postponed rencontre says the date will come and keeps the answer buttons
   await expect(page.getByText('Reportée : la nouvelle date viendra. Ta réponse reste.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Oui, on y sera' })).toBeVisible()
 })
+
+test('the reply page still fits a 375px screen with the text at 200%, once answered @webkit', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 800 })
+  const base = card()
+  await stub(page, card({ you: { ...base.you, reply: 'yes' }, siblings: [{ token: 'sib23456', child: 'Maximilien-Alexandre', reply: null }] }))
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+  const over = await page.evaluate(() => {
+    const vw = document.documentElement.clientWidth
+    return [...document.querySelectorAll<HTMLElement>('body *')].filter((el) => el.offsetParent !== null && !el.closest('.toasts')).map((el) => ({ cls: el.className?.toString?.() ?? '', right: Math.round(el.getBoundingClientRect().right) })).filter((x) => x.right > vw + 1)
+  })
+  expect(over).toEqual([])
+});

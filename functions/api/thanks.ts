@@ -3,7 +3,7 @@ import { authed } from '../_lib/route'
 import { newId, nowSec, paperCode } from '../_lib/ids'
 import { mailEnabled, sendMail } from '../_lib/mail'
 import { mailLang, requestLang } from '../_lib/lang'
-import { thanksMail } from '../_lib/mailCopy'
+import { thanksMail, withUnsubscribe } from '../_lib/mailCopy'
 import { isDemoEmail } from '../_lib/demo'
 import { mailRoom, recordMail } from '../_lib/mailBudget'
 
@@ -34,7 +34,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   let skipped = 0
   if (mailEnabled(ctx.env) && !isDemoEmail(actor.email)) {
     const { results } = await ctx.env.DB.prepare(
-      "SELECT i.token, f.email, f.lang, f.parent_name FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id WHERE i.encounter_id = ? AND i.reply = 'yes' AND f.email IS NOT NULL AND f.deleted_at IS NULL LIMIT 40",
+      "SELECT i.token, f.email, f.lang, f.parent_name FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id WHERE i.encounter_id = ? AND i.reply = 'yes' AND f.email IS NOT NULL AND f.mail_stopped_at IS NULL AND f.email_bounced_at IS NULL AND f.deleted_at IS NULL LIMIT 40",
     )
       .bind(id)
       .all<{ token: string; email: string; lang: string | null; parent_name: string }>()
@@ -45,7 +45,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
     for (const r of results.slice(0, room)) {
       const link = `${origin}/${paperCode(r.token)}`
       try {
-        await sendMail(ctx.env, { to: r.email, ...thanksMail(mailLang(r.lang, ctx.request), { parent: r.parent_name, host: actor.displayName, title: e.title, text, link }) })
+        await sendMail(ctx.env, { to: r.email, fromName: actor.displayName, replyTo: actor.email, ...withUnsubscribe(mailLang(r.lang, ctx.request), origin, r.token, thanksMail(mailLang(r.lang, ctx.request), { parent: r.parent_name, host: actor.displayName, title: e.title, text, link })) })
         sent++
       } catch (err) {
         console.error('[mail] thanks', err)

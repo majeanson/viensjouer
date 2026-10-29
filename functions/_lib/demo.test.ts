@@ -15,7 +15,7 @@ const created = readdirSync(dir)
 
 // code_misses (0007) is a per-hour counter of WRONG share-link guesses keyed by a salted address hash, deleted after
 // two hours: it holds no household and no person.
-const NOT_HOUSEHOLD_DATA: string[] = ['code_misses']
+const NOT_HOUSEHOLD_DATA: string[] = ['code_misses', 'cron_beats']
 
 describe('demo sweep', () => {
   it('reads the migrations (not an empty folder)', () => {

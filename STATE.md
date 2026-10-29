@@ -12,9 +12,9 @@
 
 **Open, in order:**
 1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
-3. A « Reporté / pluie » state with a reason (board post, optional email), instead of cancel-or-edit.
-4. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
-5. The reply page opening offline (shell cache only, never stale answers).
+2. A « Reporté / pluie » state with a reason (board post, optional email), instead of cancel-or-edit.
+3. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
+4. The reply page opening offline (shell cache only, never stale answers).
 
 **Budgets (`npm run check:bundle`):** entry 84.8 / 86 KB, every other chunk under 11 KB, stylesheet 5.3 / 5.5 KB. Both dictionaries are lazy chunks (`i18n.fr`, `i18n.en`). Read the output for « exceeded », not only « ok ».
 

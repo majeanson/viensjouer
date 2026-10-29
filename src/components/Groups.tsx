@@ -53,8 +53,8 @@ export function Groups({ families }: { families: Family[] }) {
           <div key={g.id} className="card row">
             <span><strong>{g.name}</strong><br /><span className="muted small">{g.families.map(nameOf).filter(Boolean).join(', ') || '—'}</span></span>
             <span className="cluster">
-              <button className="btn btn--ghost" onClick={() => open(g)}>{t.encounters.edit}</button>
-              <button className="btn btn--ghost btn--danger" onClick={() => rm.remove(g.id, t.undo.removed, async () => { await api('groups', { method: 'DELETE', body: { id: g.id } }); void refresh() })}>{t.families.remove}</button>
+              <button className="btn" onClick={() => open(g)}>{t.encounters.edit}</button>
+              <button className="btn btn--danger" onClick={() => rm.remove(g.id, t.undo.removed, async () => { await api('groups', { method: 'DELETE', body: { id: g.id } }); void refresh() })}>{t.families.remove}</button>
             </span>
           </div>
         ))}
@@ -65,7 +65,7 @@ export function Groups({ families }: { families: Family[] }) {
           <FamilyPicker families={families} groups={[]} selected={picked} onChange={setPicked} />
           <div className="cluster" style={{ marginTop: '0.75rem' }}>
             <button className="btn btn--primary" disabled={save.isPending}>{t.families.save}</button>
-            <button type="button" className="btn btn--ghost" onClick={() => setEditing(null)}>{t.encounters.back}</button>
+            <button type="button" className="btn" onClick={() => setEditing(null)}>{t.encounters.back}</button>
           </div>
         </form>
       ) : (

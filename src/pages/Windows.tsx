@@ -10,6 +10,7 @@ import { linkFor, linkLabel } from '../lib/link'
 import { FamilyPicker } from '../components/FamilyPicker'
 import { useDeferredRemove } from '../lib/toast'
 import type { Child, Family, Group, OpenWindow } from '../lib/types'
+import { WhenInput } from '../components/WhenInput'
 import { Icon, BigAction } from '../components/Icon'
 
 const wlink = (token: string) => linkFor(token, 'w')
@@ -102,14 +103,14 @@ export function Windows({ embedded = false }: { embedded?: boolean }) {
               <button type="button" key={c.id} className={`btn ${pickedChild === c.id ? 'btn--on' : ''}`} onClick={() => setChildId(c.id)}>{c.first_name}</button>
             ))}
           </div>
-          <label className="field"><span><Icon name="calendar" />{t.windows.from}</span><input className="input" name="startsAt" type="datetime-local" required defaultValue={toLocalInput(defaultStart)} /></label>
-          <label className="field"><span><Icon name="clock" />{t.windows.to}</span><input className="input" name="endsAt" type="datetime-local" required defaultValue={toLocalInput(defaultStart + 3 * 3600)} /></label>
+          <div className="field"><span><Icon name="calendar" />{t.windows.from}</span><WhenInput name="startsAt" label={t.windows.from} defaultValue={toLocalInput(defaultStart)} /></div>
+          <div className="field"><span><Icon name="clock" />{t.windows.to}</span><WhenInput name="endsAt" label={t.windows.to} defaultValue={toLocalInput(defaultStart + 3 * 3600)} /></div>
           <label className="field"><span><Icon name="note" />{t.encounters.note}</span><input className="input" name="note" maxLength={500} placeholder={t.windows.notePlaceholder} /></label>
           <h3><Icon name="users" />{t.encounters.invite}</h3>
           <FamilyPicker loaded={!!fams.data} families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
           <div className="cluster" style={{ marginTop: '0.75rem' }}>
             <button className="btn btn--primary" disabled={create.isPending || picked.size === 0 || !pickedChild}>{t.windows.create}</button>
-            <button type="button" className="btn btn--ghost" onClick={() => setAdding(false)}>{t.encounters.back}</button>
+            <button type="button" className="btn" onClick={() => setAdding(false)}>{t.encounters.back}</button>
           </div>
         </form>
       )}
@@ -121,7 +122,7 @@ export function Windows({ embedded = false }: { embedded?: boolean }) {
           <div key={w.id} className="card" style={over ? { opacity: 0.6 } : undefined}>
             <div className="row">
               <span className="cluster"><strong>{whenLong(w.starts_at, lang)}</strong></span>
-              <button className="btn btn--ghost btn--danger" onClick={() => rm.remove(w.id, t.undo.removed, async () => { await api('windows', { method: 'DELETE', body: { id: w.id } }); void refresh() })}>{t.encounters.delete}</button>
+              <button className="btn btn--danger" onClick={() => rm.remove(w.id, t.undo.removed, async () => { await api('windows', { method: 'DELETE', body: { id: w.id } }); void refresh() })}>{t.encounters.delete}</button>
             </div>
             {over && <p className="muted small">{t.windows.over}</p>}
             {w.note && <p className="muted small">« {w.note} »</p>}

@@ -196,6 +196,37 @@ function ReplyInner() {
   const offerAccount = answered && alive && !me.signedIn
   const calendarAfterYes = alive && answered && (you.reply === 'yes' || you.reply === 'maybe')
 
+  // What you need once you have answered (or want to dig): map, address, notes, calendar, history. The answer comes first.
+  const details = (
+    <section className="card">
+      <dl className="facts">
+            {e.map_url && <div><dt><Icon name="map" />{t.reply.map}</dt><dd><a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a>{mark(freshOf('map_url'))}</dd></div>}
+            {e.address ? <div><dt><Icon name="home" />{t.reply.addressLabel}</dt><dd>{e.address}{mark(freshOf('address'))}</dd></div> : e.kind !== 'park' && <div><dt><Icon name="home" />{t.reply.addressLabel}</dt><dd className="muted">{t.reply.addressOnYes}</dd></div>}
+            {e.note && <div><dt><Icon name="note" />{t.reply.toKnow}</dt><dd>{e.note}{mark(freshOf('note'))}</dd></div>}
+            {e.details?.gift && <div><dt><Icon name="gift" />{t.kinds.birthday.giftIs}</dt><dd>{e.details.gift}{mark(freshOf('gift'))}</dd></div>}
+      </dl>
+          {!calendarAfterYes && (
+            <div className="cluster">
+              <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
+              <a className="btn btn--small" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
+            </div>
+          )}
+          {changes.length > 0 && (
+            <details className="why" style={{ marginTop: '0.75rem' }}>
+              <summary>{t.edit.history}</summary>
+              <ul className="small" style={{ margin: '0.4rem 0 0' }}>
+                {changes.map((c, n) => (
+                  <li key={n}>
+                    <span className="muted">{whenShort(c.created_at, lang)} · {t.edit.fields[c.field]} :</span>{' '}
+                    {isPrivate(c.field) ? t.edit.hidden[c.field] : <><s>{showValue(c.field, fromRow(c).from, lang, t.edit.status, t.edit.empty)}</s> → {showValue(c.field, fromRow(c).to, lang, t.edit.status, t.edit.empty)}</>}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+    </section>
+  )
+
   return (
     <div className={barShown ? 'shell shell--bar' : 'shell'}>
       <Header />
@@ -230,42 +261,19 @@ function ReplyInner() {
           <div><dt><Icon name="tag" />{t.reply.what}</dt><dd>{e.title}{mark(freshOf('title'))}</dd></div>
           <div><dt><Icon name="calendar" />{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}<Rel at={e.starts_at} />{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
           {e.place && <div><dt><Icon name="pin" />{t.reply.where}</dt><dd>{e.place}{mark(freshOf('place'))}</dd></div>}
-          {e.map_url && <div><dt><Icon name="map" />{t.reply.map}</dt><dd><a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a>{mark(freshOf('map_url'))}</dd></div>}
-          {e.address ? <div><dt><Icon name="home" />{t.reply.addressLabel}</dt><dd>{e.address}{mark(freshOf('address'))}</dd></div> : e.kind !== 'park' && <div><dt><Icon name="home" />{t.reply.addressLabel}</dt><dd className="muted">{t.reply.addressOnYes}</dd></div>}
-          {e.note && <div><dt><Icon name="note" />{t.reply.toKnow}</dt><dd>{e.note}{mark(freshOf('note'))}</dd></div>}
-          {e.details?.gift && <div><dt><Icon name="gift" />{t.kinds.birthday.giftIs}</dt><dd>{e.details.gift}{mark(freshOf('gift'))}</dd></div>}
         </dl>
         {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
-        {!calendarAfterYes && (
-          <div className="cluster">
-            <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
-            <a className="btn btn--small" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
-          </div>
-        )}
-        {changes.length > 0 && (
-          <details className="why" style={{ marginTop: '0.75rem' }}>
-            <summary>{t.edit.history}</summary>
-            <ul className="small" style={{ margin: '0.4rem 0 0' }}>
-              {changes.map((c, n) => (
-                <li key={n}>
-                  <span className="muted">{whenShort(c.created_at, lang)} · {t.edit.fields[c.field]} :</span>{' '}
-                  {isPrivate(c.field) ? t.edit.hidden[c.field] : <><s>{showValue(c.field, fromRow(c).from, lang, t.edit.status, t.edit.empty)}</s> → {showValue(c.field, fromRow(c).to, lang, t.edit.status, t.edit.empty)}</>}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
       </section>
 
       {!alive ? (
         <div className="notice">{t.reply.closed}</div>
       ) : answered ? (
         <div className="card">
-          {done && <div className="notice">{t.reply.saved}</div>}
+          {(done || justAnswered) && <div className="notice notice--ok" role="status"><Icon name="check" />{t.reply.saved}</div>}
           <div className="row">
             <span><span className="muted small">{t.reply.yourReply}</span><br /><strong className={`chip chip--${you.reply}`}>{t.encounters.reply[you.reply!]}</strong>{you.replyNote && <span className="small"> · « {you.replyNote} »</span>}</span>
-            <button className="btn btn--ghost" onClick={() => setEditing(true)}>{t.reply.change}</button>
+            <button className="btn" onClick={() => setEditing(true)}>{t.reply.change}</button>
           </div>
           <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.reply.hostKnows(host.parent_name || host.household_name)}</p>
           {calendarAfterYes && (
@@ -317,6 +325,7 @@ function ReplyInner() {
           <p className="muted small" style={{ margin: '0.75rem 0 0' }}>{t.reply.oneTap}</p>
         </section>
       )}
+      {details}
 
       {offerAccount && (claiming ? claimForm : (
         <section className="card" aria-label={t.reply.moreTitle(host.child_first_name)}>
@@ -431,7 +440,7 @@ function ReplyInner() {
       <footer className="footer muted small">
         <p>{t.reply.whatIs}</p>
         <p><Link to="/confidentialite">{t.privacy.link}</Link></p>
-        {me.signedIn || offerAccount ? null : claiming ? claimForm : <button className="btn btn--ghost" onClick={() => setClaiming(true)}>{t.reply.create}</button>}
+        {me.signedIn || offerAccount ? null : claiming ? claimForm : <button className="btn" onClick={() => setClaiming(true)}>{t.reply.create}</button>}
       </footer>
 
       {barShown && (

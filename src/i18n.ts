@@ -101,11 +101,11 @@ export const FR = {
     invite: 'Inviter',
     noFamilies: 'Pas encore de famille dans ton carnet : ajoute la première ici.',
     create: 'Créer et obtenir les liens',
-    links: 'Les liens',
+    links: 'Les invitations',
     paperHint: 'Assez court pour l’écrire sur un papier, majuscules et tiret sans importance.',
     copy: 'Copier le lien',
-    theLink: 'Le lien et ses deux mots',
-    reshuffle: 'Autres mots',
+    theLink: 'Le lien (deux mots faciles à écrire)',
+    reshuffle: 'Changer les deux mots',
     copied: 'Copié !',
     send: 'Envoyer par courriel',
     sent: 'Envoyé',
@@ -207,7 +207,8 @@ export const FR = {
     status: { proposed: 'proposée', confirmed: 'confirmée', cancelled: 'annulée' } as Record<string, string>,
   },
   share: {
-    button: 'Partager le lien',
+    preview: 'Le message pour texto ou WhatsApp',
+    button: 'Envoyer l’invitation',
     noEmailHint: 'Pas de courriel : envoie ce message par texto, ou écris le lien sur un papier.',
     message: (m: { parent: string; host: string; friend: string; title: string; when: string; scope: 'friend' | 'family'; link: string }) =>
       `Salut ${m.parent} ! ${m.host} organise « ${m.title} », ${m.when}. ${m.scope === 'friend' ? `L’invitation est pour ${m.friend} seulement.` : 'Toute la famille est la bienvenue.'} Tu réponds ici, sans compte : ${m.link}`,
@@ -424,9 +425,11 @@ export const FR = {
   install: { title: 'Sur l’écran d’accueil', hint: 'Ouvre Viens jouer comme une appli, sans passer par le navigateur. Rien à télécharger d’un magasin.', button: 'Installer l’appli', ios: 'Sur iPhone et iPad : touche le bouton Partager de Safari, puis « Sur l’écran d’accueil ». Viens jouer s’ouvre ensuite comme une appli.' },
   cover: { add: 'Ajouter une image', change: 'Changer l’image', remove: 'Retirer l’image', field: 'Image (facultatif)' },
   form: {
+    day: 'Jour',
+    hour: 'Heure',
     again: 'Refaire pareil',
     quick: { sat: 'Samedi 10 h', sun: 'Dimanche 10 h', tomorrow: 'Demain 10 h' },
-    more: 'Plus d’options',
+    more: 'Plus de choix',
     moreHint: 'Fin, répétition, adresse, lien de carte, note…',
     reused: 'Lien de carte et adresse repris de la dernière fois.',
     titleAuto: 'Laisse vide : on l’écrit pour toi.',
@@ -463,7 +466,7 @@ export const FR = {
   profile: { name: 'Mon prénom', nameHint: 'Le prénom qui s’affiche sur les invitations que tu envoies.', save: 'Enregistrer', saved: 'Enregistré.', testMail: 'M’envoyer un courriel d’essai', testMailHint: 'Reçois un exemple du courriel que les familles recevront quand tu modifies une rencontre. Il part à ton adresse seulement.', testMailSent: (to: string) => `Courriel envoyé à ${to}.`, notifyAnswers: 'Me prévenir quand une famille répond',
     notifyAnswersHint: 'Un courriel quand une famille dit oui, peut-être ou non, au plus un toutes les dix minutes par famille. Rien d’autre, et tu peux le couper quand tu veux.',
     remindHost: 'Me rappeler la veille de mes rencontres', remindHostHint: 'Un seul courriel, la veille, avec l’heure, le lieu et qui vient. Jamais autre chose. Tu peux le couper quand tu veux.' },
-  board: { title: 'Le tableau', hint: 'Un mot pour tout le monde : où se retrouver, quoi apporter, une photo à venir voir. Il reste là, tu peux y revenir.', empty: 'Rien d’écrit encore. Écris le premier mot.', closedEmpty: 'Rien n’a été écrit.', placeholder: 'Écrire sur le tableau…', send: 'Publier', host: 'Hôte', mine: 'Toi', pinned: 'Épinglés', pin: 'Épingler', unpin: 'Détacher', remove: 'Retirer', new: 'Nouveau', newCount: (n: number) => `${n} nouveau${n > 1 ? 'x' : ''}`, closed: 'La rencontre est passée : le tableau reste ouvert à la lecture.' },
+  board: { title: 'Le tableau', hint: 'Un mot pour tout le monde : où se retrouver, quoi apporter, une photo à venir voir. Il reste là, tu peux y revenir.', empty: 'Rien d’écrit encore. Écris le premier mot.', closedEmpty: 'Rien n’a été écrit.', placeholder: 'Écrire sur le tableau…', send: 'Publier', writeFirst: 'Écris un mot d’abord.', host: 'Hôte', mine: 'Toi', pinned: 'Épinglés', pin: 'Épingler', unpin: 'Détacher', remove: 'Retirer', new: 'Nouveau', newCount: (n: number) => `${n} nouveau${n > 1 ? 'x' : ''}`, closed: 'La rencontre est passée : le tableau reste ouvert à la lecture.' },
   common: { crashed: 'Quelque chose a cassé', crashedHint: 'Ce n’est pas toi. Recharge la page : tes données sont gardées sur le serveur.', reload: 'Recharger', tryAgain: 'Réessayer', offline: 'Hors ligne : ce que tu fais ne partira pas avant le retour du réseau.', skip: 'Aller au contenu', loading: 'Chargement…', why: 'Pourquoi ?', error: 'Ça n’a pas marché. Réessaie.', mailCapped: 'Limite de courriels du jour atteinte : certaines familles n’en ont pas reçu. Copie leur lien.', themeNow: { auto: 'Thème : automatique (suit l’appareil)', light: 'Thème : clair', dark: 'Thème : sombre' }, lang: 'English' },
 }
 

@@ -12,6 +12,7 @@ import { FamilyPicker } from '../components/FamilyPicker'
 import { HomeCardForm } from '../components/HomeCard'
 import { Windows } from './Windows'
 import type { Child, Encounter, Family, Group, Invitation, Kind } from '../lib/types'
+import { WhenInput } from '../components/WhenInput'
 import { Icon, kindIcon } from '../components/Icon'
 import { Face } from '../components/Face'
 
@@ -28,7 +29,7 @@ interface Source {
 }
 
 // « Proposer » — short on purpose: who, what kind, when. The title writes itself, and everything
-// else (end time, repeat, address, map link, note, gift) sits under « Plus d'options ».
+// else (end time, repeat, address, map link, note, gift) sits under « Plus de choix ».
 export function EncounterNew() {
   const t = useT()
   const { lang } = useLang()
@@ -198,7 +199,7 @@ export function EncounterNew() {
                   <button type="button" key={label} className="btn btn--small" onClick={() => setStart(toLocalInput(at))}>{label}</button>
                 ))}
               </div>
-              <input className="input" name="startsAt" type="datetime-local" required value={start} onChange={(e) => setStart(e.target.value)} aria-label={t.encounters.when} />
+              <WhenInput name="startsAt" label={t.encounters.when} value={start} onChange={setStart} />
             </div>
             <label className="field"><span><Icon name="pin" />{t.encounters.place}</span><input
               className="input"
@@ -222,9 +223,9 @@ export function EncounterNew() {
               }}
             /><datalist id="past-places">{(placesQ.data?.places ?? []).map((p) => <option key={p.place} value={p.place} />)}</datalist>{reused && <span className="small muted" style={{ fontWeight: 400 }}>{t.form.reused}</span>}</label>
             <label className="field"><span><Icon name="edit" />{t.encounters.titleField}</span><input className="input" name="title" maxLength={120} defaultValue={prev?.title ?? ''} placeholder={`${t.form.autoTitle[kind]}, ${dayHour(fromLocalInput(start) ?? nextSaturdayTen(), lang)}`} /><span className="small muted" style={{ fontWeight: 400 }}>{t.form.titleAuto}</span></label>
-
+            <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.form.moreHint}</p>
             <details className="why" open={moreOpen} style={{ marginTop: '0.5rem' }}>
-              <summary>{t.form.more} <span className="muted">· {t.form.moreHint}</span></summary>
+              <summary>{t.form.more}</summary>
               <div style={{ marginTop: '0.75rem' }}>
                 <label className="field"><span><Icon name="clock" />{t.encounters.until}</span><input className="input" name="endsAt" type="time" defaultValue={prevEnd} /><span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.untilHint}</span></label>
                 <label className="field">

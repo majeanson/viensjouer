@@ -93,6 +93,7 @@ export function MessageBoard({
   const { lang } = useLang()
   const [seenAt] = useState<number | null>(() => readSeen(seenKey))
   const [text, setText] = useState('')
+  const [empty, setEmpty] = useState(false)
   const area = useRef<HTMLTextAreaElement>(null)
   const last = messages.reduce((n, m) => Math.max(n, m.created_at), 0)
 
@@ -111,7 +112,12 @@ export function MessageBoard({
   function submit(ev: FormEvent) {
     ev.preventDefault()
     const v = text.trim()
-    if (!v || posting) return
+    if (posting) return
+    if (!v) {
+      setEmpty(true)
+      area.current?.focus()
+      return
+    }
     onPost(v)
     setText('')
     requestAnimationFrame(() => area.current?.focus())
@@ -177,14 +183,14 @@ export function MessageBoard({
             maxLength={1000}
             value={text}
             placeholder={t.board.placeholder}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => { setText(e.target.value); setEmpty(false) }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submit(e)
             }}
           />
           <div className="row" style={{ alignItems: 'center' }}>
-            <span className="muted small">{text.length > 800 ? `${text.length}/1000` : ''}</span>
-            <button className="btn btn--primary" disabled={posting || !text.trim()}><Icon name="message" />{t.board.send}</button>
+            <span className="muted small" role="status">{empty ? t.board.writeFirst : text.length > 800 ? `${text.length}/1000` : ''}</span>
+            <button className="btn btn--primary" disabled={posting}><Icon name="message" />{t.board.send}</button>
           </div>
         </form>
       ) : (

@@ -130,7 +130,7 @@ export function Friends() {
           />
           <div className="cluster" style={{ marginTop: '0.75rem' }}>
             <button className="btn btn--primary" disabled={save.isPending}>{t.families.save}</button>
-            <button type="button" className="btn btn--ghost" onClick={() => setEditing(null)}>{t.encounters.back}</button>
+            <button type="button" className="btn" onClick={() => setEditing(null)}>{t.encounters.back}</button>
           </div>
         </form>
       )}

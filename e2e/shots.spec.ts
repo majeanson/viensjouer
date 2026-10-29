@@ -35,8 +35,9 @@ async function stubAll(page: Page, signedIn = true) {
     if (/^(cover|r\/[^/]+\/cover)/.test(p)) return r.fulfill({ body: COVER, contentType: 'image/png' })
     if (p === 'health') return j({ ok: true, mail: true, photos: true, invite: false })
     if (p === 'auth/me') return j(signedIn ? { signedIn: true, photo: 'me1', email: 'marc@example.com', displayName: 'Marc', household: { id: 'h', name: 'Les Jeanson', tz: 'America/Toronto' }, mail: true, demo: false } : { signedIn: false })
-    if (p === 'children') return j({ children: [kid, kid2] })
-    if (p === 'families') return j({ families: fams })
+    const empty = new URL(page.url()).searchParams.has('empty')
+    if (p === 'children') return j({ children: empty ? [] : [kid, kid2] })
+    if (p === 'families') return j({ families: empty ? [] : fams })
     if (p === 'groups') return j({ groups: [{ id: 'g1', name: 'Garderie', families: ['f1', 'f2'] }] })
     if (p === 'home-card') return j({ card: { dog: true, pool: false, screens: 'little', nutFree: true, note: 'Le chien est doux' } })
     if (p === 'parent-invite') return j({ invites: [] })
@@ -53,7 +54,10 @@ async function stubAll(page: Page, signedIn = true) {
         bring: [{ id: 'b1', label: 'la collation', claimed_label: 'Julie', added_by: 'host' }, { id: 'b2', label: 'des jus', claimed_label: null, added_by: 'host' }],
       })
     }
+    if (p === 'encounters' && empty) return j({ encounters: [], invitations: [] })
+    if (p === 'calendar' && empty) return j({ items: [], birthdays: [] })
     if (p === 'encounters') return j({ encounters, invitations: [{ encounter_id: 'e1', id: 'i1', reply: 'yes', parent_name: 'Julie', child_first_name: 'Léa' }, { encounter_id: 'e1', id: 'i2', reply: 'maybe', parent_name: 'Paul', child_first_name: 'Max' }, { encounter_id: 'e2', id: 'i4', reply: null, parent_name: 'Julie', child_first_name: 'Léa' }] })
+    if (p === 'circle' && empty) return j({ children: [] })
     if (p === 'circle') return j({ children: [{ child: kid, linked: [{ linkId: 'l1', otherHousehold: 'hh2', childName: 'Léa', childBirthdate: '2023-12-24', parentName: 'Julie', householdName: 'La famille de Julie', lastAt: now - 6 * 86400, nextAt: now + 86400 }] }], book: [] })
     if (p === 'calendar') return j({ items: [{ at: now + 2 * 86400, type: 'invited', id: 'x1', title: 'Cabane à sucre', kind: 'park', place: 'Érablière', token: 'ours-miel', reply: null, host: 'Julie' }], birthdays: [{ date: new Date((now + 5 * 86400) * 1000).toISOString().slice(0, 10), name: 'Léa', turns: 3, whose: 'friend' }], today: '2030-01-01' })
     if (p === 'windows') return j({ windows: [] })
@@ -62,7 +66,7 @@ async function stubAll(page: Page, signedIn = true) {
         alive: true,
         encounter: { ...encounters[1], address: null, details: {}, hereAt: null, note: 'Sieste à 13 h, on garde les souliers à l’entrée', place: 'Chez nous' },
         host: { child_first_name: 'Noé', parent_name: 'Marc', household_name: 'Les Jeanson', tz: 'America/Toronto', childPhoto: 'p1', parentPhoto: 'me1' },
-        you: { parent_name: 'Julie', email: null, phone: null, child_first_name: 'Léa', allergies: null, reply: u.searchParams.get('answered') ? 'yes' : null, replyNote: null, remind: false, adults: null, kids: null, scope: 'family' },
+        you: { parent_name: 'Julie', email: null, phone: null, child_first_name: 'Léa', allergies: null, reply: new URL(page.url()).searchParams.get('answered') ? 'yes' : null, replyNote: null, remind: false, adults: null, kids: null, scope: 'family' },
         homeCard: { dog: true, pool: false, screens: 'little', nutFree: true, note: 'Le chien est doux' },
         relais: null, souvenirs: [], souvenirsOpen: false, photos: false, series: [], changes: [],
         messages: board.map((m, n) => ({ ...m, mine: n === 1 })),
@@ -80,6 +84,9 @@ const SCREENS: [string, string, boolean?][] = [
   ['reply', '/lune-miel', false],
   ['reply-answered', '/lune-miel?answered=1', false],
   ['encounters', '/rencontres'],
+  ['empty-encounters', '/rencontres?empty=1'],
+  ['empty-friends', '/amis?empty=1'],
+  ['empty-children', '/enfants?empty=1'],
   ['new', '/rencontres/nouvelle'],
   ['detail', '/rencontres/e1'],
   ['friends', '/amis'],

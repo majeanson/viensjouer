@@ -5,6 +5,7 @@ import { useLang, useT } from '../i18n'
 import { endFromTime, fromLocalInput, toLocalInput, toLocalTime } from '../lib/format'
 import { clientDiff, isPrivate, showValue, type Snap } from '../lib/changes'
 import type { Encounter } from '../lib/types'
+import { WhenInput } from './WhenInput'
 import { Icon } from './Icon'
 
 // « Modifier la rencontre » — change the title, time, place, address, note (and the gift idea for a
@@ -86,7 +87,7 @@ export function EncounterEdit({
       <h3><Icon name="edit" />{t.edit.title}</h3>
       {e.series_id && <p className="muted small">{t.edit.seriesOnly}</p>}
       <label className="field"><span><Icon name="edit" />{t.encounters.titleField}</span><input className="input" name="title" required maxLength={120} defaultValue={e.title} /></label>
-      <label className="field"><span><Icon name="calendar" />{t.encounters.when}</span><input className="input" name="startsAt" type="datetime-local" required defaultValue={toLocalInput(e.starts_at)} /></label>
+      <div className="field"><span><Icon name="calendar" />{t.encounters.when}</span><WhenInput name="startsAt" label={t.encounters.when} defaultValue={toLocalInput(e.starts_at)} /></div>
       <label className="field"><span><Icon name="clock" />{t.encounters.until}</span><input className="input" name="endsAt" type="time" defaultValue={e.ends_at ? toLocalTime(e.ends_at) : ''} /><span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.untilHint}</span></label>
       <label className="field"><span><Icon name="pin" />{t.encounters.place}</span><input className="input" name="place" maxLength={120} defaultValue={e.place ?? ''} /></label>
       <label className="field"><span><Icon name="map" />{t.encounters.mapUrl}</span><input className="input" name="mapUrl" type="url" autoComplete="off" maxLength={300} defaultValue={e.map_url ?? ''} /></label>
@@ -121,7 +122,7 @@ export function EncounterEdit({
       {err && <div className="notice notice--err">{err}</div>}
       <div className="cluster">
         <button className="btn btn--primary" disabled={save.isPending || (changes.length === 0 && !guestsChanged)}>{t.edit.save}</button>
-        <button type="button" className="btn btn--ghost" onClick={onClose}>{t.edit.cancel}</button>
+        <button type="button" className="btn" onClick={onClose}>{t.edit.cancel}</button>
       </div>
     </form>
   )

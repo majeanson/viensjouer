@@ -39,7 +39,7 @@ export function ParentInvite() {
           <p className="muted small">{t.parent.expires}</p>
           <div className="cluster">
             <button className="btn" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
-            <button className="btn btn--ghost btn--danger" onClick={() => drop.mutate(i.id)}>{t.parent.withdraw}</button>
+            <button className="btn btn--danger" onClick={() => drop.mutate(i.id)}>{t.parent.withdraw}</button>
           </div>
         </div>
       ))}

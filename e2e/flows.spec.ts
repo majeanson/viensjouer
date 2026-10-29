@@ -163,9 +163,9 @@ test('the short form writes the title itself, and refuses an end time that is no
   await page.getByRole('checkbox', { name: /Léa/ }).check()
   // quick dates
   await page.getByRole('button', { name: 'Dimanche 10 h' }).click()
-  await expect(page.getByLabel('Quand', { exact: true })).toHaveValue(/T10:00$/)
+  await expect(page.locator('input[name=startsAt]')).toHaveValue(/T10:00$/)
   // an end time before the start is refused, with the reason
-  await page.getByText('Plus d’options').click()
+  await page.getByText('Plus de choix').click()
   await page.getByLabel('Jusqu’à (facultatif)').fill('09:00')
   await page.getByRole('button', { name: 'Créer et obtenir les liens' }).click()
   await expect(page.getByText('La fin doit venir après le début, le même jour.')).toBeVisible()
@@ -194,7 +194,7 @@ test('« Refaire pareil » opens the form with the same kind, place, families an
   await expect(page.getByLabel('Où')).toHaveValue('Chez nous')
   await expect(page.getByLabel('Titre')).toHaveValue('Après la sieste')
   await expect(page.getByRole('radio', { name: /seulement/i }).first()).toHaveAttribute('aria-checked', 'true')
-  const when = await page.getByLabel('Quand', { exact: true }).inputValue()
+  const when = await page.locator('input[name=startsAt]').inputValue()
   expect(new Date(when).getTime()).toBeGreaterThan(Date.now())
   expect(new Date(when).getDay()).toBe(new Date(past * 1000).getDay())
 })
@@ -322,7 +322,7 @@ test('« Où » remembers the places used before and brings the map link back', 
   await expect(page.locator('#past-places option')).toHaveCount(2)
   await page.getByLabel('Où').fill('parc lafontaine')
   await expect(page.getByText('Lien de carte et adresse repris de la dernière fois.')).toBeVisible()
-  await page.getByText('Plus d’options').click()
+  await page.getByText('Plus de choix').click()
   await expect(page.locator('input[name=mapUrl]')).toHaveValue('https://maps.app.goo.gl/abc')
   // a link already typed is never overwritten
   await page.locator('input[name=mapUrl]').fill('https://maps.app.goo.gl/mine')
@@ -490,4 +490,46 @@ test('the page language attribute follows the device, and the toggle', async ({ 
   await page.getByRole('button', { name: 'FR (français)' }).click()
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
   await ctx.close()
+})
+
+test('every button on the host screens is a real tap target (36px tall or more) on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await host(page, {
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie', { linked_household_id: 'hh2', email: 'j@example.com' })] } }),
+    'GET groups': () => ({ json: { groups: [] } }),
+    'GET circle': () => ({ json: { children: [], book: [] } }),
+    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes'), inv('i2', 'f2', 'Max', 'Paul', null)], { map_url: 'https://maps.app.goo.gl/x' }) } : { json: { encounters: [enc()], invitations: [] } }),
+  })
+  for (const path of ['/rencontres', '/rencontres/e1', '/rencontres/nouvelle', '/amis', '/enfants']) {
+    await page.goto(path)
+    await expect(page.locator('h1').first()).toBeVisible()
+    const small = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('button, a.btn, summary')]
+        .filter((el) => el.offsetParent !== null && !el.closest('.toasts'))
+        .map((el) => ({ text: (el.textContent ?? '').trim().slice(0, 30), h: Math.round(el.getBoundingClientRect().height) }))
+        .filter((x) => x.h < 35),
+    )
+    expect(small, path).toEqual([])
+  }
+})
+
+test('the new-rencontre form takes a day and an hour as two pickers and sends one start', async ({ page }) => {
+  const stub = await host(page, {
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }),
+    'GET groups': () => ({ json: { groups: [] } }),
+    'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'] } }),
+  })
+  await page.goto('/rencontres/nouvelle')
+  await page.getByLabel('Jour', { exact: true }).fill('2030-05-04')
+  await page.getByLabel('Heure', { exact: true }).fill('09:30')
+  await expect(page.locator('input[name=startsAt]')).toHaveValue('2030-05-04T09:30')
+  await page.getByRole('button', { name: 'Demain 10 h' }).click() // a quick chip moves both pickers
+  await expect(page.getByLabel('Heure', { exact: true })).toHaveValue('10:00')
+  await page.getByLabel('Jour', { exact: true }).fill('2030-05-04')
+  await page.getByLabel('Heure', { exact: true }).fill('09:30')
+  await page.getByRole('checkbox').first().check()
+  await page.getByRole('button', { name: /Créer et obtenir/ }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'encounters').length).toBe(1)
+  const body = stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')!.body as { startsAt: number }
+  expect(body.startsAt).toBe(Math.floor(new Date('2030-05-04T09:30').getTime() / 1000))
 })

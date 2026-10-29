@@ -91,7 +91,7 @@ export function FamilyPicker({ families, groups, selected, onChange, loaded = tr
           {err && <div className="notice notice--err">{err}</div>}
           <div className="cluster">
             <button type="button" className="btn btn--primary" disabled={busy} onClick={(e) => void create((e.currentTarget.closest('[role=group]') as HTMLElement))}>{t.families.addAndPick}</button>
-            {families.length > 0 && <button type="button" className="btn btn--ghost" onClick={() => setAdding(false)}>{t.encounters.back}</button>}
+            {families.length > 0 && <button type="button" className="btn" onClick={() => setAdding(false)}>{t.encounters.back}</button>}
           </div>
         </div>
       ) : (

@@ -34,6 +34,19 @@
 
 ## 3. What just shipped
 
+### Grandma pass — 2026-10-28
+
+Reply page: the answer sits right under the title, when and where; map, address, notes, calendar and history
+come after it in a second card; a green « Réponse envoyée. Merci ! » shows at once after a tap. Plainer words:
+Les invitations, Envoyer l'invitation, Plus de choix, Changer les deux mots. The message that will go by text is
+shown before it is sent. A day and an hour are two pickers (`WhenInput`). « Publier » is never a dead grey
+button: an empty tap says « Écris un mot d'abord. ». « Pourquoi ? » and every ghost button are real buttons now.
+The slim answer bar wraps instead of overflowing at large text. Checkbox rows align to the first line.
+Door: the trial button sits on its own line. New guards: answer-bar one-line at 320 px, text at 200 %, tap targets
+of 36 px on host screens, answer before details. New shots: the three empty states. Not built on purpose: a
+nudge to families who did not answer (the hourly reminders are opt-in for the recipient; « Renvoyer » is the host's
+own gentle nudge).
+
 ### Actions are buttons — 2026-10-28
 
 Every action that was an underlined word (Modifier, Refaire pareil, Renvoyer, Copier, Annuler la rencontre,

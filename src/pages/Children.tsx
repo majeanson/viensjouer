@@ -73,8 +73,8 @@ export function Children() {
           <div key={c.id} className="card row">
             <span className="cluster"><Face name={c.first_name} colour={c.colour} src={c.photo ? `/api/avatar/child/${c.id}?v=${c.photo}` : null} size="lg" /><strong>{c.first_name}</strong><span className="muted small">{ageLabel(c.birthdate, lang)}</span></span>
             <span className="cluster">
-              <button className="btn btn--ghost" onClick={() => { setPending(null); setEditing(c) }}>{t.children.edit}</button>
-              <button className="btn btn--ghost btn--danger" onClick={() => rm.remove(c.id, t.undo.removed, async () => { await api('children', { method: 'DELETE', body: { id: c.id } }); void invalidate() })}>{t.children.remove}</button>
+              <button className="btn btn--small" onClick={() => { setPending(null); setEditing(c) }}>{t.children.edit}</button>
+              <button className="btn btn--small btn--danger" onClick={() => rm.remove(c.id, t.undo.removed, async () => { await api('children', { method: 'DELETE', body: { id: c.id } }); void invalidate() })}>{t.children.remove}</button>
             </span>
           </div>
         ))}
@@ -105,7 +105,7 @@ export function Children() {
           </div>
           <div className="cluster">
             <button className="btn btn--primary" disabled={save.isPending}>{t.children.save}</button>
-            <button type="button" className="btn btn--ghost" onClick={() => setEditing(null)}>{t.encounters.back}</button>
+            <button type="button" className="btn" onClick={() => setEditing(null)}>{t.encounters.back}</button>
           </div>
         </form>
       ) : null}

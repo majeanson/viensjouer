@@ -17,7 +17,7 @@ function Fallback({ onRetry }: { onRetry: () => void }) {
         <p className="muted">{t.common.crashedHint}</p>
         <div className="cluster">
           <button className="btn btn--primary" onClick={() => location.reload()}>{t.common.reload}</button>
-          <button className="btn btn--ghost" onClick={onRetry}>{t.common.tryAgain}</button>
+          <button className="btn" onClick={onRetry}>{t.common.tryAgain}</button>
         </div>
       </div>
     </div>

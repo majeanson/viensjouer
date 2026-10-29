@@ -108,8 +108,9 @@ export function EncounterDetail() {
 
   // The ready-to-send message: what the invitation is, who it is for, and the short link. Shared
   // with the phone's own share sheet (texto, WhatsApp…) or copied when there is none.
+  const messageFor = (i: Invitation) => t.share.message({ parent: i.parent_name, host: me.displayName ?? '', friend: i.child_first_name, title: e.title, when: whenLong(e.starts_at, lang), scope: i.scope, link: linkFor(i.token) })
   async function shareMessage(i: Invitation) {
-    const text = t.share.message({ parent: i.parent_name, host: me.displayName ?? '', friend: i.child_first_name, title: e.title, when: whenLong(e.starts_at, lang), scope: i.scope, link: linkFor(i.token) })
+    const text = messageFor(i)
     try {
       if (navigator.share && /iPhone|Android/i.test(navigator.userAgent)) {
         await navigator.share({ text })
@@ -233,7 +234,7 @@ export function EncounterDetail() {
             </div>
           )}
 
-          {/* Until someone answers, « Les liens » below already says « Sans réponse » for each family: no second list. */}
+          {/* Until someone answers, « Les invitations » below already says « Sans réponse » for each family: no second list. */}
           {(invitations.length === 0 || invitations.some((i) => i.reply)) && <div className="card" aria-label={t.roster.title}>
             <h3><Icon name="users" />{t.roster.title}</h3>
             <p className="muted small" style={{ margin: '0 0 0.4rem' }}>{e.show_guests === false ? null : t.roster.public}</p>
@@ -264,6 +265,10 @@ export function EncounterDetail() {
                   <details className="more">
                     <summary>{t.form.more}</summary>
                     <div className="stack">
+                      <div>
+                        <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.share.preview}</p>
+                        <blockquote className="msgpreview">{messageFor(i)}</blockquote>
+                      </div>
                       <div>
                         <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.encounters.theLink}</p>
                         <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
@@ -310,7 +315,7 @@ export function EncounterDetail() {
                     <label className="field"><span><Icon name="note" />{t.kinds.relais.note}</span><input className="input" name="note" maxLength={400} defaultValue={relaisOf(i.id)?.note ?? ''} /></label>
                     <div className="cluster">
                       <button className="btn btn--primary" disabled={relaisSave.isPending}>{t.kinds.relais.send}</button>
-                      {relaisOf(i.id) && <button type="button" className="btn btn--ghost btn--danger" onClick={() => relaisDel.mutate(i.id)}>{t.kinds.relais.remove}</button>}
+                      {relaisOf(i.id) && <button type="button" className="btn btn--danger" onClick={() => relaisDel.mutate(i.id)}>{t.kinds.relais.remove}</button>}
                     </div>
                   </form>
                 )}
@@ -324,7 +329,7 @@ export function EncounterDetail() {
                 ))}
               </div>
             ) : (
-              <button className="btn btn--ghost" style={{ marginTop: '0.75rem' }} onClick={() => setAddMore(true)}>{t.encounters.addFamily}</button>
+              <button className="btn" style={{ marginTop: '0.75rem' }} onClick={() => setAddMore(true)}>{t.encounters.addFamily}</button>
             ))}
           </div>
         </div>

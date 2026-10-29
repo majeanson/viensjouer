@@ -82,10 +82,10 @@ export function Door() {
         <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : mode === 'login' ? t.auth.submitLogin : t.auth.submitSignup}</button>
         {mode === 'login' && health.data?.mail && <p className="small" style={{ margin: '0.75rem 0 0' }}><Link to="/oubli">{t.auth.forgot}</Link></p>}
       </form>
-      <p className="small" style={{ textAlign: 'center' }}>
+      <div className="trial">
         <button type="button" className="btn" disabled={busy} onClick={() => void go('demo')}>{t.trial.button}</button>
-        <span className="muted"> · {t.trial.hint}</span>
-      </p>
+        <p className="muted small">{t.trial.hint}</p>
+      </div>
       <p className="small" style={{ textAlign: 'center' }}><Link to="/confidentialite">{t.privacy.link}</Link></p>
     </div>
   )

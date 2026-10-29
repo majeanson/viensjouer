@@ -359,7 +359,7 @@ test('a kept answer stays kept when the server is busy (5xx), and goes out on th
 })
 
 test('the answer bar follows a phone until the question is on screen, answers in one tap, and the calendar moves under the yes', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 480 }) // short enough that the question starts below the fold
+  await page.setViewportSize({ width: 390, height: 330 }) // short enough that the question starts below the fold
   const posts = await stub(page, card())
   await page.goto(`/${CODE}`)
   await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
@@ -404,4 +404,49 @@ test.describe('the theme button', () => {
     expect(await stored()).toBeNull()
     expect(await theme()).toBe('')
   })
+})
+
+test('the slim answer bar keeps each word on one line at 320px', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await stub(page, card())
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+  const bar = page.getByRole('group', { name: 'Vous venez ?' })
+  await expect(bar).toBeVisible()
+  const heights = await bar.getByRole('button').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().height)))
+  expect(heights).toHaveLength(3)
+  expect(Math.max(...heights)).toBeLessThanOrEqual(52) // one line of text; a wrapped word makes it taller
+})
+
+test('with the text size doubled nothing bleeds off the screen and the answer is still on top', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await stub(page, card())
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
+  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+  await expect(page.locator('.answerbar')).toBeVisible() // the question is far down at this size, so the slim bar is up
+  const over = await page.evaluate(() => {
+    const vw = document.documentElement.clientWidth
+    return [...document.querySelectorAll<HTMLElement>('body *')]
+      .filter((el) => el.offsetParent !== null || getComputedStyle(el).position === 'fixed')
+      .map((el) => ({ text: (el.textContent ?? '').trim().slice(0, 30), tag: el.tagName, cls: el.className?.toString?.() ?? '', right: Math.round(el.getBoundingClientRect().right) }))
+      .filter((x) => x.right > vw + 1)
+  })
+  expect(over).toEqual([])
+  // The question comes before the long details: « Quoi / Où » are above it, « Carte / Adresse » below.
+  const ask = await page.getByRole('button', { name: 'Oui, on y sera' }).boundingBox()
+  const address = await page.getByText('Adresse', { exact: true }).boundingBox()
+  expect(ask && address && ask.y < address.y).toBe(true)
+})
+
+test('the answer comes before the details, and the thanks line shows at once after a tap', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await stub(page, card())
+  await page.goto(`/${CODE}`)
+  const ask = await page.getByRole('button', { name: 'Oui, on y sera' }).boundingBox()
+  const details = await page.getByText('À savoir', { exact: true }).boundingBox()
+  expect(ask && details && ask.y < details.y).toBe(true)
+  await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Réponse envoyée. Merci !' })).toBeVisible()
 })

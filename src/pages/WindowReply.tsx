@@ -72,7 +72,7 @@ export function WindowReply() {
       )}
       <footer className="footer muted small">
         <p>{t.reply.footer}</p>
-        <Link to="/" className="btn btn--ghost">{t.reply.create}</Link>
+        <Link to="/" className="btn">{t.reply.create}</Link>
       </footer>
     </div>
   )

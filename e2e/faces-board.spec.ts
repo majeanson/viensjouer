@@ -134,6 +134,8 @@ test('the host\'s board: write, pin at the top, remove with an undo, links are l
   await expect(link).toHaveAttribute('rel', /noopener/)
   await expect(board).toContainText('il y a 1 heure')
   // write
+  await board.getByRole('button', { name: 'Publier' }).click() // nothing written yet: a calm hint, never a dead button
+  await expect(board.getByText('Écris un mot d’abord.')).toBeVisible()
   await board.getByLabel('Écrire sur le tableau…').fill('À samedi !')
   await board.getByRole('button', { name: 'Publier' }).click()
   await expect.poll(() => calls.filter((c) => c.method === 'POST' && c.path === 'messages').length).toBe(1)
@@ -236,7 +238,7 @@ test('the tabs sit under the thumb on a phone and on top on a desktop, with icon
 test('inputs, questions and concepts carry an icon, and icons are decorative', async ({ page }) => {
   await host(page, { 'GET families': () => ({ json: { families: [{ id: 'f1', parent_name: 'Julie', email: null, phone: null, child_first_name: 'Léa', child_birthdate: null, allergies: null, notes: null, linked_household_id: null }] } }) })
   await page.goto('/rencontres/nouvelle')
-  await page.getByText('Plus d’options').click()
+  await page.getByText('Plus de choix').click()
   expect(await page.locator('label.field svg.ico').count()).toBeGreaterThanOrEqual(6)
   expect(await page.locator('h3 svg.ico').count()).toBeGreaterThanOrEqual(2)
   // every icon is hidden from assistive tech: the words carry the meaning

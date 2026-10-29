@@ -14,3 +14,13 @@ describe('actions are buttons', () => {
     expect(bad).toEqual([])
   })
 })
+
+describe('one look for every action, one picker for every time', () => {
+  const all = walk('src').map((f) => f.split(sep).join('/'))
+  it('no screen uses the see-through ghost button', () => {
+    expect(all.filter((f) => /btn--ghost/.test(readFileSync(f, 'utf8')))).toEqual([])
+  })
+  it('a time is picked with WhenInput, never a bare datetime-local', () => {
+    expect(all.filter((f) => f !== 'src/components/WhenInput.tsx' && /datetime-local/.test(readFileSync(f, 'utf8')))).toEqual([])
+  })
+})

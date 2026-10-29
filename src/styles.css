@@ -81,7 +81,6 @@ li { margin-bottom: 0.4rem; }
 .btn:disabled { opacity: 0.5; cursor: default; }
 .btn--primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .btn--primary:hover:not(:disabled) { filter: brightness(0.96); border-color: transparent; }
-.btn--ghost { background: transparent; border-color: transparent; padding-inline: 0.5rem; }
 .btn--small { min-height: 36px; padding: 0.2rem 0.6rem; font-size: 0.85rem; }
 .btn--danger { color: var(--bad); }
 .btn--big { width: 100%; padding: 0.8rem 1rem; font-size: 1rem; }
@@ -95,13 +94,13 @@ li { margin-bottom: 0.4rem; }
 .input { width: 100%; border: 1px solid var(--line); border-radius: var(--radius); padding: 0.6rem 0.7rem; background: var(--paper); min-height: var(--target); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 textarea.input { min-height: 5rem; resize: vertical; }
-.check { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0; }
-.check input { width: 1.2rem; height: 1.2rem; accent-color: var(--ink); }
+.check { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.45rem 0; }
+.check input { flex: none; margin-top: 0.15rem; width: 1.2rem; height: 1.2rem; accent-color: var(--ink); }
 .seg { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 
 /* « Pourquoi on le demande » — a quiet, tappable line under an optional field. */
 .why { display: block; margin-top: 0.15rem; font-weight: 400; }
-.why summary { cursor: pointer; font-size: 0.8rem; color: var(--muted); list-style: none; text-decoration: underline; width: fit-content; }
+.why summary { cursor: pointer; list-style: none; width: fit-content; display: inline-flex; align-items: center; min-height: 36px; padding: 0.1rem 0.7rem; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--card); font-size: 0.8rem; font-weight: 600; color: var(--ink); }
 .why summary::-webkit-details-marker { display: none; }
 .why p { margin: 0.25rem 0 0; font-size: 0.8rem; line-height: 1.4; color: var(--muted); }
 .why-list div { padding: 0.5rem 0; border-top: 1px solid var(--line); }
@@ -131,6 +130,7 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .msg b { font-size: 0.8rem; display: block; color: var(--muted); }
 .notice { padding: 0.6rem 0.8rem; border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 16%, transparent); margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: space-between; }
 .notice--err { background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.notice--ok { background: color-mix(in srgb, var(--ok) 18%, transparent); justify-content: flex-start; font-weight: 650; font-size: 1.05rem; }
 
 .hero { padding: 1.5rem 0 1rem; }
 .hero h1 { font-size: 1.6rem; max-width: 22ch; }
@@ -343,9 +343,9 @@ main:focus { outline: none; }
 }
 
 /* The reply page: while the question is out of view, three answers stay one tap away (phones; a desktop shows the question at once). */
-.answerbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-nav); display: flex; gap: 0.5rem; padding: 0.6rem var(--gutter) calc(0.6rem + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(60, 40, 10, 0.08); }
-.answerbar .btn { flex: 1 1 0; white-space: nowrap; padding-inline: 0.4rem; }
-.answerbar .answerbar__yes { flex: 2 1 0; }
+.answerbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-nav); display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.6rem var(--gutter) calc(0.6rem + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(60, 40, 10, 0.08); }
+.answerbar .btn { flex: 1 1 auto; white-space: nowrap; padding-inline: 0.4rem; }
+.answerbar .answerbar__yes { flex: 2 1 auto; }
 .shell--bar { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
 @media (min-width: 761px) { .answerbar { display: none; } }
 @media (prefers-reduced-motion: no-preference) { .answerbar { animation: slide-up 0.28s var(--ease) backwards; } }
@@ -359,3 +359,11 @@ main:focus { outline: none; }
 
 .bigaction:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .endactions { display: grid; gap: 0.75rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.trial { display: grid; justify-items: center; gap: 0.4rem; text-align: center; margin: 1rem 0; }
+.trial p { margin: 0; }
+.when { display: grid; grid-template-columns: 3fr 2fr; gap: 0.5rem; }
+.when .field { margin: 0; }
+.msgpreview { margin: 0; padding: 0.6rem 0.8rem; border-left: 3px solid var(--accent); background: var(--paper); border-radius: var(--r-md); font-size: 0.9rem; line-height: 1.45; overflow-wrap: anywhere; }
+.when > *, .when .input { min-width: 0; }
+.when .input { width: 100%; }
+@media (max-width: 380px) { .when { grid-template-columns: 1fr; } }

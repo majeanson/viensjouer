@@ -25,13 +25,13 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await host.getByLabel('À apporter', { exact: true }).fill('la collation')
   await host.getByRole('button', { name: 'Ajouter', exact: true }).click()
   await expect(host.getByText('la collation')).toBeVisible()
-  await host.getByText('Plus d’options').first().click()
+  await host.getByText('Plus de choix').first().click()
   const written = await host.locator('.paper').first().innerText()
   const firstCode = written.match(/([a-z]{3,7}-[a-z]{3,7})$/)?.[1]
   expect(firstCode, `a two-word link in "${written}"`).toBeTruthy()
 
   // -- two words that read badly can be drawn again; the old ones stop opening the invitation
-  await host.getByRole('button', { name: 'Autres mots' }).first().click()
+  await host.getByRole('button', { name: 'Changer les deux mots' }).first().click()
   await expect(host.locator('.paper').first()).not.toHaveText(written)
   const code = (await host.locator('.paper').first().innerText()).match(/([a-z]{3,7}-[a-z]{3,7})$/)?.[1]
   expect(code).toBeTruthy()
@@ -80,7 +80,7 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await expect(paper).toContainText(code!.split('-').join(' · '))
   await expect(host.locator('.sheet')).not.toContainText('Chez nous')
   await host.goto(hostUrl)
-  await host.getByText('Plus d’options').first().click()
+  await host.getByText('Plus de choix').first().click()
   await host.getByRole('group', { name: 'Noter sa réponse' }).getByRole('button', { name: 'Peut-être' }).click()
   await expect.poll(async () => ((await (await guest.request.get(`/api/r/${code}`)).json()) as { you: { reply: string } }).you.reply).toBe('maybe')
 

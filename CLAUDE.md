@@ -52,6 +52,7 @@ Local needs `.dev.vars` (copy `.dev.vars.example`; `SESSION_SECRET` ≥ 32 chars
 - **Icons**: `components/Icon.tsx` (no emoji, ever: a build test fails on one). Always beside words, decorative.
 - **A group of optional fields**: ONE `WhyMany` (each field named, why it is asked, what skipping costs). A single field: `Why`.
 - **Actions are buttons**: `btn` (`btn--small` in a row, `btn--danger` for cancel/delete, `btn--primary btn--big` for the one main action, kept apart from the destructive ones). Never an underlined word: `buttons.test.ts` fails on `linkbtn` outside the undo bar. Plain text links are for going elsewhere (a map, a policy page).
+- **A day and an hour**: `WhenInput` (two pickers, one value). Never a bare `datetime-local`. **No see-through buttons**: `btn--ghost` is gone, `buttons.test.ts` guards both.
 - **Never `confirm()`**: `lib/toast.tsx` (`done` for reversible, `later`/`useDeferredRemove` for deletes, 6 s undo). An e2e fails on a browser dialog.
 - **Faces / pictures**: `Face`, `AvatarPicker` (small square JPEG, server cap 400 KB), `CoverPicture`. All optional; no bucket means no button.
 - **The board**: `MessageBoard` on the host page and the invitation. **Rows of choices**: the `.seg` family. **A fold**: `.fold` / `.more`.

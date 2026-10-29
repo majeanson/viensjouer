@@ -5,6 +5,7 @@ import { whenShort } from '../lib/format'
 import { Face } from './Face'
 import { Icon } from './Icon'
 import type { Lang } from '../i18n'
+import { focusIfFinePointer } from '../lib/focus'
 
 // « Le tableau » — the rencontre's message board, for everyone who is invited: where to meet, what to
 // bring, a photo to come and see. It exists as soon as the rencontre does and stays readable afterwards,
@@ -115,12 +116,12 @@ export function MessageBoard({
     if (posting) return
     if (!v) {
       setEmpty(true)
-      area.current?.focus()
+      focusIfFinePointer(area.current)
       return
     }
     onPost(v)
     setText('')
-    requestAnimationFrame(() => area.current?.focus())
+    requestAnimationFrame(() => focusIfFinePointer(area.current))
   }
 
   const Row = ({ m }: { m: BoardMessage }) => (

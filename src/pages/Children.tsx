@@ -91,7 +91,7 @@ export function Children() {
             onUpload={cur ? async (blob) => { await api(`avatar?kind=child&id=${cur.id}`, { method: 'POST', body: blob }); await invalidate() } : undefined}
             onRemove={cur ? async () => { await api('avatar', { method: 'DELETE', body: { kind: 'child', id: cur.id } }); await invalidate() } : undefined}
           />
-          <label className="field"><span><Icon name="smile" />{t.children.firstName}</span><input className="input" name="firstName" required maxLength={40} defaultValue={cur?.first_name} autoFocus /></label>
+          <label className="field"><span><Icon name="smile" />{t.children.firstName}</span><input className="input" name="firstName" required maxLength={40} defaultValue={cur?.first_name} /></label>
           <label className="field"><span><Icon name="cake" />{t.children.birthdate}</span><input className="input" name="birthdate" type="date" defaultValue={cur?.birthdate ?? ''} /><Why k="childBirthdate" /></label>
           <div className="field">
             <span><Icon name="clock" />{t.children.nap}</span>

@@ -113,7 +113,7 @@ export function Friends() {
 
       {editing && (
         <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
-          <label className="field"><span><Icon name="smile" />{t.families.childFirstName}</span><input className="input" name="childFirstName" required maxLength={40} defaultValue={cur?.child_first_name} autoFocus /></label>
+          <label className="field"><span><Icon name="smile" />{t.families.childFirstName}</span><input className="input" name="childFirstName" required maxLength={40} defaultValue={cur?.child_first_name} /></label>
           <label className="field"><span><Icon name="user" />{t.families.parentName}</span><input className="input" name="parentName" required maxLength={60} defaultValue={cur?.parent_name} /></label>
           <label className="field"><span><Icon name="mail" />{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /></label>
           <label className="field"><span><Icon name="cake" />{t.families.birthdate}</span><input className="input" name="childBirthdate" type="date" defaultValue={cur?.child_birthdate ?? ''} /></label>

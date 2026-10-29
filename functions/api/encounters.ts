@@ -244,7 +244,8 @@ export const onRequestPatch = authed(async (ctx, actor) => {
       if ('planB' in sent) after.planB = d.planB ?? null
       if (cur.kind === 'birthday' && 'gift' in sent && !series) after.gift = d.gift ?? null
     }
-    if (status !== undefined) after.status = status
+    // Postponing a series must not bring back an occurrence the host already cancelled.
+    if (status !== undefined && !(status === 'postponed' && tid !== id && cur.status === 'cancelled')) after.status = status
     // A postponed rencontre that gets a new start is on again, to be confirmed.
     else if (cur.status === 'postponed' && after.starts_at !== before.starts_at) after.status = 'proposed'
     plans.push({ id: tid, cur, before, after })

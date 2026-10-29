@@ -57,6 +57,18 @@ describe('purgeRemoved', () => {
     expect(ids('friend_families')).toEqual(['f-used'])
   })
 
+  it('blanks the contact details of a removed family or child it has to keep, and keeps their names', async () => {
+    const { db, env } = realDb()
+    seed(db)
+    db.exec("UPDATE friend_families SET email = 'a@b.c', phone = '555', allergies = 'nuts', notes = 'dog', child_birthdate = '2020-01-01' WHERE id = 'f-used'")
+    db.exec("UPDATE children SET birthdate = '2020-01-01', nap_start = '13:00' WHERE id = 'c-used'")
+    await purgeRemoved(env, NOW)
+    const f = db.prepare("SELECT parent_name, child_first_name, email, phone, allergies, notes, child_birthdate FROM friend_families WHERE id = 'f-used'").get() as Record<string, unknown>
+    expect(f).toMatchObject({ parent_name: 'P', child_first_name: 'K', email: null, phone: null, allergies: null, notes: null, child_birthdate: null })
+    const c = db.prepare("SELECT first_name, birthdate, nap_start FROM children WHERE id = 'c-used'").get() as Record<string, unknown>
+    expect(c).toMatchObject({ first_name: 'X', birthdate: null, nap_start: null })
+  })
+
   it('is safe to run twice', async () => {
     const { db, env } = realDb()
     seed(db)

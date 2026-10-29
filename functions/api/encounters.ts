@@ -228,8 +228,10 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   if (body?.note !== undefined) after.note = str(body.note, 1000)
   if (body?.details !== undefined) {
     const d = cleanDetails(cur.kind, body.details)
-    after.planB = d.planB ?? null
-    if (cur.kind === 'birthday') after.gift = d.gift ?? null
+    // Only a key the client actually sent is touched: an older bundle that sends just { gift } must not wipe the plan B.
+    const sent = body.details && typeof body.details === 'object' ? (body.details as Record<string, unknown>) : {}
+    if ('planB' in sent) after.planB = d.planB ?? null
+    if (cur.kind === 'birthday' && 'gift' in sent) after.gift = d.gift ?? null
   }
   if (status !== undefined) after.status = status
   const changes = diffEncounter(before, after)
@@ -259,7 +261,7 @@ async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Req
        JOIN friend_families f ON f.id = i.friend_family_id
        JOIN encounters e ON e.id = i.encounter_id
        JOIN households h ON h.id = e.household_id
-      WHERE i.encounter_id = ? AND f.email IS NOT NULL AND (i.reply IS NULL OR i.reply != 'no') LIMIT 40`,
+      WHERE i.encounter_id = ? AND f.email IS NOT NULL AND f.deleted_at IS NULL AND (i.reply IS NULL OR i.reply != 'no') LIMIT 40`,
   )
     .bind(encounterId)
     .all<{ token: string; email: string; lang: string | null; parent_name: string; tz: string }>()

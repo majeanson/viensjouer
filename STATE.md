@@ -12,9 +12,15 @@
 
 **Open, in order:**
 1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
-2. A « Reporté / pluie » state with a reason (board post, optional email), instead of cancel-or-edit.
-3. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
-4. The reply page opening offline (shell cache only, never stale answers).
+2. **Household time zone** (review finding, confirmed): `households.tz` is 'America/Toronto' forever and nothing writes it, so emails, the .ics and quiet hours are off for a family outside Eastern time. Set it from the browser at signup, edit it on the account page. Small, and it matters more now that quiet hours use it.
+3. **Cancelling a whole series is silent** (confirmed): later occurrences change status with no change row and no notice. Write one change per occurrence and offer the update email. Goes with the Reporté / pluie item below.
+4. A dead or retired link says « cette rencontre est terminée » with the host's first name, not the generic failure page.
+5. Cron reminders are outside the daily mail budget (60/day vs Resend's 100/day free): count them with `recordMail`, or skip when `mailRoom` is 0.
+6. Edit a recurring series in one go (today twelve edits to move a weekly park from 10 h to 11 h).
+7. An invited parent with two children cannot answer for both; a « host lockout » prompt (invite my partner after the first rencontre); free-tier headroom warning in the cron; the export should also include `child_links` and reminder preferences.
+8. A « Reporté / pluie » state with a reason (board post, optional email), instead of cancel-or-edit.
+9. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
+10. The reply page opening offline (shell cache only, never stale answers).
 
 **Budgets (`npm run check:bundle`):** entry 84.8 / 86 KB, every other chunk under 11 KB, stylesheet 5.3 / 5.5 KB. Both dictionaries are lazy chunks (`i18n.fr`, `i18n.en`). Read the output for « exceeded », not only « ok ».
 
@@ -52,7 +58,7 @@
 
 ### Hygiene — 2026-10-29
 
-`functions/_lib/purge.ts`, run by the hourly `tidy`: a rencontre, window, group, message, photo, family or child removed more than 30 days ago is deleted for good (a family or child still named by a surviving invitation, rencontre or link is kept, its book entry makes the history readable; R2 blobs go with them). Share words of a rencontre or window over for 90 days are retired (`token` becomes `old-<id>`), so the two-word space is reusable while the row and its answer stay. Bounded to 25 / 200 rows per run. `purge.test.ts` runs the real migrations on `node:sqlite` (planted red once). The privacy page says 30 days.
+`functions/_lib/purge.ts`, run by the hourly `tidy`: a rencontre, window, group, message, photo, family or child removed more than 30 days ago is deleted for good (a family or child still named by a surviving invitation, rencontre or link is kept, its book entry makes the history readable; R2 blobs go with them). Share words of a rencontre or window over for 90 days are retired (`token` becomes `old-<id>`), so the two-word space is reusable while the row and its answer stay. Bounded to 25 / 200 rows per run. `purge.test.ts` runs the real migrations on `node:sqlite` (planted red once). A removed family or child that history still names keeps only its names: email, phone, allergies, notes and birthdates are blanked after the 30 days. Rows are deleted before their blobs, so a failed batch retries with its picture intact. The privacy page says so.
 
 ### The night's batch — 2026-10-29
 

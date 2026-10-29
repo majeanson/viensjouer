@@ -33,7 +33,6 @@ export async function purgeRemoved(env: Env, now = nowSec()): Promise<void> {
     const ids = encs.map((e) => e.id)
     const m = marks(ids.length)
     const { results: shots } = await env.DB.prepare(`SELECT media_key FROM souvenirs WHERE encounter_id IN (${m})`).bind(...ids).all<{ media_key: string }>()
-    await dropBlobs(env, [...shots.map((s) => s.media_key), ...encs.map((e) => e.cover_key)])
     await env.DB.batch([
       env.DB.prepare(`DELETE FROM bring_items WHERE encounter_id IN (${m})`).bind(...ids),
       env.DB.prepare(`DELETE FROM encounter_changes WHERE encounter_id IN (${m})`).bind(...ids),
@@ -43,6 +42,8 @@ export async function purgeRemoved(env: Env, now = nowSec()): Promise<void> {
       env.DB.prepare(`DELETE FROM invitations WHERE encounter_id IN (${m})`).bind(...ids),
       env.DB.prepare(`DELETE FROM encounters WHERE id IN (${m})`).bind(...ids),
     ])
+    // Rows first, blobs after: a failed batch leaves the row to retry next hour with its picture intact.
+    await dropBlobs(env, [...shots.map((s) => s.media_key), ...encs.map((e) => e.cover_key)])
   }
 
   // Windows and groups: their members first.
@@ -72,9 +73,15 @@ export async function purgeRemoved(env: Env, now = nowSec()): Promise<void> {
          AND NOT EXISTS (SELECT 1 FROM child_links l WHERE l.child_a = c.id OR l.child_b = c.id)`
   const { results: kids } = await env.DB.prepare(`SELECT c.id, c.photo_key FROM children c WHERE c.deleted_at IS NOT NULL AND c.deleted_at < ? AND ${kept} LIMIT ?`).bind(cutoff, BATCH).all<{ id: string; photo_key: string | null }>()
   if (kids.length) {
-    await dropBlobs(env, kids.map((k) => k.photo_key))
     await env.DB.prepare(`DELETE FROM children WHERE id IN (${marks(kids.length)})`).bind(...kids.map((k) => k.id)).run()
+    await dropBlobs(env, kids.map((k) => k.photo_key))
   }
+
+  // Whatever removed row had to stay (history still names it) keeps its names but loses what could reach the person.
+  await env.DB.batch([
+    env.DB.prepare('UPDATE friend_families SET email = NULL, phone = NULL, allergies = NULL, notes = NULL, child_birthdate = NULL WHERE deleted_at IS NOT NULL AND deleted_at < ? AND (email IS NOT NULL OR phone IS NOT NULL OR allergies IS NOT NULL OR notes IS NOT NULL OR child_birthdate IS NOT NULL)').bind(cutoff),
+    env.DB.prepare('UPDATE children SET birthdate = NULL, nap_start = NULL, nap_end = NULL WHERE deleted_at IS NOT NULL AND deleted_at < ? AND (birthdate IS NOT NULL OR nap_start IS NOT NULL OR nap_end IS NOT NULL)').bind(cutoff),
+  ])
 }
 
 // Frees the two-word space: an ended rencontre's links stop being codes. The unique token column stays satisfied

@@ -53,6 +53,7 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
        JOIN households h ON h.id = e.household_id
        JOIN children c ON c.id = e.child_id
       WHERE i.remind_at IS NOT NULL AND i.remind_at <= ? AND i.reminded_at IS NULL
+        AND f.deleted_at IS NULL AND (i.reply IS NULL OR i.reply != 'no')
         AND e.deleted_at IS NULL AND e.status != 'cancelled' AND e.starts_at > ?
       LIMIT 100`,
   )

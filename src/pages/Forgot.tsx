@@ -30,6 +30,7 @@ export function Forgot() {
   return (
     <div className="shell">
       <Header />
+      <main id="main" tabIndex={-1}>
       <h1>{t.auth.forgotTitle}</h1>
       {sent ? (
         <div className="notice">{t.auth.forgotSent}</div>
@@ -41,6 +42,7 @@ export function Forgot() {
         </form>
       )}
       <p className="small"><Link to="/">{t.encounters.back}</Link></p>
+      </main>
     </div>
   )
 }
@@ -70,12 +72,14 @@ export function Reset() {
   return (
     <div className="shell">
       <Header />
+      <main id="main" tabIndex={-1}>
       <h1>{t.auth.resetTitle}</h1>
       <form className="card" onSubmit={submit}>
         <label className="field"><span><Icon name="lock" />{t.auth.newPassword}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
         {err && <div className="notice notice--err">{err}</div>}
         <button className="btn btn--primary btn--big" disabled={busy || !token}>{busy ? t.auth.working : t.auth.resetSend}</button>
       </form>
+      </main>
     </div>
   )
 }

@@ -28,6 +28,8 @@ export function Header() {
     return () => mq.removeEventListener('change', follow)
   }, [choice])
   return (
+    <>
+    <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus() }}>{t.common.skip}</a>
     <header className="head">
       <Link to={me.signedIn ? '/rencontres' : '/'} className="brand"><i aria-hidden="true" />{t.appName}</Link>
       <div className="head__tools">
@@ -48,5 +50,6 @@ export function Header() {
         )}
       </div>
     </header>
+    </>
   )
 }

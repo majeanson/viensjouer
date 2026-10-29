@@ -35,6 +35,7 @@ export function Join() {
   return (
     <div className="shell">
       <Header />
+      <main id="main" tabIndex={-1}>
       {!token || q.isError ? (
         <div className="notice notice--err">{t.parent.dead}</div>
       ) : q.data ? (
@@ -52,6 +53,7 @@ export function Join() {
       ) : (
         <p className="muted">{t.common.loading}</p>
       )}
+      </main>
     </div>
   )
 }

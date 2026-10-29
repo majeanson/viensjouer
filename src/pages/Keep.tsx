@@ -33,6 +33,7 @@ export function Keep() {
   return (
     <div className="shell">
       <Header />
+      <main id="main" tabIndex={-1}>
       <h1>{t.trial.keepTitle}</h1>
       <p className="muted">{t.trial.keepHint}</p>
       <form className="card" onSubmit={submit}>
@@ -42,6 +43,7 @@ export function Keep() {
         {err && <div className="notice notice--err">{err}</div>}
         <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : t.trial.keepSend}</button>
       </form>
+      </main>
     </div>
   )
 }

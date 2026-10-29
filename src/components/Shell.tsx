@@ -13,7 +13,6 @@ export function Shell({ children }: { children: ReactNode }) {
   const t = useT()
   return (
     <div className="shell">
-      <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus() }}>{t.common.skip}</a>
       <Header />
       <OfflineNotice />
       <nav className="nav" aria-label="Navigation">

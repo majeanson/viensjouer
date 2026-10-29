@@ -47,6 +47,7 @@ export function WindowReply() {
   return (
     <div className="shell">
       <Header />
+      <main id="main" tabIndex={-1}>
       <div className="card">
         <span className="chip chip--kind">{t.windows.chip}</span>
         <h1 style={{ marginTop: '0.5rem' }}>{t.windows.offer(host.child_first_name, you.child_first_name)}</h1>
@@ -70,6 +71,7 @@ export function WindowReply() {
           </div>
         </div>
       )}
+      </main>
       <footer className="footer muted small">
         <p>{t.reply.footer}</p>
         <Link to="/" className="btn">{t.reply.create}</Link>

@@ -165,6 +165,7 @@ export const EN: Dict = {
     closed: 'This get-together is past or cancelled, replies are closed.',
     extras: 'Add my details (optional)',
     saveExtras: 'Save',
+    untilWord: 'until',
     oneTap: 'One tap is enough. You can change your mind later.',
     yourReply: 'Your reply',
     change: 'Change',

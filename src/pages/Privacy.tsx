@@ -10,6 +10,7 @@ export function Privacy() {
   return (
     <div className="shell">
       <Header />
+      <main id="main" tabIndex={-1}>
       <h1>{t.privacy.title}</h1>
       <p className="muted">{t.privacy.lead}</p>
       <div className="card">
@@ -43,6 +44,7 @@ export function Privacy() {
         <Link to="/compte" className="btn">{t.account.title}</Link>
       </div>
       <p className="small"><Link to="/">{t.encounters.back}</Link></p>
+      </main>
     </div>
   )
 }

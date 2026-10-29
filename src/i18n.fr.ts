@@ -163,6 +163,7 @@ export const FR = {
     closed: 'Cette rencontre est passée ou annulée, on ne peut plus répondre.',
     extras: 'Ajouter mes coordonnées (facultatif)',
     saveExtras: 'Enregistrer',
+    untilWord: 'jusqu’à',
     oneTap: 'Un seul toucher suffit. Tu peux changer d’avis plus tard.',
     yourReply: 'Votre réponse',
     change: 'Changer',

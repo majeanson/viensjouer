@@ -420,7 +420,7 @@ test('the slim answer bar keeps each word on one line at 320px', async ({ page }
   await page.goto(`/${CODE}`)
   await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-  const bar = page.getByRole('group', { name: 'Vous venez ?' })
+  const bar = page.locator('.answerbar')
   await expect(bar).toBeVisible()
   const heights = await bar.getByRole('button').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().height)))
   expect(heights).toHaveLength(3)

@@ -184,12 +184,12 @@ function ReplyInner() {
   // wants to see the friend again), else in the footer. Never before the question: it must not compete with it.
   const claimForm = (
     <form className="card" style={{ textAlign: 'left' }} onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>
-      <h3><Icon name="user" />{t.reply.claimTitle}</h3>
+      <h2><Icon name="user" />{t.reply.claimTitle}</h2>
       <p className="muted small">{t.reply.claimHint}</p>
       <label className="field"><span><Icon name="user" />{t.reply.parentName}</span><input className="input" name="displayName" required maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
       <label className="field"><span><Icon name="mail" />{t.reply.email}</span><input className="input" name="email" type="email" required defaultValue={you.email ?? ''} autoComplete="email" /></label>
       <label className="field"><span><Icon name="lock" />{t.reply.claimPassword}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
-      {err && <div className="notice notice--err">{err}</div>}
+      {err && <div className="notice notice--err" role="alert">{err}</div>}
       <button className="btn btn--primary btn--big" disabled={claim.isPending}>{t.reply.claimSend}</button>
     </form>
   )
@@ -231,6 +231,7 @@ function ReplyInner() {
     <div className={barShown ? 'shell shell--bar' : 'shell'}>
       <Header />
       <OfflineNotice />
+      <main id="main" tabIndex={-1}>
 
       {fresh.length > 0 && (
         <div className="notice notice--changed" role="status">
@@ -259,7 +260,7 @@ function ReplyInner() {
         <p><strong>{you.scope === 'friend' ? t.scope.youFriend(you.child_first_name) : t.scope.youFamily}</strong></p>
         <dl className="facts">
           <div><dt><Icon name="tag" />{t.reply.what}</dt><dd>{e.title}{mark(freshOf('title'))}</dd></div>
-          <div><dt><Icon name="calendar" />{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}<Rel at={e.starts_at} />{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
+          <div><dt><Icon name="calendar" />{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at && <><span aria-hidden="true"> → </span><span className="sr-only"> {t.reply.untilWord} </span>{timeOnly(e.ends_at, lang)}</>}<Rel at={e.starts_at} />{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
           {e.place && <div><dt><Icon name="pin" />{t.reply.where}</dt><dd>{e.place}{mark(freshOf('place'))}</dd></div>}
           {e.details?.planB && <div><dt><Icon name="umbrella" />{t.encounters.planB}</dt><dd>{e.details.planB}{mark(freshOf('planB'))}</dd></div>}
         </dl>
@@ -306,15 +307,15 @@ function ReplyInner() {
                   ...(you.reply === 'yes' && (you.scope === 'family' || e.kind === 'birthday') ? ([[t.scope.kidsLabel, 'headcount']] as [string, 'headcount'][]) : []),
                 ]}
               />
-              {err && <div className="notice notice--err">{err}</div>}
+              {err && <div className="notice notice--err" role="alert">{err}</div>}
               <button className="btn btn--primary" disabled={post.isPending} style={{ marginTop: '0.75rem' }}>{t.reply.saveExtras}</button>
             </form>
           </details>
         </div>
       ) : (
         <section className="card" ref={questionRef}>
-          <h3><Icon name="help" />{t.reply.question}</h3>
-          <div className="stack">
+          <h2 id="reply-question"><Icon name="help" />{t.reply.question}</h2>
+          <div className="stack" role="group" aria-labelledby="reply-question">
             <button type="button" className="btn btn--big btn--yes" disabled={post.isPending} onClick={() => answer('yes')}><Icon name="check" />{t.reply.yes}</button>
             <div className="seg">
               <button type="button" className="btn" disabled={post.isPending} onClick={() => answer('maybe')}><Icon name="help" />{t.reply.maybe}</button>
@@ -322,7 +323,7 @@ function ReplyInner() {
             </div>
           </div>
           {queued && <div className="notice" role="status" style={{ marginTop: '0.75rem' }}>{t.reply.queued}</div>}
-          {err && <div className="notice notice--err" style={{ marginTop: '0.75rem' }}>{err}</div>}
+          {err && <div className="notice notice--err" role="alert" style={{ marginTop: '0.75rem' }}>{err}</div>}
           <p className="muted small" style={{ margin: '0.75rem 0 0' }}>{t.reply.oneTap}</p>
         </section>
       )}
@@ -330,7 +331,7 @@ function ReplyInner() {
 
       {offerAccount && (claiming ? claimForm : (
         <section className="card" aria-label={t.reply.moreTitle(host.child_first_name)}>
-          <h3><Icon name="heart" />{t.reply.moreTitle(host.child_first_name)}</h3>
+          <h2><Icon name="heart" />{t.reply.moreTitle(host.child_first_name)}</h2>
           <p className="muted small">{t.reply.moreHint}</p>
           <button className="btn" onClick={() => setClaiming(true)}>{t.reply.create}</button>
         </section>
@@ -338,7 +339,7 @@ function ReplyInner() {
 
       {guests && (guests.yes.length > 0 || guests.maybe.length > 0) && (
         <section className="card guests" aria-label={t.roster.guestsTitle}>
-          <h3><Icon name="users" />{t.roster.guestsTitle}</h3>
+          <h2><Icon name="users" />{t.roster.guestsTitle}</h2>
           {guests.yes.length > 0 && <p><strong>{t.roster.yes} ({guests.yes.length})</strong> : {guests.yes.join(', ')}</p>}
           {guests.maybe.length > 0 && <p><strong>{t.roster.maybe} ({guests.maybe.length})</strong> : {guests.maybe.join(', ')}</p>}
           {guests.waiting > 0 && <p className="muted small">{t.roster.waiting(guests.waiting)}</p>}
@@ -348,7 +349,7 @@ function ReplyInner() {
 
       {(bring.length > 0 || canBring) && (
         <section className="card" aria-label={t.bring.title}>
-          <h3><Icon name="bag" />{t.bring.title}</h3>
+          <h2><Icon name="bag" />{t.bring.title}</h2>
           {bring.map((b) => (
             <div key={b.id} className="row linkrow">
               <span>{b.label} <span className="muted small">· {b.by ? (b.mine ? t.bring.byName(you.parent_name) : t.bring.byName(b.by)) : t.bring.nobody}</span></span>
@@ -380,7 +381,7 @@ function ReplyInner() {
       {homeCard && <HomeCardView card={homeCard} />}
       {relais && (
         <div className="card">
-          <h3><Icon name="home" />{t.kinds.relais.title}</h3>
+          <h2><Icon name="home" />{t.kinds.relais.title}</h2>
           {relais.nap && <p style={{ margin: 0 }}><strong>{t.kinds.relais.nap} :</strong> {relais.nap}</p>}
           {relais.ate && <p style={{ margin: 0 }}><strong>{t.kinds.relais.ate} :</strong> {relais.ate}</p>}
           {relais.mood && <p style={{ margin: 0 }}><strong>{t.kinds.relais.mood} :</strong> {relais.mood}</p>}
@@ -390,7 +391,7 @@ function ReplyInner() {
 
       {souvenirsOpen && (photos || souvenirs.length > 0) && (
         <div className="card">
-          <h3><Icon name="camera" />{t.souvenirs.title}</h3>
+          <h2><Icon name="camera" />{t.souvenirs.title}</h2>
           <p className="muted small">{t.souvenirs.hint}</p>
           <Why k="photos" />
           <PhotoGrid
@@ -407,7 +408,7 @@ function ReplyInner() {
 
       {series.length > 0 && (
         <div className="card">
-          <h3><Icon name="repeat" />{t.reply.seriesTitle}</h3>
+          <h2><Icon name="repeat" />{t.reply.seriesTitle}</h2>
           <p className="muted small">{t.reply.seriesHint}</p>
           {series.map((w) => (
             <Link key={w.token} to={`/${paperCode(w.token)}`} className="row linkrow" style={{ textDecoration: 'none' }}>
@@ -438,6 +439,7 @@ function ReplyInner() {
         onDelete={(m) => post.mutate({ deleteMessage: m.id })}
       />
 
+      </main>
       <footer className="footer muted small">
         <p>{t.reply.whatIs}</p>
         <p><Link to="/confidentialite">{t.privacy.link}</Link></p>

@@ -52,6 +52,7 @@ export function Door() {
   return (
     <div className="shell">
       <Header />
+      <main id="main" tabIndex={-1}>
       <section className="hero">
         <h1>{t.tagline}</h1>
         <p className="muted">{t.door.pitch}</p>
@@ -87,6 +88,7 @@ export function Door() {
         <p className="muted small">{t.trial.hint}</p>
       </div>
       <p className="small" style={{ textAlign: 'center' }}><Link to="/confidentialite">{t.privacy.link}</Link></p>
+      </main>
     </div>
   )
 }

@@ -28,3 +28,21 @@ describe('GET /api/r/<token> on a removed rencontre', () => {
     expect((await get(seed(), 'zzzz9999')).status).toBe(404)
   })
 })
+
+describe('GET /api/w/<code> on a removed window', () => {
+  it('says 410 with the host’s first name too', async () => {
+    const { onRequestGet: getW } = await import('../w/[token]')
+    const { db, env } = realDb()
+    db.exec(`INSERT INTO households (id, name, tz, created_at, updated_at) VALUES ('h1', 'H', 'America/Toronto', 1, 1)`)
+    db.exec(`INSERT INTO parents (email, household_id, display_name, password_hash, created_at) VALUES ('a@b.c', 'h1', 'Marie Tremblay', 'x', 1)`)
+    db.exec(`INSERT INTO children (id, household_id, first_name, created_at, updated_at) VALUES ('c1', 'h1', 'Noé', 1, 1)`)
+    db.exec(`INSERT INTO friend_families (id, household_id, parent_name, child_first_name, created_at, updated_at) VALUES ('f1', 'h1', 'P', 'Léa', 1, 1)`)
+    db.exec(`INSERT INTO open_windows (id, household_id, child_id, starts_at, ends_at, created_at, deleted_at) VALUES ('w1', 'h1', 'c1', 1, 2, 1, 9)`)
+    db.exec(`INSERT INTO window_targets (id, window_id, friend_family_id, token, created_at) VALUES ('t1', 'w1', 'f1', 'wxyz2345', 1)`)
+    const res = (await getW({ env, request: new Request('https://x.test/api/w/wxyz2345'), params: { token: 'wxyz2345' } } as never)) as Response
+    expect(res.status).toBe(410)
+    expect(((await res.json()) as { error: string }).error).toBe('Marie')
+    const none = (await getW({ env, request: new Request('https://x.test/api/w/zzzz9999'), params: { token: 'zzzz9999' } } as never)) as Response
+    expect(none.status).toBe(404)
+  })
+})

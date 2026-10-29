@@ -18,7 +18,7 @@ export interface FamilyRow {
   linked_household_id: string | null
 }
 
-const FIELDS = 'id, parent_name, email, phone, child_first_name, child_birthdate, allergies, notes, linked_household_id'
+const FIELDS = 'id, parent_name, email, phone, child_first_name, child_birthdate, allergies, notes, linked_household_id, email_bounced_at'
 
 export const onRequestGet = authed(async (ctx, actor) => {
   const { results } = await ctx.env.DB.prepare(`SELECT ${FIELDS} FROM friend_families WHERE household_id = ? AND deleted_at IS NULL ORDER BY child_first_name`)
@@ -65,6 +65,7 @@ export const onRequestPatch = authed(async (ctx, actor) => {
        parent_name = COALESCE(?, parent_name),
        child_first_name = COALESCE(?, child_first_name),
        email = CASE WHEN ? THEN ? ELSE email END,
+       email_bounced_at = CASE WHEN ? THEN NULL ELSE email_bounced_at END,
        phone = CASE WHEN ? THEN ? ELSE phone END,
        child_birthdate = CASE WHEN ? THEN ? ELSE child_birthdate END,
        allergies = CASE WHEN ? THEN ? ELSE allergies END,
@@ -77,6 +78,7 @@ export const onRequestPatch = authed(async (ctx, actor) => {
       str(body?.childFirstName, 40),
       body?.email !== undefined ? 1 : 0,
       cleanEmail(body?.email),
+      body?.email !== undefined ? 1 : 0,
       body?.phone !== undefined ? 1 : 0,
       str(body?.phone, 30),
       body?.childBirthdate !== undefined ? 1 : 0,

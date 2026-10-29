@@ -75,6 +75,14 @@ export function EncounterDetail() {
     onError: fail,
   })
   const setScope = useMutation({ mutationFn: (b: { id: string; scope: 'friend' | 'family' }) => api('invitations', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
+  const announce = useMutation({
+    mutationFn: (reason: string) => api<{ notified: number; notifiedSkipped?: number }>('encounters', { method: 'PATCH', body: { id, announce: true, ...(reason ? { reason } : {}) } }),
+    onSuccess: (r) => {
+      setFlash((r.notified ? t.edit.savedNotified(r.notified) : t.edit.nothing) + (r.notifiedSkipped ? ` ${t.common.mailCapped}` : ''))
+      setTimeout(() => setFlash(null), 6000)
+    },
+    onError: fail,
+  })
   const message = useMutation({ mutationFn: (text: string) => api('messages', { method: 'POST', body: { encounterId: id, text } }), onSuccess: refresh, onError: fail })
   const pin = useMutation({ mutationFn: (b: { id: string; pinned: boolean }) => api('messages', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
   const relaisSave = useMutation({
@@ -275,7 +283,7 @@ export function EncounterDetail() {
             {invitations.map((i) => (
               <div key={i.id} className="linkrow">
                 <div className="row">
-                  <span className="cluster"><span><strong>{i.child_first_name}</strong> <span className="muted small">· {i.parent_name}</span></span></span>
+                  <span className="cluster"><span><strong>{i.child_first_name}</strong> <span className="muted small">· {i.parent_name}</span></span>{i.email_bounced_at && <span className="chip chip--cancelled">{t.families.bounced}</span>}</span>
                   <span className={`chip ${i.reply ? `chip--${i.reply}` : ''}`}>{i.reply ? t.encounters.reply[i.reply] : t.encounters.reply.none}</span>
                 </div>
                 {i.reply_note && <p className="small" style={{ margin: 0 }}>« {i.reply_note} »</p>}
@@ -472,14 +480,17 @@ export function EncounterDetail() {
           onSubmit={(ev) => {
             ev.preventDefault()
             const why = String(new FormData(ev.currentTarget).get('why') ?? '').trim()
-            if (!why) return
-            message.mutate(`${t.encounters.status.cancelled} : ${why}`)
+            const mail = new FormData(ev.currentTarget).get('notify') === 'on'
+            if (!why && !mail) return
+            if (why) message.mutate(`${t.encounters.status.cancelled} : ${why}`)
+            if (mail) announce.mutate(why)
             ev.currentTarget.reset()
           }}
         >
           <h3><Icon name="message" />{t.encounters.whyCancel}</h3>
           <p className="muted small">{t.encounters.whyCancelHint}</p>
           <label className="field"><span className="sr-only">{t.encounters.whyCancel}</span><input className="input" name="why" maxLength={200} placeholder={t.encounters.whyCancelPlaceholder} /></label>
+          {!!me.mail && invitations.some((i) => i.email && i.reply !== 'no') && <label className="check"><input type="checkbox" name="notify" /><span>{t.edit.notify}</span></label>}
           <button className="btn btn--primary" disabled={message.isPending}>{t.board.send}</button>
         </form>
       )}

@@ -63,7 +63,9 @@ export function changeLines(changes: Change[], tz: string, lang: MailLang = 'fr'
     return v
   }
   return changes.map((c) =>
-    c.field === 'address' || c.field === 'map_url'
+    c.field === 'status' && c.old === null
+      ? `${LABEL[lang].status} : ${show('status', c.new)}`
+      : c.field === 'address' || c.field === 'map_url'
       ? `${LABEL[lang][c.field]} : ${lang === 'fr' ? 'mise à jour, à voir sur la page' : 'updated, see the page'}`
       : `${LABEL[lang][c.field]} : ${show(c.field, c.old)} → ${show(c.field, c.new)}`,
   )

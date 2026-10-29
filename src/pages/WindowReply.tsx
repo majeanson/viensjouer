@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '../lib/api'
+import { ApiError, api, isStatus } from '../lib/api'
 import { useLang, useT } from '../i18n'
 import { whenLong } from '../lib/format'
 import { Header } from '../components/Header'
@@ -37,6 +37,7 @@ export function WindowReply() {
     onError: (e) => setErr(e.message),
   })
   if (q.isLoading) return <Loading page />
+  if (isStatus(q.error, 410)) return <main id="main" className="shell"><div className="notice" role="status">{t.reply.windowEnded((q.error as ApiError).message)}</div></main>
   if (!q.data) return <QueryError page error={q.error} dead={t.reply.dead} onRetry={() => void q.refetch()} />
   const { window: w, host, you, alive } = q.data
   const answer = (reply: 'yes' | 'no') => (e: FormEvent) => {

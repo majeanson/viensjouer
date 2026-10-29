@@ -701,3 +701,77 @@ for (const width of [320, 375]) {
     await check('famille')
   })
 }
+
+const MAILING = { signedIn: true, email: 'm@example.com', displayName: 'Marc', household: { id: 'h', name: 'Les Jeanson', tz: 'America/Toronto' }, mail: true, demo: false }
+
+test('a host with no second parent is asked once, after a first rencontre has passed, and « Plus tard » sticks', async ({ page }) => {
+  await host(page, {
+    'GET auth/me': () => ({ json: { ...MAILING, mail: false, soloHost: true } }),
+    'GET encounters': () => ({ json: { encounters: [enc({ starts_at: now - 5 * 86_400 })], invitations: [] } }),
+  })
+  await page.goto('/rencontres')
+  await expect(page.getByText(/Invite l’autre parent/)).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Inviter' })).toHaveAttribute('href', '/compte')
+  await page.getByRole('button', { name: 'Plus tard' }).click()
+  await expect(page.getByText(/Invite l’autre parent/)).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByText(/Invite l’autre parent/)).toHaveCount(0)
+})
+
+test('no partner line when there is a second parent, or before any rencontre has passed', async ({ page }) => {
+  await host(page, {
+    'GET auth/me': () => ({ json: { ...MAILING, mail: false, soloHost: false } }),
+    'GET encounters': () => ({ json: { encounters: [enc({ starts_at: now - 5 * 86_400 })], invitations: [] } }),
+  })
+  await page.goto('/rencontres')
+  await expect(page.getByRole('heading', { name: 'Rencontres', level: 1 })).toBeVisible()
+  await expect(page.getByText(/Invite l’autre parent/)).toHaveCount(0)
+})
+
+test('Reporter asks for a reason, sends it with the email choice, and the card says it is postponed', async ({ page }) => {
+  let status = 'proposed'
+  const stub = await host(page, {
+    'GET auth/me': () => ({ json: MAILING }),
+    'GET encounters': () => ({ json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes', { email: 'j@example.com' })], { status }) }),
+    'PATCH encounters': (b) => { status = String(b?.status ?? status); return { json: { changed: 1, notified: 1 } } },
+  })
+  await page.goto('/rencontres/e1')
+  await page.getByRole('button', { name: 'Reporter', exact: true }).click()
+  const form = page.locator('form', { hasText: 'Les réponses restent' })
+  await form.getByLabel('Pourquoi ? (facultatif)').fill('Il pleut')
+  await expect(form.getByLabel('Prévenir par courriel les familles qui ont une adresse')).toBeChecked()
+  await form.getByRole('button', { name: 'Reporter', exact: true }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'PATCH')?.body).toMatchObject({ id: 'e1', status: 'postponed', reason: 'Il pleut', notify: true })
+  await expect(page.getByText(/Reportée : change la date/)).toBeVisible()
+  // postponed already: no second « Reporter »
+  await expect(page.getByRole('button', { name: 'Reporter', exact: true })).toHaveCount(0)
+})
+
+test('cancelled: the reason can go out by email, and an empty form sends nothing', async ({ page }) => {
+  const stub = await host(page, {
+    'GET auth/me': () => ({ json: MAILING }),
+    'GET encounters': () => ({ json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes', { email: 'j@example.com' })], { status: 'cancelled' }) }),
+    'PATCH encounters': () => ({ json: { notified: 1 } }),
+  })
+  await page.goto('/rencontres/e1')
+  const form = page.locator('form', { hasText: 'Dis-leur pourquoi' })
+  await form.getByRole('button', { name: 'Publier' }).click()
+  expect(stub.calls.filter((c) => c.method === 'PATCH' || (c.method === 'POST' && c.path === 'messages'))).toEqual([])
+  await form.getByPlaceholder('La pluie, un rhume, on se reprend…').fill('Un rhume')
+  await form.getByLabel('Prévenir par courriel les familles qui ont une adresse').check()
+  await form.getByRole('button', { name: 'Publier' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'PATCH')?.body).toEqual({ id: 'e1', announce: true, reason: 'Un rhume' })
+  await expect(page.getByText(/1 courriel envoyé/)).toBeVisible()
+})
+
+test('a family whose email bounced is marked on the card and in the friends list', async ({ page }) => {
+  await host(page, {
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie', { email: 'j@example.com', email_bounced_at: now })] } }),
+    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', null, { email: 'j@example.com', email_bounced_at: now })]) } : { json: { encounters: [enc()], invitations: [] } }),
+  })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByText('Courriel non reçu')).toBeVisible()
+  await page.goto('/amis')
+  await expect(page.getByText('Courriel non reçu')).toBeVisible()
+  await expect(page.getByText('Vérifie l’adresse, ou envoie-lui le lien par texto.')).toBeVisible()
+});

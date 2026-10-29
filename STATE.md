@@ -12,8 +12,7 @@
 
 **Open, in order:**
 1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
-2. **Cancelling a series: the email offer.** Every later occurrence now gets its change row (shown on its card), but « Annuler » still sends no update email; the « Prévenir » box exists on edit and on Reporter only.
-3. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
+2. **Turn the bounce webhook on** (one human step, see the 2026-10-29 « last four » entry): add the endpoint in Resend and `wrangler secret put RESEND_WEBHOOK_SECRET`.
 
 **Budgets (`npm run check:bundle`):** entry 84.8 / 86 KB, every other chunk under 11 KB, stylesheet 5.3 / 5.5 KB. Both dictionaries are lazy chunks (`i18n.fr`, `i18n.en`). Read the output for « exceeded », not only « ok ».
 
@@ -291,6 +290,13 @@ Two read-only audits produced a ranked list; it is worked through in order, one 
 ### No keyboard pops by itself — 2026-10-29
 
 Opening a form or tapping a button never focuses a text field: the three `autoFocus` (group, child, family forms) are gone, and the board's refocus after sending or after an empty send goes through `focusIfFinePointer` (`src/lib/focus.ts`), which only focuses with a mouse-and-keyboard pointer. `noAutofocus.test.ts` fails on any `autoFocus` and on a `.focus()` outside the skip link, the route change and `focus.ts` (planted red once).
+
+### The last four — 2026-10-29
+
+- **Cancel can email**: the cancelled card's reason form has « Prévenir par courriel » (off by default, a send cannot be undone); `PATCH encounters { announce: true, reason? }` sends the current status (cancelled or postponed) with the host's word, within the daily mail budget.
+- **Bounce awareness**: `POST /api/resend-webhook` (public on the written list, authenticated by the Svix signature, `_lib/svix.ts`) stamps `friend_families.email_bounced_at` (migration 0019) on `email.bounced` / `email.complained`; the host sees « Courriel non reçu » on the card and on Amis, and editing the address clears it. **Needs the human step**: in Resend, Webhooks, add `https://jouer.marcportal.com/api/resend-webhook` for bounced + complained, then `wrangler secret put RESEND_WEBHOOK_SECRET` with its `whsec_…`. Until then the endpoint answers 503 and nothing shows.
+- **Dead window links** say « écris à Marie » too (`_lib/retired.ts` serves both kinds).
+- **Browser tests** for the sibling answer, the partner line, Reporter, the cancel email, the bounce mark, the removed link and the postponed reply page.
 
 ### Date and time pickers on iOS — 2026-10-29
 

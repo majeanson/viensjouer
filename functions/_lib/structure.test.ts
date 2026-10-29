@@ -28,6 +28,7 @@ describe('who may call an endpoint', () => {
     'functions/api/health.ts': 'liveness and which optional features exist; no data',
     'functions/api/join.ts': 'a second parent joins with a one-use invitation token',
     'functions/api/demo.ts': 'the sandbox door: mints a throwaway household',
+    'functions/api/resend-webhook.ts': 'Resend’s bounce webhook: no session, authenticated by its Svix signature',
     'functions/api/feed.ts': 'the host calendar feed: a 24-character secret in the path',
   }
   const byCode = (f: string) => /^functions\/api\/(r|w|auth)\//.test(f)

@@ -10,6 +10,7 @@ import { addressFor, coverId, isReply, linkAlive, type EncounterRow, type Reply 
 import { REMIND_LEAD_SEC } from '../../_lib/reminders'
 import { headcount, hereAllowed, homeCardOrNull, parseDetails, souvenirsVisible, type Scope } from '../../_lib/kinds'
 import { photosEnabled } from '../../_lib/photos'
+import { retiredHost } from '../../_lib/retired'
 
 // THE install-free side. The token in the path is the whole credential: one card, one
 // family. No cookie, no CSRF (worker/index.ts exempts `r/`), rate-limited by address.
@@ -80,26 +81,11 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
   }
 }
 
-// A real link whose rencontre the host has since removed. The token is still the credential, so it may be told who the
-// host was (first name only): « cette rencontre est terminée, demande à Marie » beats the generic dead end. 410, with the
-// first name as the message (the client prints it, it is not a sentence). A purged row is gone for good: plain 404.
-async function retiredHost(env: Env, raw: string | undefined): Promise<string | null> {
-  const token = normalizeLinkCode(raw)
-  if (!token) return null
-  const row = await env.DB.prepare(
-    `SELECT (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host
-       FROM invitations i JOIN encounters e ON e.id = i.encounter_id WHERE i.token = ? AND e.deleted_at IS NOT NULL`,
-  )
-    .bind(token)
-    .first<{ host: string | null }>()
-  return row ? (row.host ?? '').trim().split(/\s+/)[0] || null : null
-}
-
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   if ((await overAuthLimit(ctx.env, ctx.request)) || (await lockedOut(ctx.env, ctx.request))) return tooManyRequests()
   const r = await resolve(ctx.env, ctx.params.token as string | undefined)
   if (!r) {
-    const host = await retiredHost(ctx.env, ctx.params.token as string | undefined)
+    const host = await retiredHost(ctx.env, 'encounter', ctx.params.token as string | undefined)
     if (host) return gone(host)
     return lookupMiss(ctx.env, ctx.request)
   }

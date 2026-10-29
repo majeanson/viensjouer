@@ -11,6 +11,7 @@ import * as authLogout from '../functions/api/auth/logout'
 import * as authMe from '../functions/api/auth/me'
 import * as children from '../functions/api/children'
 import * as families from '../functions/api/families'
+import * as resendWebhook from '../functions/api/resend-webhook'
 import * as encounters from '../functions/api/encounters'
 import * as messages from '../functions/api/messages'
 import * as invitations from '../functions/api/invitations'
@@ -65,6 +66,7 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['auth/me', authMe],
   ['children', children],
   ['families', families],
+  ['resend-webhook', resendWebhook],
   ['encounters', encounters],
   ['messages', messages],
   ['invitations', invitations],
@@ -133,5 +135,5 @@ export function matchRoute(apiPath: string): { mod: RouteMod; params: Record<str
 // every reply-link write (the token in the path is the credential, and the invited
 // parent has no session by design).
 export function csrfExempt(apiPath: string): boolean {
-  return apiPath === 'auth/login' || apiPath === 'auth/signup' || apiPath === 'auth/forgot' || apiPath === 'demo' || apiPath === 'join' || apiPath === 'auth/reset' || apiPath.startsWith('r/') || apiPath.startsWith('w/')
+  return apiPath === 'auth/login' || apiPath === 'auth/signup' || apiPath === 'auth/forgot' || apiPath === 'demo' || apiPath === 'join' || apiPath === 'resend-webhook' || apiPath === 'auth/reset' || apiPath.startsWith('r/') || apiPath.startsWith('w/')
 }

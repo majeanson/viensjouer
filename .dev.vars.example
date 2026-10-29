@@ -13,3 +13,5 @@ SESSION_SECRET=replace-with-at-least-32-random-characters-xx
 # are copy-link only and the day-before reminder hides.
 # RESEND_API_KEY=re_...
 # MAIL_FROM=Viens jouer <viensjouer@marcportal.com>
+# OPTIONAL: Svix secret of the Resend webhook (Resend dashboard, Webhooks, whsec_...). Unset: /api/resend-webhook answers 503.
+RESEND_WEBHOOK_SECRET=

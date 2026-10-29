@@ -33,6 +33,7 @@ interface InviteRow {
   parent_name: string
   child_first_name: string
   email: string | null
+  email_bounced_at: number | null
   allergies: string | null
   adults: number | null
   kids: number | null
@@ -40,7 +41,7 @@ interface InviteRow {
 }
 
 const INVITE_SELECT = `SELECT i.id, i.friend_family_id, i.token, i.reply, i.reply_note, i.reply_at, i.sent_at,
-                              f.parent_name, f.child_first_name, f.email, f.allergies, i.adults, i.kids, i.scope
+                              f.parent_name, f.child_first_name, f.email, f.email_bounced_at, f.allergies, i.adults, i.kids, i.scope
                          FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id`
 
 export const onRequestGet = authed(async (ctx, actor) => {
@@ -110,6 +111,7 @@ type Body = {
   note?: string | null
   status?: string
   reason?: string
+  announce?: boolean
   invite?: string[]
 }
 
@@ -192,6 +194,14 @@ export const onRequestPatch = authed(async (ctx, actor) => {
     if (body.here && !hereAllowed(own, nowSec())) return badRequest('Pas avant le jour même.')
     await ctx.env.DB.prepare('UPDATE encounters SET here_at = ?, updated_at = ? WHERE id = ?').bind(body.here ? nowSec() : null, nowSec(), id).run()
     return ok()
+  }
+  // « Prévenir les familles » after a cancel or a postponement that was done without the email: the status as it stands.
+  if (body?.announce === true) {
+    const now = await ctx.env.DB.prepare('SELECT title, status FROM encounters WHERE id = ?').bind(id).first<{ title: string; status: Status }>()
+    if (!now || (now.status !== 'cancelled' && now.status !== 'postponed')) return badRequest('Rien à annoncer.')
+    if (!mailEnabled(ctx.env) || isDemoEmail(actor.email)) return ok({ notified: 0, notifiedSkipped: 0 })
+    const r = await notifyChange(ctx.env, ctx.request, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, now.title, [{ field: 'status', old: null, new: now.status }], str(body.reason, 200))
+    return ok({ notified: r.sent, notifiedSkipped: r.skipped })
   }
   if (typeof body?.showGuests === 'boolean') await ctx.env.DB.prepare('UPDATE encounters SET show_guests = ?, updated_at = ? WHERE id = ?').bind(body.showGuests ? 1 : 0, nowSec(), id).run()
   const status = body?.status

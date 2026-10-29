@@ -471,3 +471,30 @@ test('no serious or critical accessibility violation on the reply page in dark m
   await expect(page.getByRole('status').filter({ hasText: 'Merci' })).toBeVisible()
   expect(await bad()).toEqual([])
 })
+
+test('another child of the same parent: one tap gives the same answer, sent to that child’s own link', async ({ page }) => {
+  const base = card()
+  const posts = await stub(page, card({ you: { ...base.you, reply: 'yes' }, siblings: [{ token: 'sib23456', child: 'Max', reply: null }, { token: 'sib34567', child: 'Zoé', reply: 'yes' }] }))
+  const sibling: unknown[] = []
+  await page.route('**/api/r/sib23456', (r) => { sibling.push(r.request().postDataJSON()); return r.fulfill({ json: { ok: true } }) })
+  await page.goto(`/${CODE}`)
+  await expect(page.getByText('Zoé a la même réponse : Oui.')).toBeVisible()
+  await page.getByRole('button', { name: 'Même réponse pour Max : Oui' }).click()
+  await expect.poll(() => sibling.length).toBe(1)
+  expect(sibling[0]).toEqual({ reply: 'yes' })
+  expect(posts).toEqual([])
+})
+
+test('a link whose rencontre was removed says so, and who to ask', async ({ page }) => {
+  await stub(page, { error: 'Marie' }, 410)
+  await page.goto(`/${CODE}`)
+  await expect(page.getByText('Cette rencontre est terminée. Si tu as une question, écris à Marie.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Réessayer' })).toHaveCount(0)
+})
+
+test('a postponed rencontre says the date will come and keeps the answer buttons', async ({ page }) => {
+  await stub(page, card({ encounter: { ...card().encounter, status: 'postponed' } }))
+  await page.goto(`/${CODE}`)
+  await expect(page.getByText('Reportée : la nouvelle date viendra. Ta réponse reste.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Oui, on y sera' })).toBeVisible()
+})

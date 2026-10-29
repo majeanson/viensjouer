@@ -1,8 +1,9 @@
 import type { Env } from '../../_lib/env'
 import { lockedOut, lookupMiss } from '../../_lib/guessLimit'
-import { badRequest, ok, readJson, str, tooManyRequests } from '../../_lib/json'
+import { badRequest, gone, ok, readJson, str, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { normalizeLinkCode, nowSec } from '../../_lib/ids'
+import { retiredHost } from '../../_lib/retired'
 
 // The install-free side of « une fenêtre ouverte ». The code in the path is the whole
 // credential (one window, one family); no cookie, no CSRF (worker/routes.ts exempts `w/`).
@@ -45,7 +46,10 @@ async function resolve(env: Env, raw: string | undefined): Promise<Row | null> {
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   if ((await overAuthLimit(ctx.env, ctx.request)) || (await lockedOut(ctx.env, ctx.request))) return tooManyRequests()
   const r = await resolve(ctx.env, ctx.params.token as string | undefined)
-  if (!r) return lookupMiss(ctx.env, ctx.request)
+  if (!r) {
+    const host = await retiredHost(ctx.env, 'window', ctx.params.token as string | undefined)
+    return host ? gone(host) : lookupMiss(ctx.env, ctx.request)
+  }
   return ok({
     alive: r.ends_at > nowSec(),
     window: { starts_at: r.starts_at, ends_at: r.ends_at, note: r.note },

@@ -156,6 +156,7 @@ export function Friends() {
                   {l && <span className="chip chip--yes">{t.friends.onApp}</span>}
                 </div>
               )}
+              {f.email_bounced_at && <p className="small" style={{ margin: '0.35rem 0 0' }}><span className="chip chip--cancelled">{t.families.bounced}</span> {t.families.bouncedHint}</p>}
               <p className="small muted" style={{ margin: '0.35rem 0 0' }}>{[f.email, f.phone, l ? dates(l) : null, f.allergies && `${t.families.allergies} : ${f.allergies}`, f.notes].filter(Boolean).join(' · ')}</p>
               <Together familyId={f.id} />
               {l && <button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button>}

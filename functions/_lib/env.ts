@@ -22,6 +22,9 @@ export interface Env {
   // ever sent: invites are copy-link only and the reminder checkbox hides.
   RESEND_API_KEY?: string
   MAIL_FROM?: string
+  // OPTIONAL: the Svix signing secret of the Resend webhook (`whsec_…`). Unset → /api/resend-webhook answers 503 and the
+  // « courriel non reçu » mark never appears; nothing else changes.
+  RESEND_WEBHOOK_SECRET?: string
 
   // OPTIONAL rate-limit bindings (wrangler.toml [[ratelimits]]). Unset → allow.
   LIMIT_IP?: RateLimit

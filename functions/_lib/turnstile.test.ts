@@ -6,27 +6,44 @@ import { onRequestPost as forgot } from '../api/auth/forgot'
 import { onRequestPost as signup } from '../api/auth/signup'
 
 const on = { TURNSTILE_SITE_KEY: 'site', TURNSTILE_SECRET: 'sec' } as never
+const SIGNUP = { action: 'signup', hostname: 'jouer.test' } as const
+const PASS = { success: true, action: 'signup', hostname: 'jouer.test' }
 const reply = (body: unknown, status = 200) => (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch
 
 describe('turnstilePasses', () => {
   it('is a pass, and invisible, when it is not configured', async () => {
     expect(turnstileSiteKey({} as never)).toBeNull()
     expect(turnstileSiteKey({ TURNSTILE_SITE_KEY: 'site' } as never)).toBeNull() // half a switch is off
-    expect(await turnstilePasses({} as never, undefined, null)).toBe(true)
+    expect(await turnstilePasses({} as never, undefined, null, SIGNUP)).toBe(true)
   })
   it('needs a token, and Cloudflare saying yes', async () => {
-    expect(await turnstilePasses(on, undefined, null, reply({ success: true }))).toBe(false)
-    expect(await turnstilePasses(on, '', null, reply({ success: true }))).toBe(false)
-    expect(await turnstilePasses(on, 'tok', '1.2.3.4', reply({ success: true }))).toBe(true)
-    expect(await turnstilePasses(on, 'tok', null, reply({ success: false }))).toBe(false)
-    expect(await turnstilePasses(on, 'tok', null, reply({}, 500))).toBe(false)
+    expect(await turnstilePasses(on, undefined, null, SIGNUP, reply({ success: true }))).toBe(false)
+    expect(await turnstilePasses(on, '', null, SIGNUP, reply({ success: true }))).toBe(false)
+    expect(await turnstilePasses(on, 'tok', '1.2.3.4', SIGNUP, reply(PASS))).toBe(true)
+    expect(await turnstilePasses(on, 'tok', null, SIGNUP, reply({ success: false }))).toBe(false)
+    expect(await turnstilePasses(on, 'tok', null, SIGNUP, reply({}, 500))).toBe(false)
   })
   it('sends the secret, the token and the address to Cloudflare, and fails closed when it cannot reach it', async () => {
     let seen = ''
-    const spy = (async (_u: string, init: { body: URLSearchParams }) => ((seen = init.body.toString()), new Response('{"success":true}'))) as unknown as typeof fetch
-    await turnstilePasses(on, 'tok', '1.2.3.4', spy)
+    const spy = (async (_u: string, init: { body: URLSearchParams }) => ((seen = init.body.toString()), new Response(JSON.stringify(PASS)))) as unknown as typeof fetch
+    await turnstilePasses(on, 'tok', '1.2.3.4', SIGNUP, spy)
     expect(seen).toBe('secret=sec&response=tok&remoteip=1.2.3.4')
-    expect(await turnstilePasses(on, 'tok', null, (async () => { throw new Error('down') }) as unknown as typeof fetch)).toBe(false)
+    expect(await turnstilePasses(on, 'tok', null, SIGNUP, (async () => { throw new Error('down') }) as unknown as typeof fetch)).toBe(false)
+  })
+})
+
+describe('what a passing token must also say', () => {
+  const ok = { success: true, action: 'signup', hostname: 'jouer.test' }
+  it('refuses a token solved for another surface or on another site', async () => {
+    expect(await turnstilePasses(on, 'tok', null, SIGNUP, reply(ok))).toBe(true)
+    expect(await turnstilePasses(on, 'tok', null, SIGNUP, reply({ ...ok, action: 'forgot' }))).toBe(false)
+    expect(await turnstilePasses(on, 'tok', null, SIGNUP, reply({ ...ok, hostname: 'evil.test' }))).toBe(false)
+    expect(await turnstilePasses(on, 'tok', null, SIGNUP, reply({ success: true }))).toBe(false)
+  })
+  it('takes the hostnames from TURNSTILE_HOSTNAMES when set (never localhost in production)', async () => {
+    const env = { ...(on as object), TURNSTILE_HOSTNAMES: 'jouer.marcportal.com, other.marcportal.com' } as never
+    expect(await turnstilePasses(env, 'tok', null, SIGNUP, reply({ ...ok, hostname: 'other.marcportal.com' }))).toBe(true)
+    expect(await turnstilePasses(env, 'tok', null, SIGNUP, reply(ok))).toBe(false) // jouer.test is not on the list
   })
 })
 

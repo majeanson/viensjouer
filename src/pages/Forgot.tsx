@@ -16,6 +16,7 @@ export function Forgot() {
   const [sent, setSent] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [tsTries, setTsTries] = useState(0)
   const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ turnstile?: string | null }>('health'), staleTime: 60_000 })
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -28,6 +29,7 @@ export function Forgot() {
       setErr(ex instanceof Error ? ex.message : t.common.error)
     } finally {
       setBusy(false)
+      setTsTries((n) => n + 1)
     }
   }
   return (
@@ -40,7 +42,7 @@ export function Forgot() {
       ) : (
         <form className="card" onSubmit={submit}>
           <label className="field"><span><Icon name="mail" />{t.auth.email}</span><input className="input" name="email" type="email" required autoComplete="email" /></label>
-          {health.data?.turnstile && <Turnstile siteKey={health.data.turnstile} />}
+          {health.data?.turnstile && <Turnstile siteKey={health.data.turnstile} action="forgot" resetKey={tsTries} />}
           {err && <div className="notice notice--err">{err}</div>}
           <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : t.auth.forgotSend}</button>
         </form>

@@ -31,6 +31,8 @@ export interface Env {
 
   // OPTIONAL Turnstile bot check on signup and forgot-password (_lib/turnstile.ts). Both unset → no check, no widget.
   TURNSTILE_SITE_KEY?: string
+  // Comma-separated frontend hostnames siteverify may report. Unset: the request's own hostname.
+  TURNSTILE_HOSTNAMES?: string
   TURNSTILE_SECRET?: string
 
   // OPTIONAL rate-limit bindings (wrangler.toml [[ratelimits]]). Unset → allow.

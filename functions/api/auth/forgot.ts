@@ -18,7 +18,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (!mailEnabled(ctx.env)) return serviceUnavailable('L’envoi de courriels n’est pas branché.')
   if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
   const body = await readJson<{ email?: string; turnstile?: string }>(ctx.request)
-  if (!(await turnstilePasses(ctx.env, body?.turnstile, clientIp(ctx.request)))) return badRequest(TURNSTILE_MESSAGE)
+  if (!(await turnstilePasses(ctx.env, body?.turnstile, clientIp(ctx.request), { action: 'forgot', hostname: new URL(ctx.request.url).hostname }))) return badRequest(TURNSTILE_MESSAGE)
   const email = body?.email?.trim().toLowerCase()
   if (!email || !EMAIL_RE.test(email)) return badRequest('Courriel invalide.')
   if (await overAuthLimit(ctx.env, ctx.request, `forgot:${email}`)) return tooManyRequests()

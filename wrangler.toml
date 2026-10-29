@@ -38,7 +38,10 @@ APP_NAME = "Viens jouer"
 SIGNUP_OPEN = "1"
 # Turnstile bot check on signup and forgot-password. Only half the switch: put the widget's PUBLIC site key here and
 # `wrangler secret put TURNSTILE_SECRET`. Both unset -> no check, no widget.
-# TURNSTILE_SITE_KEY = "0x..."
+TURNSTILE_SITE_KEY = "0x4AAAAAAFrYMbkilKTmCzp2"
+# The frontend hostnames siteverify may report (the page the widget was solved on): production only, never localhost.
+# Unset, the request's own hostname is expected.
+TURNSTILE_HOSTNAMES = "jouer.marcportal.com"
 # Outbound mail sender. Only half the switch: nothing is sent until RESEND_API_KEY is set
 # (`wrangler secret put RESEND_API_KEY` — a « Sending access » key of this app's own, so
 # revoking one app's key never silences the other). marcportal.com is verified in Resend.

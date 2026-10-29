@@ -34,6 +34,7 @@ export function Door() {
     if (!loading && me.signedIn) nav('/rencontres', { replace: true })
   }, [loading, me.signedIn, nav])
 
+  const [tsTries, setTsTries] = useState(0)
   async function go(path: string, body?: unknown) {
     setBusy(true)
     setErr(null)
@@ -45,6 +46,7 @@ export function Door() {
       setErr(ex instanceof Error ? ex.message : t.common.error)
     } finally {
       setBusy(false)
+      setTsTries((n) => n + 1) // a token works once: ask for a fresh one whatever happened
     }
   }
   // A paper card carries two words; whoever holds it types them here, with a space or a hyphen, accents or not.
@@ -88,7 +90,7 @@ export function Door() {
         {mode === 'signup' && <label className="field"><span><Icon name="user" />{t.auth.displayName}</span><input className="input" name="displayName" required maxLength={60} autoComplete="given-name" /></label>}
         <label className="field"><span><Icon name="mail" />{t.auth.email}</span><input className="input" name="email" type="email" required autoComplete="email" /></label>
         <label className="field"><span><Icon name="lock" />{t.auth.password}</span><input className="input" name="password" type="password" required minLength={8} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} /></label>
-        {mode === 'signup' && health.data?.turnstile && <Turnstile siteKey={health.data.turnstile} />}
+        {mode === 'signup' && health.data?.turnstile && <Turnstile siteKey={health.data.turnstile} action="signup" resetKey={tsTries} />}
         {mode === 'signup' && health.data?.invite && <label className="field"><span>{t.auth.invite}</span><input className="input" name="invite" required /></label>}
         {err && <div className="notice notice--err">{err}</div>}
         <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : mode === 'login' ? t.auth.submitLogin : t.auth.submitSignup}</button>

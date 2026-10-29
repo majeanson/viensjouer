@@ -165,7 +165,6 @@ export function Friends() {
                 <span><strong>{f.child_first_name}</strong> <span className="muted small">· {f.parent_name}</span></span>
                 <span className="cluster">
                   <button className="btn btn--small" onClick={() => setEditing(f)}>{t.encounters.edit}</button>
-                  <button className="btn btn--small btn--danger" onClick={() => rm.remove(f.id, t.undo.removed, async () => { await api('families', { method: 'DELETE', body: { id: f.id } }); void invalidate() })}>{t.families.remove}</button>
                 </span>
               </div>
               {(tags.length > 0 || l) && (
@@ -178,8 +177,14 @@ export function Friends() {
               {f.email_bounced_at && <p className="small" style={{ margin: '0.35rem 0 0' }}><span className="chip chip--cancelled">{t.families.bounced}</span> {t.families.bouncedHint}</p>}
               <p className="small muted" style={{ margin: '0.35rem 0 0' }}>{[f.email, f.phone, l ? dates(l) : null, f.allergies && `${t.families.allergies} : ${f.allergies}`, f.notes].filter(Boolean).join(' · ')}</p>
               <Together familyId={f.id} />
-              {l && <button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button>}
               {!f.linked_household_id && <CircleInvite family={f} />}
+              <details className="more" style={{ marginTop: '0.35rem' }}>
+                <summary>{t.encounters.moreOptions}</summary>
+                <div className="cluster">
+                  <button className="btn btn--small btn--danger" onClick={() => rm.remove(f.id, t.undo.removed, async () => { await api('families', { method: 'DELETE', body: { id: f.id } }); void invalidate() })}>{t.families.remove}</button>
+                  {l && <button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button>}
+                </div>
+              </details>
             </div>
           )
         })}

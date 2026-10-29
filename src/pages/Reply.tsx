@@ -270,7 +270,7 @@ function ReplyInner() {
           {(done || justAnswered) && <div className="notice notice--ok" role="status"><Icon name="check" />{t.reply.saved}</div>}
           <div className="row">
             <span><span className="muted small">{t.reply.yourReply}</span><br /><strong className={`chip chip--${you.reply}`}>{t.encounters.reply[you.reply!]}</strong>{you.replyNote && <span className="small"> · « {you.replyNote} »</span>}</span>
-            <button className="btn" onClick={() => setEditing(true)}>{t.reply.change}</button>
+            <button className="btn btn--small" onClick={() => setEditing(true)}>{t.reply.change}</button>
           </div>
           <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.reply.hostKnows(host.parent_name || host.household_name)}</p>
           {alive && you.reply && (q.data.siblings ?? []).map((s) => s.reply !== null && s.reply === you.reply ? (
@@ -279,9 +279,12 @@ function ReplyInner() {
             <button key={s.token} className="btn btn--small" style={{ marginTop: '0.5rem' }} disabled={alsoFor.isPending} onClick={() => alsoFor.mutate({ token: s.token, reply: you.reply! })}>{t.reply.siblingAnswer(s.child, t.encounters.reply[you.reply!])}</button>
           ))}
           {calendarAfterYes && (
-            <div className="cluster" style={{ marginTop: '0.75rem' }}>
+            <div style={{ marginTop: '0.75rem' }}>
               <a className="btn btn--primary" href={`/api/r/${token}/ics`} download="rencontre.ics"><Icon name="calendar" />{t.reply.calendar}</a>
-              <a className="btn btn--small" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
+              <details className="more" style={{ marginTop: '0.5rem' }}>
+                <summary>{t.encounters.moreOptions}</summary>
+                <a className="btn btn--small" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
+              </details>
             </div>
           )}
           <details className="why" key={String(justAnswered)} open={justAnswered && you.reply === 'yes' && (e.kind === 'birthday' || you.scope === 'family')} style={{ marginTop: '0.75rem' }}>

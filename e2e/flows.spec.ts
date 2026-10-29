@@ -150,6 +150,7 @@ test('removing a friend is undoable too: no browser dialog anywhere', async ({ p
   })
   const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }) })
   await page.goto('/amis')
+  await page.getByText('Plus d’options', { exact: true }).click()
   await page.getByRole('button', { name: 'Retirer', exact: true }).click()
   await expect(page.getByText('Léa')).toHaveCount(0)
   await page.locator('.toast').getByRole('button', { name: 'Annuler' }).click()

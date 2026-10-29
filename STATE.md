@@ -12,9 +12,8 @@
 
 **Open, in order:**
 1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
-2. **Turn push on**: `wrangler secret put VAPID_PRIVATE_KEY` (the JWK of the key pair whose public half is in `wrangler.toml`). Until then phone notifications are off and the in-app « Nouveau » list works on its own. Other optional switches follow.
-3. **Human steps that switch things on** (each is optional, nothing breaks without it): the Resend bounce webhook (`RESEND_WEBHOOK_SECRET`), Turnstile (`TURNSTILE_SITE_KEY` in wrangler.toml + `wrangler secret put TURNSTILE_SECRET`), the owner's mail alert (`ADMIN_EMAIL`). Details in the « Everything else on the list » entry.
-4. The same « Bâti par marc.portal » line in the other repos (see memory), and the Babillard export/plan bridge (to discuss first).
+2. **Human steps that switch things on** (each is optional, nothing breaks without it): the Resend bounce webhook (`RESEND_WEBHOOK_SECRET`), Turnstile (`TURNSTILE_SITE_KEY` in wrangler.toml + `wrangler secret put TURNSTILE_SECRET`), the owner's mail alert (`ADMIN_EMAIL`). Details in the « Everything else on the list » entry.
+3. The same « Bâti par marc.portal » line in the other repos (see memory), and the Babillard export/plan bridge (to discuss first).
 
 **Budgets (`npm run check:bundle`):** entry 85.0 / 86 KB, lazy chunks 12 KB (French dictionary 11.1), stylesheet 5.5 / 6 KB. The dictionary and stylesheet caps were raised on purpose on 2026-10-29 (reasoning in `scripts/check-bundle.mjs`); the entry did not move. Read the output for « exceeded », not only « ok ».
 
@@ -333,7 +332,7 @@ The rule: a screen shows the ONE thing it is for; everything else is one tap awa
 - **Explained on the site**: « Comment ça marche » (four steps + who gets what) at the foot of the front page; the Notifications tab in Compte; one sentence on the privacy page.
 - **Privacy page text moved to its own lazy chunk** (`i18n.privacy.fr/en.ts`, loaded by `Privacy.tsx`): the French dictionary fell from 12.1 to 10.6 KB gzip and the chunk cap went back to 11 KB (the 12 KB raise earlier that day was a bridge). `copyRules.test` reads the privacy text too.
 - Tests: VAPID signature verified against its public key, push 201/404/410, notify on a real database (language, linked or same-email, no sandbox, dedupe, cap, dead device deleted), the endpoints behind a real session, the create-a-rencontre-inviting-a-registered-account path end to end, `sw.js` run against a stand-in scope, and the browser (Nouveau, Compte, front page).
-- **Not done / to try on a real phone**: an actual push to an iPhone (needs the key set and the app on the home screen) and Android Chrome. Families with only a link stay on email (decided: accounts only).
+- **Switched on 2026-10-29**: `VAPID_PRIVATE_KEY` is set on the Worker and a test notification arrived on Marc's phone. Not yet tried: the other platform (iPhone vs Android) and a push for a real invitation between two accounts. Families with only a link stay on email (decided: accounts only).
 
 ### Sending invitations made easy — 2026-10-29
 

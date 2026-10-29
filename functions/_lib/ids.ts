@@ -91,6 +91,17 @@ function fmt(tz: string, lang: 'fr' | 'en', shape: 'long' | 'time'): Intl.DateTi
   return f
 }
 
+// An IANA zone name the runtime knows, or null: what a household's `tz` may be set to.
+export function cleanTz(v: unknown): string | null {
+  if (typeof v !== 'string' || !v || v.length > 64) return null
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: v })
+    return v
+  } catch {
+    return null
+  }
+}
+
 // « samedi 7 novembre, 10 h 00 » for an instant, in the household's zone. Used in
 // emails and the .ics description, where the reader has no browser Intl of their own.
 export function whenLong(sec: number, lang: 'fr' | 'en' = 'fr', tz = DEFAULT_TZ): string {

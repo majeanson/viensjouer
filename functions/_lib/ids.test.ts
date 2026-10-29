@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { freshLinkCode, newLinkCode, normalizeLinkCode, paperCode } from './ids'
+import { cleanTz, freshLinkCode, newLinkCode, normalizeLinkCode, paperCode } from './ids'
 import { WORDS } from './words'
 
 describe('word list', () => {
@@ -68,5 +68,14 @@ describe('freshLinkCode', () => {
     expect(calls).toBe(4)
     const everythingTaken = { prepare: () => ({ bind: () => ({ first: async () => ({ x: 1 }) }) }) } as unknown as D1Database
     await expect(freshLinkCode(everythingTaken, 'invitations')).rejects.toThrow(/exhausted/)
+  })
+})
+
+describe('cleanTz', () => {
+  it('keeps a real zone and refuses anything else', () => {
+    expect(cleanTz('Europe/Paris')).toBe('Europe/Paris')
+    expect(cleanTz('Mars/Olympus')).toBeNull()
+    expect(cleanTz('')).toBeNull()
+    expect(cleanTz(42)).toBeNull()
   })
 })

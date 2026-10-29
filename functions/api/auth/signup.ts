@@ -5,7 +5,7 @@ import { overAuthLimit, overKeyLimit } from '../../_lib/rateLimit'
 import { signInAs, sessionCookies } from '../../_lib/auth'
 import { hashPassword, verifyPassword } from '../../_lib/password'
 import { inviteAccepted } from '../../_lib/signupGate'
-import { newId, nowSec } from '../../_lib/ids'
+import { DEFAULT_TZ, cleanTz, newId, nowSec } from '../../_lib/ids'
 
 export const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
@@ -13,7 +13,7 @@ export const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 // signed in. Who may: _lib/signupGate.ts. CSRF-exempt (no session yet).
 export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (await overAuthLimit(ctx.env, ctx.request)) return tooManyRequests()
-  const body = await readJson<{ email?: string; password?: string; displayName?: string; householdName?: string; invite?: string }>(ctx.request)
+  const body = await readJson<{ email?: string; password?: string; displayName?: string; householdName?: string; invite?: string; tz?: string }>(ctx.request)
   const email = body?.email?.trim().toLowerCase()
   if (!email || !EMAIL_RE.test(email)) return badRequest('Courriel invalide.')
   const password = body?.password ?? ''
@@ -45,7 +45,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   try {
     // One batch: parents.email is the primary key, so two racing signups cannot both land.
     await ctx.env.DB.batch([
-      ctx.env.DB.prepare('INSERT INTO households (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)').bind(householdId, householdName, ts, ts),
+      ctx.env.DB.prepare('INSERT INTO households (id, name, tz, created_at, updated_at) VALUES (?, ?, ?, ?, ?)').bind(householdId, householdName, cleanTz(body?.tz) ?? DEFAULT_TZ, ts, ts),
       ctx.env.DB.prepare('INSERT INTO parents (email, household_id, display_name, password_hash, created_at) VALUES (?, ?, ?, ?, ?)').bind(
         email,
         householdId,

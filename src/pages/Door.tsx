@@ -10,6 +10,15 @@ import { CODE_RE } from '../lib/link'
 
 // The front door: one sentence, sign in or create an account, or try it. A signed-in parent
 // is sent straight to their rencontres.
+// The zone this device is in: a new household starts there, not in Toronto.
+const browserTz = () => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone
+  } catch {
+    return undefined
+  }
+}
+
 export function Door() {
   const { loading, me, refresh } = useAuth()
   const t = useT()
@@ -46,7 +55,7 @@ export function Door() {
   }
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    void go(mode === 'login' ? 'auth/login' : 'auth/signup', Object.fromEntries(new FormData(e.currentTarget).entries()))
+    void go(mode === 'login' ? 'auth/login' : 'auth/signup', { ...Object.fromEntries(new FormData(e.currentTarget).entries()), ...(mode === 'signup' ? { tz: browserTz() } : {}) })
   }
 
   return (

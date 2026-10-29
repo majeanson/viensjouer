@@ -12,10 +12,9 @@
 
 **Open, in order:**
 1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
-2. **Household time zone** (review finding, confirmed): `households.tz` is 'America/Toronto' forever and nothing writes it, so emails, the .ics and quiet hours are off for a family outside Eastern time. Set it from the browser at signup, edit it on the account page. Small, and it matters more now that quiet hours use it.
-3. **Cancelling a series: the email offer.** Every later occurrence now gets its change row (shown on its card), but « Annuler » still sends no update email; the « Prévenir » box exists on edit and on Reporter only.
-4. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
-5. The reply page opening offline (shell cache only, never stale answers).
+2. **Cancelling a series: the email offer.** Every later occurrence now gets its change row (shown on its card), but « Annuler » still sends no update email; the « Prévenir » box exists on edit and on Reporter only.
+3. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
+4. The reply page opening offline (shell cache only, never stale answers).
 
 **Budgets (`npm run check:bundle`):** entry 84.8 / 86 KB, every other chunk under 11 KB, stylesheet 5.3 / 5.5 KB. Both dictionaries are lazy chunks (`i18n.fr`, `i18n.en`). Read the output for « exceeded », not only « ok ».
 
@@ -50,6 +49,10 @@
 - **Push straight to `main`.** CI is the gate; fix forward.
 
 ## 3. What just shipped
+
+### Household time zone — 2026-10-29
+
+`households.tz` is now written: signup sends the browser's zone (`cleanTz` refuses anything the runtime does not know, default Toronto), and Compte > Profil has a « Mon fuseau horaire » select (PATCH `/api/profile { tz }`, household-wide whichever parent sets it). Households created before this stay on Toronto until their host picks a zone there; nothing guesses it for them.
 
 ### Dead links, mail budget, series, Reporté — 2026-10-29
 

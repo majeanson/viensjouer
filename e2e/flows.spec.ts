@@ -533,3 +533,60 @@ test('the new-rencontre form takes a day and an hour as two pickers and sends on
   const body = stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')!.body as { startsAt: number }
   expect(body.startsAt).toBe(Math.floor(new Date('2030-05-04T09:30').getTime() / 1000))
 })
+
+test('the host screens have no serious accessibility violation in dark mode', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.addInitScript(() => { try { localStorage.setItem('vj-theme', 'dark') } catch { /* ignore */ } })
+  await host(page, {
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie', { linked_household_id: 'hh2', email: 'j@example.com' })] } }),
+    'GET groups': () => ({ json: { groups: [{ id: 'g1', name: 'La garderie', families: ['f1'] }] } }),
+    'GET circle': () => ({ json: { children: [{ child: { id: 'c1' }, linked: [{ linkId: 'l1', otherHousehold: 'hh2', childName: 'Léa', parentName: 'Julie', lastAt: null, nextAt: soon }] }], book: [] } }),
+    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes'), inv('i2', 'f2', 'Max', 'Paul', null)], { map_url: 'https://maps.app.goo.gl/x' }) } : { json: { encounters: [enc()], invitations: [{ encounter_id: 'e1', id: 'i1', reply: 'yes', parent_name: 'Julie', child_first_name: 'Léa' }] } }),
+  })
+  for (const path of ['/rencontres', '/rencontres/e1', '/rencontres/nouvelle', '/amis', '/enfants', '/compte']) {
+    await page.goto(path)
+    await expect(page.locator('h1').first()).toBeVisible()
+    const { violations } = await new AxeBuilder({ page }).analyze()
+    const bad = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
+    expect(bad.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`), path).toEqual([])
+  }
+})
+
+const MAIL_ME = { signedIn: true, email: 'm@example.com', displayName: 'Marc', household: { id: 'h', name: 'Les Jeanson', tz: 'America/Toronto' }, mail: true, demo: false }
+
+test('the host sees where the answers stand and can nudge everyone who is still silent in one tap', async ({ page }) => {
+  const stub = await host(page, {
+    'GET auth/me': () => ({ json: MAIL_ME }),
+    'POST invitations': () => ({ json: { ok: true } }),
+    'GET encounters': (_b, url) =>
+      url.searchParams.get('id')
+        ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes'), inv('i2', 'f2', 'Max', 'Paul', null, { email: 'p@example.com' }), inv('i3', 'f3', 'Zoé', 'Anne', null, { email: 'a@example.com' }), inv('i4', 'f4', 'Eli', 'Sam', null)]) }
+        : { json: { encounters: [enc()], invitations: [] } },
+  })
+  await page.goto('/rencontres/e1')
+  const tally = page.getByRole('group', { name: 'Les réponses reçues' })
+  await expect(tally).toContainText('Oui · 1')
+  await expect(tally).toContainText('Pas de réponse · 3')
+  await page.getByRole('button', { name: 'Renvoyer aux 2 familles sans réponse' }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'invitations').map((c) => c.body?.id)).toEqual(['i2', 'i3'])
+})
+
+test('an answered family is one calm line: no send buttons until it is needed', async ({ page }) => {
+  await host(page, {
+    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes'), inv('i2', 'f2', 'Max', 'Paul', null)]) } : { json: { encounters: [enc()], invitations: [] } }),
+  })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByRole('button', { name: 'Envoyer l’invitation' })).toHaveCount(1) // only Max, who has not answered
+  await expect(page.getByText('Plus de choix')).toHaveCount(2) // every family keeps its options
+})
+
+test('after cancelling, the host can tell the families why, on the board they see', async ({ page }) => {
+  const stub = await host(page, {
+    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes')], { status: 'cancelled' }) } : { json: { encounters: [enc({ status: 'cancelled' })], invitations: [] } }),
+    'POST messages': () => ({ status: 201, json: { id: 'm1' } }),
+  })
+  await page.goto('/rencontres/e1')
+  await page.getByPlaceholder('La pluie, un rhume, on se reprend…').fill('La pluie, on se reprend samedi')
+  await page.locator('form', { hasText: 'Dis-leur pourquoi' }).getByRole('button', { name: 'Publier' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'messages')?.body).toMatchObject({ text: 'Annulée : La pluie, on se reprend samedi' })
+})

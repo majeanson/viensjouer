@@ -109,7 +109,7 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .why-list dd { margin: 0; color: var(--muted); }
 
 /* ---- small things --------------------------------------------------------- */
-.chip { display: inline-flex; align-items: center; border-radius: var(--r-pill); padding: 0.1rem 0.5rem; font-size: 0.8rem; font-weight: 600; background: var(--paper); border: 1px solid var(--line); white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; border-radius: var(--r-pill); padding: 0.1rem 0.5rem; font-size: 0.8rem; font-weight: 600; background: var(--paper); border: 1px solid var(--line); max-width: 100%; text-align: left; }
 .chip--yes { background: color-mix(in srgb, var(--ok) 16%, transparent); border-color: transparent; }
 .chip--no { background: color-mix(in srgb, var(--bad) 14%, transparent); border-color: transparent; }
 .chip--maybe { background: color-mix(in srgb, var(--accent) 22%, transparent); border-color: transparent; }
@@ -147,9 +147,9 @@ textarea.input { min-height: 5rem; resize: vertical; }
 
 /* The shared page: the facts as a labelled list, and the three steps. */
 .facts { margin: 0 0 0.9rem; display: grid; gap: 0.5rem; }
-.facts div { display: grid; grid-template-columns: 7rem 1fr; gap: 0.5rem; }
-.facts dt { color: var(--muted); font-size: 0.85rem; font-weight: 600; padding-top: 0.1rem; }
-.facts dd { margin: 0; }
+.facts div { display: grid; grid-template-columns: min(7rem, 38%) minmax(0, 1fr); gap: 0.5rem; }
+.facts dt { color: var(--muted); font-size: 0.85rem; font-weight: 600; padding-top: 0.1rem; overflow-wrap: anywhere; }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
 .steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
 .steps li { position: relative; padding: 0.25rem 0 0.6rem 2rem; color: var(--muted); counter-increment: step; }
 .steps li::before { content: counter(step); position: absolute; left: 0; top: 0.2rem; width: 1.4rem; height: 1.4rem; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; color: var(--muted); }

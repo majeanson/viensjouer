@@ -65,6 +65,14 @@ export function EncounterDetail() {
   const record = useMutation({ mutationFn: (b: { id: string; reply: 'yes' | 'maybe' | 'no' }) => api('invitations', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
   const reshuffle = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'PATCH', body: { id: invId, newCode: true } }), onSuccess: refresh, onError: fail })
   const send = useMutation({ mutationFn: (invId: string) => api('invitations', { method: 'POST', body: { id: invId } }), onSuccess: refresh, onError: fail })
+  // One tap for the ones still silent: the same single send as « Renvoyer », one family after the other.
+  const resendAll = useMutation({
+    mutationFn: async (ids: string[]) => {
+      for (const invId of ids) await api('invitations', { method: 'POST', body: { id: invId } })
+    },
+    onSuccess: refresh,
+    onError: fail,
+  })
   const setScope = useMutation({ mutationFn: (b: { id: string; scope: 'friend' | 'family' }) => api('invitations', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
   const message = useMutation({ mutationFn: (text: string) => api('messages', { method: 'POST', body: { encounterId: id, text } }), onSuccess: refresh, onError: fail })
   const pin = useMutation({ mutationFn: (b: { id: string; pinned: boolean }) => api('messages', { method: 'PATCH', body: b }), onSuccess: refresh, onError: fail })
@@ -168,6 +176,8 @@ export function EncounterDetail() {
     [t.roster.no, invitations.filter((i) => i.reply === 'no'), 'no'],
     [t.roster.none, invitations.filter((i) => !i.reply), 'none'],
   ]
+  const silent = invitations.filter((i) => !i.reply)
+  const silentWithMail = silent.filter((i) => i.email)
   const who = (i: Invitation) => `${i.child_first_name} (${i.parent_name})`
 
   return (
@@ -250,6 +260,12 @@ export function EncounterDetail() {
 
           <div className="card">
             <h3><Icon name="share" />{t.encounters.links}</h3>
+            {invitations.length > 0 && (
+              <div className="cluster" style={{ marginBottom: '0.75rem' }} role="group" aria-label={t.encounters.tally}>
+                {(['yes', 'maybe', 'no'] as const).map((k) => ({ k, n: invitations.filter((i) => i.reply === k).length })).filter((x) => x.n > 0).map((x) => <span key={x.k} className={`chip chip--${x.k}`}>{t.encounters.reply[x.k]} · {x.n}</span>)}
+                {silent.length > 0 && <span className="chip">{t.encounters.reply.none} · {silent.length}</span>}
+              </div>
+            )}
             {invitations.map((i) => (
               <div key={i.id} className="linkrow">
                 <div className="row">
@@ -260,8 +276,12 @@ export function EncounterDetail() {
                 {i.allergies && <p className="small" style={{ margin: 0 }}>{t.families.allergies} : {i.allergies}</p>}
                 {i.reply === 'yes' && <p className="small muted" style={{ margin: 0 }}>{t.kinds.birthday.theyCome(kidsComing(i.scope, i.kids), i.adults ?? 0)}</p>}
                 <div className="cluster">
-                  <button className={`btn btn--small ${!i.email || !me.mail ? 'btn--primary' : ''}`} onClick={() => void shareMessage(i)}>{copied === 's' + i.id ? t.encounters.copied : t.share.button}</button>
-                  {me.mail && i.email && <button className="btn btn--small" disabled={send.isPending} onClick={() => send.mutate(i.id)}>{i.sent_at ? t.encounters.resend : t.encounters.send}</button>}
+                  {!i.reply && (
+                    <>
+                      <button className={`btn btn--small ${!i.email || !me.mail ? 'btn--primary' : ''}`} onClick={() => void shareMessage(i)}>{copied === 's' + i.id ? t.encounters.copied : t.share.button}</button>
+                      {me.mail && i.email && <button className="btn btn--small" disabled={send.isPending} onClick={() => send.mutate(i.id)}>{i.sent_at ? t.encounters.resend : t.encounters.send}</button>}
+                    </>
+                  )}
                   <details className="more">
                     <summary>{t.form.more}</summary>
                     <div className="stack">
@@ -321,6 +341,7 @@ export function EncounterDetail() {
                 )}
               </div>
             ))}
+            {me.mail && silentWithMail.length > 0 && <p style={{ margin: '0.75rem 0 0' }}><button className="btn" disabled={resendAll.isPending} onClick={() => resendAll.mutate(silentWithMail.map((i) => i.id))}><Icon name="mail" />{t.encounters.resendAll(silentWithMail.length)}</button></p>}
             {invitations.length > 0 && <p style={{ margin: '0.75rem 0 0' }}><Link to={`/rencontres/${e.id}/cartes`} className="btn btn--small"><Icon name="note" />{t.cards.title}</Link></p>}
             {notYet.length > 0 && (addMore ? (
               <div className="stack" style={{ marginTop: '0.75rem' }}>
@@ -414,6 +435,23 @@ export function EncounterDetail() {
         </div>
       </div>
 
+      {e.status === 'cancelled' && (
+        <form
+          className="card"
+          onSubmit={(ev) => {
+            ev.preventDefault()
+            const why = String(new FormData(ev.currentTarget).get('why') ?? '').trim()
+            if (!why) return
+            message.mutate(`${t.encounters.status.cancelled} : ${why}`)
+            ev.currentTarget.reset()
+          }}
+        >
+          <h3><Icon name="message" />{t.encounters.whyCancel}</h3>
+          <p className="muted small">{t.encounters.whyCancelHint}</p>
+          <label className="field"><span className="sr-only">{t.encounters.whyCancel}</span><input className="input" name="why" maxLength={200} placeholder={t.encounters.whyCancelPlaceholder} /></label>
+          <button className="btn btn--primary" disabled={message.isPending}>{t.board.send}</button>
+        </form>
+      )}
       <div className="endactions">
         {e.status === 'proposed' && <button className="btn btn--primary btn--big" onClick={() => patch.mutate({ status: 'confirmed' })}><Icon name="check" />{t.encounters.confirm}</button>}
         <div className="cluster">

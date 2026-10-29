@@ -419,12 +419,12 @@ test('the slim answer bar keeps each word on one line at 320px', async ({ page }
   expect(Math.max(...heights)).toBeLessThanOrEqual(52) // one line of text; a wrapped word makes it taller
 })
 
-test('with the text size doubled nothing bleeds off the screen and the answer is still on top', async ({ page }) => {
+test('with the text size at 250% nothing bleeds off the screen and the answer is still on top', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await stub(page, card())
   await page.goto(`/${CODE}`)
   await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
-  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
+  await page.addStyleTag({ content: 'html { font-size: 250% !important; }' })
   await expect(page.locator('.answerbar')).toBeVisible() // the question is far down at this size, so the slim bar is up
   const over = await page.evaluate(() => {
     const vw = document.documentElement.clientWidth
@@ -449,4 +449,17 @@ test('the answer comes before the details, and the thanks line shows at once aft
   expect(ask && details && ask.y < details.y).toBe(true)
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   await expect(page.getByRole('status').filter({ hasText: 'Réponse envoyée. Merci !' })).toBeVisible()
+})
+
+test('no serious or critical accessibility violation on the reply page in dark mode, asked and answered', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.addInitScript(() => { try { localStorage.setItem('vj-theme', 'dark') } catch { /* ignore */ } })
+  await stub(page, card())
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
+  const bad = async () => (await new AxeBuilder({ page }).analyze()).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)
+  expect(await bad()).toEqual([])
+  await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Merci' })).toBeVisible()
+  expect(await bad()).toEqual([])
 })

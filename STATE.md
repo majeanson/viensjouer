@@ -34,6 +34,10 @@
 
 ## 3. What just shipped
 
+### Host page, calmer — 2026-10-29
+
+« Les invitations » opens with the tally (Oui · 2, Peut-être · 1, Pas de réponse · 1) and one button to send again to every silent family that has an address. A family that has answered is one calm line (its send buttons return under « Plus de choix » only when needed). A cancelled rencontre offers « Dis-leur pourquoi »: the note goes on the board the families read. Dark-mode axe sweeps (reply asked and answered, every host screen). `.gitattributes` (LF) ends the CRLF warnings. Five unused icons dropped (bundle: entry 84.8 / 86 KB, shared chunk 16.3 / 16.5 KB: the next growth has to split the French dictionary into its own lazy chunk, as English already is). CI caught that the facts grid and chips overflowed at big text; the test now runs at 250 % (CI fonts are wider than local ones).
+
 ### Grandma pass — 2026-10-28
 
 Reply page: the answer sits right under the title, when and where; map, address, notes, calendar and history

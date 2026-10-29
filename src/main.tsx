@@ -6,39 +6,39 @@ import { AppRoutes } from './router'
 import { AuthProvider } from './lib/auth'
 import { ToastProvider } from './lib/toast'
 import { queryClient } from './lib/query'
-import { FR, LangContext, readLang, writeLang, type Dict, type Lang } from './i18n'
+import { LangContext, readLang, writeLang, type Dict, type Lang } from './i18n'
 import './styles.css'
+
+const loadDict = (l: Lang): Promise<Dict> => (l === 'en' ? import('./i18n.en').then((m) => m.EN) : import('./i18n.fr').then((m) => m.FR))
 
 function Root() {
   const [lang, setLangState] = useState<Lang>(readLang)
-  // English is its own chunk: loaded the first time a visitor needs it. A first visit in English waits for it
-  // (a blank beat beats a flash of French); switching later keeps the page and swaps the words when ready.
-  const [en, setEn] = useState<Dict | null>(null)
-  const [booted, setBooted] = useState(lang === 'fr')
+  // Each dictionary is its own chunk, loaded for the language the visitor needs. The first render waits for it (a blank
+  // beat beats a flash of the other language); switching later keeps the page and swaps the words when ready.
+  const [dicts, setDicts] = useState<Partial<Record<Lang, Dict>>>({})
   // The page's own language follows the visitor's (screen readers pick their voice from it), also on first load.
   useEffect(() => {
     document.documentElement.lang = lang
   }, [lang])
   useEffect(() => {
-    if (lang !== 'en' || en) return
+    if (dicts[lang]) return
     let live = true
-    void import('./i18n.en').then((m) => {
-      if (!live) return
-      setEn(m.EN)
-      setBooted(true)
+    void loadDict(lang).then((d) => {
+      if (live) setDicts((cur) => ({ ...cur, [lang]: d }))
     })
     return () => {
       live = false
     }
-  }, [lang, en])
+  }, [lang, dicts])
   const setLang = (l: Lang) => {
     writeLang(l)
     setLangState(l)
     document.documentElement.lang = l
   }
-  if (!booted) return null
+  const dict = dicts[lang] ?? dicts[lang === 'fr' ? 'en' : 'fr']
+  if (!dict) return null
   return (
-    <LangContext.Provider value={{ lang, setLang, dict: lang === 'en' && en ? en : FR }}>
+    <LangContext.Provider value={{ lang, setLang, dict }}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>

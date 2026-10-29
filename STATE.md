@@ -6,6 +6,23 @@
 
 ---
 
+## 0. Front door (read this, skip the ledger unless you need the why)
+
+**Where it stands (2026-10-29).** Phases 1 to 5 are shipped and live; the audit, paper-cards and declutter passes are done. Everything between §3 and the end of this file is a dated ledger of *why* things are the way they are: search it (`grep -n "keyword" STATE.md`), do not read it top to bottom.
+
+**Open, in order:**
+1. Walk it on two real phones with two real emails (the only human step left from Phase 1).
+2. Hygiene: hard-delete soft-deleted rows and old invitations in the hourly `tidy` (the privacy page says removed rows stay until « Tout effacer »; codes are never reused while rows exist).
+3. A « Reporté / pluie » state with a reason (board post, optional email), instead of cancel-or-edit.
+4. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
+5. The reply page opening offline (shell cache only, never stale answers).
+
+**Budgets (`npm run check:bundle`):** entry 84.8 / 86 KB, every other chunk under 11 KB, stylesheet 5.3 / 5.5 KB. Both dictionaries are lazy chunks (`i18n.fr`, `i18n.en`). Read the output for « exceeded », not only « ok ».
+
+**Don't re-open (decided):** SMS, native app, push, discovery, ranking, hosts choosing their own two words, a class-wide shared code.
+
+---
+
 ## 1. Snapshot
 
 | | |
@@ -34,9 +51,13 @@
 
 ## 3. What just shipped
 
+### French is its own lazy chunk — 2026-10-29
+
+`src/i18n.fr.ts` holds the French dictionary; `src/i18n.ts` keeps only the types, context and language helpers (`Dict` is `typeof FR`, a type-only import, so EN parity still fails `tsc`). `main.tsx` loads the dictionary the visitor needs before the first render. The shared `Icon` chunk fell from 16.3 to 6.4 KB, `i18n.fr` is 9.8 KB, the entry did not move; the chunk cap ratcheted 16.5 → 11 KB. Trade: a French first visit now waits for one small extra request (as English always did). `copyRules.test.ts` reads `FR` from the new file.
+
 ### Host page, calmer — 2026-10-29
 
-« Les invitations » opens with the tally (Oui · 2, Peut-être · 1, Pas de réponse · 1) and one button to send again to every silent family that has an address. A family that has answered is one calm line (its send buttons return under « Plus de choix » only when needed). A cancelled rencontre offers « Dis-leur pourquoi »: the note goes on the board the families read. Dark-mode axe sweeps (reply asked and answered, every host screen). `.gitattributes` (LF) ends the CRLF warnings. Five unused icons dropped (bundle: entry 84.8 / 86 KB, shared chunk 16.3 / 16.5 KB: the next growth has to split the French dictionary into its own lazy chunk, as English already is). CI caught that the facts grid and chips overflowed at big text; the test now runs at 250 % (CI fonts are wider than local ones).
+« Les invitations » opens with the tally (Oui · 2, Peut-être · 1, Pas de réponse · 1) and one button to send again to every silent family that has an address. A family that has answered is one calm line (its send buttons return under « Plus de choix » only when needed). A cancelled rencontre offers « Dis-leur pourquoi »: the note goes on the board the families read. Dark-mode axe sweeps (reply asked and answered, every host screen). `.gitattributes` (LF) ends the CRLF warnings. Five unused icons dropped (bundle: entry 84.8 / 86 KB, shared chunk 16.3 / 16.5 KB: French has since been split out, see below). CI caught that the facts grid and chips overflowed at big text; the test now runs at 250 % (CI fonts are wider than local ones).
 
 ### Grandma pass — 2026-10-28
 

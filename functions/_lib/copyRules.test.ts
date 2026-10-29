@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { FR } from '../../src/i18n'
+import { FR } from '../../src/i18n.fr'
 import { EN } from '../../src/i18n.en'
 
 // Rules about the words on screen, held by the build like Babillard's glossary tests:
@@ -29,7 +29,7 @@ describe('copy rules', () => {
         const name = p.split('.').pop()!
         return !new RegExp(String.raw`\.${name}\b|'${name}'|\b${name}:`).test(SOURCE)
       })
-    expect(unused.join(', '), 'remove these keys from FR and EN in src/i18n.ts').toBe('')
+    expect(unused.join(', '), 'remove these keys from FR and EN in src/i18n.fr.ts and src/i18n.en.ts').toBe('')
   })
 
   it('has no em-dash and no emoji in any string, in either language', () => {

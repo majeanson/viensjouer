@@ -12,5 +12,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   if (!me) return ok({ signedIn: false })
   const h = await ctx.env.DB.prepare('SELECT id, name, tz FROM households WHERE id = ?').bind(me.householdId).first<{ id: string; name: string; tz: string }>()
   const p = await ctx.env.DB.prepare('SELECT photo_key, remind_host, notify_answers FROM parents WHERE email = ?').bind(me.email).first<{ photo_key: string | null; remind_host: number; notify_answers: number }>()
-  return ok({ signedIn: true, photo: coverId(p?.photo_key), remindHost: p?.remind_host === 1, notifyAnswers: p?.notify_answers === 1, email: me.email, displayName: me.displayName, household: h, mail: mailEnabled(ctx.env), demo: isDemoEmail(me.email) })
+  // A household with one parent only: the front door to a lockout, so the app suggests inviting the other one.
+  const n = await ctx.env.DB.prepare('SELECT COUNT(*) AS n FROM parents WHERE household_id = ?').bind(me.householdId).first<{ n: number }>()
+  return ok({ signedIn: true, soloHost: (n?.n ?? 0) === 1, photo: coverId(p?.photo_key), remindHost: p?.remind_host === 1, notifyAnswers: p?.notify_answers === 1, email: me.email, displayName: me.displayName, household: h, mail: mailEnabled(ctx.env), demo: isDemoEmail(me.email) })
 }

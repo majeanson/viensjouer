@@ -1,6 +1,6 @@
 // Shapes the SPA reads off the API (snake_case rows, as the server sends them).
 export type Kind = 'park' | 'home' | 'birthday'
-export type Status = 'proposed' | 'confirmed' | 'cancelled'
+export type Status = 'proposed' | 'confirmed' | 'postponed' | 'cancelled'
 export type Reply = 'yes' | 'no' | 'maybe'
 
 export interface Child {

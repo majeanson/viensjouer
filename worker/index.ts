@@ -8,6 +8,7 @@ import { forbidden, notFound, serverError } from '../functions/_lib/json'
 import { withSecurityHeaders } from '../functions/_lib/securityHeaders'
 import { sendDueReminders, sendHostReminders } from '../functions/_lib/reminders'
 import { tidy } from '../functions/_lib/lifecycle'
+import { warnIfMailNearFree } from '../functions/_lib/mailBudget'
 import { csrfExempt, matchRoute, type RouteMod } from './routes'
 import { previewFor, withPreview } from './preview'
 
@@ -96,6 +97,7 @@ export default {
       ['reminders', sendDueReminders(env, 'https://jouer.marcportal.com')],
       ['host reminders', sendHostReminders(env, 'https://jouer.marcportal.com')],
       ['tidy', tidy(env)],
+      ['mail headroom', warnIfMailNearFree(env)],
     ]
     // One job failing is named in the log and never stops the others.
     ctx.waitUntil(Promise.allSettled(jobs.map(([, p]) => p)).then((rs) => rs.forEach((r, i) => r.status === 'rejected' && console.error('[cron]', jobs[i][0], r.reason))))

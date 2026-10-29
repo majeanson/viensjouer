@@ -54,4 +54,36 @@ describe('sendDueReminders', () => {
     const stamped = db.prepare('SELECT COUNT(*) AS n FROM invitations WHERE reminded_at IS NOT NULL').get() as { n: number }
     expect(Number(stamped.n)).toBe(0)
   })
+
+  it('counts what it sends against the household’s daily budget', async () => {
+    const { db, env } = realDb()
+    seed(db, dayZone())
+    vi.stubGlobal('fetch', async () => new Response('{"id":"x"}', { status: 200 }))
+    const e = { ...env, RESEND_API_KEY: 'k', MAIL_FROM: 'a@b.c' } as typeof env
+    expect(await sendDueReminders(e, 'https://x.test')).toBe(1)
+    const n = db.prepare("SELECT COUNT(*) AS n FROM mail_sends WHERE household_id = 'h1'").get() as { n: number }
+    expect(Number(n.n)).toBe(1)
+  })
+
+  it('skips a household whose budget is used up, unstamped, so a later run can still send', async () => {
+    const { db, env } = realDb()
+    seed(db, dayZone())
+    for (let k = 0; k < 60; k++) db.prepare("INSERT INTO mail_sends (id, household_id, created_at) VALUES (?, 'h1', ?)").run(`m${k}`, nowSec() - 60)
+    const sent: string[] = []
+    vi.stubGlobal('fetch', async () => (sent.push('x'), new Response('{}', { status: 200 })))
+    const e = { ...env, RESEND_API_KEY: 'k', MAIL_FROM: 'a@b.c' } as typeof env
+    expect(await sendDueReminders(e, 'https://x.test')).toBe(0)
+    expect(sent).toEqual([])
+    const stamped = db.prepare('SELECT COUNT(*) AS n FROM invitations WHERE reminded_at IS NOT NULL').get() as { n: number }
+    expect(Number(stamped.n)).toBe(0)
+  })
+
+  it('does not remind for a postponed rencontre', async () => {
+    const { db, env } = realDb()
+    seed(db, dayZone())
+    db.exec("UPDATE encounters SET status = 'postponed'")
+    vi.stubGlobal('fetch', async () => new Response('{}', { status: 200 }))
+    const e = { ...env, RESEND_API_KEY: 'k', MAIL_FROM: 'a@b.c' } as typeof env
+    expect(await sendDueReminders(e, 'https://x.test')).toBe(0)
+  })
 })

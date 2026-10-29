@@ -11,6 +11,7 @@ interface Me {
   mail?: boolean
   demo?: boolean
   photo?: string | null
+  soloHost?: boolean
   remindHost?: boolean
   notifyAnswers?: boolean
 }

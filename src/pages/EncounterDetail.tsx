@@ -53,6 +53,7 @@ export function EncounterDetail() {
   const [addMore, setAddMore] = useState(false)
   const [relaisFor, setRelaisFor] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
+  const [postponing, setPostponing] = useState(false)
   const [flash, setFlash] = useState<string | null>(null)
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: K.encounter(id) })
@@ -440,6 +441,31 @@ export function EncounterDetail() {
         </div>
       </div>
 
+      {postponing && e.status !== 'cancelled' && e.status !== 'postponed' && (
+        <form
+          className="card"
+          onSubmit={(ev) => {
+            ev.preventDefault()
+            const f = new FormData(ev.currentTarget)
+            const reason = String(f.get('why') ?? '').trim()
+            patch.mutate(
+              { status: 'postponed', ...(reason ? { reason } : {}), ...(f.get('series') === 'on' ? { series: true } : {}), notify: f.get('notify') === 'on' },
+              { onSuccess: () => setPostponing(false) },
+            )
+          }}
+        >
+          <h3><Icon name="umbrella" />{t.encounters.postpone}</h3>
+          <p className="muted small">{t.encounters.postponeHint}</p>
+          <label className="field"><span>{t.encounters.postponeWhy}</span><input className="input" name="why" maxLength={200} placeholder={t.encounters.postponePlaceholder} /></label>
+          {e.series_id && <label className="check"><input type="checkbox" name="series" /><span>{t.encounters.postponeSeries}</span></label>}
+          {!!me.mail && invitations.some((i) => i.email && i.reply !== 'no') && <label className="check"><input type="checkbox" name="notify" defaultChecked /><span>{t.edit.notify}</span></label>}
+          <div className="cluster">
+            <button className="btn btn--primary" disabled={patch.isPending}>{t.encounters.postpone}</button>
+            <button type="button" className="btn" onClick={() => setPostponing(false)}>{t.edit.cancel}</button>
+          </div>
+        </form>
+      )}
+      {e.status === 'postponed' && <div className="notice" role="status">{t.encounters.postponedHost}</div>}
       {e.status === 'cancelled' && (
         <form
           className="card"
@@ -460,6 +486,7 @@ export function EncounterDetail() {
       <div className="endactions">
         {e.status === 'proposed' && <button className="btn btn--primary btn--big" onClick={() => patch.mutate({ status: 'confirmed' })}><Icon name="check" />{t.encounters.confirm}</button>}
         <div className="cluster">
+          {e.status !== 'cancelled' && e.status !== 'postponed' && <button className="btn" onClick={() => setPostponing(true)}><Icon name="umbrella" />{t.encounters.postpone}</button>}
           {e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => cancel(false, e.status)}>{t.encounters.cancel}</button>}
           {e.series_id && e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => cancel(true, e.status)}>{t.encounters.cancelSeries}</button>}
           <button className="btn btn--danger" onClick={deleteIt}><Icon name="trash" />{t.encounters.delete}</button>

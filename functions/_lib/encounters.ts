@@ -2,7 +2,9 @@
 // invited side (functions/api/r/*).
 
 export type Kind = 'park' | 'home' | 'birthday'
-export type Status = 'proposed' | 'confirmed' | 'cancelled'
+// « postponed »: off for now, no new date yet. The link stays open, the answers stay, the reminders wait.
+export type Status = 'proposed' | 'confirmed' | 'postponed' | 'cancelled'
+export const isStatus = (v: unknown): v is Status => v === 'proposed' || v === 'confirmed' || v === 'postponed' || v === 'cancelled'
 export type Reply = 'yes' | 'no' | 'maybe'
 
 export const KINDS: Kind[] = ['park', 'home', 'birthday']
@@ -90,7 +92,7 @@ export function icsFold(line: string): string {
   return parts.join('\r\n ')
 }
 
-const ICS_STATUS: Record<Status, string> = { proposed: 'TENTATIVE', confirmed: 'CONFIRMED', cancelled: 'CANCELLED' }
+const ICS_STATUS: Record<Status, string> = { proposed: 'TENTATIVE', confirmed: 'CONFIRMED', postponed: 'TENTATIVE', cancelled: 'CANCELLED' }
 
 // One VEVENT. The UID never changes and SEQUENCE grows with every edit, so a calendar that already has the
 // event UPDATES it (time moved, cancelled) instead of adding a second one.

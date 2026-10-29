@@ -13,14 +13,9 @@
 **Open, in order:**
 1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
 2. **Household time zone** (review finding, confirmed): `households.tz` is 'America/Toronto' forever and nothing writes it, so emails, the .ics and quiet hours are off for a family outside Eastern time. Set it from the browser at signup, edit it on the account page. Small, and it matters more now that quiet hours use it.
-3. **Cancelling a whole series is silent** (confirmed): later occurrences change status with no change row and no notice. Write one change per occurrence and offer the update email. Goes with the Reporté / pluie item below.
-4. A dead or retired link says « cette rencontre est terminée » with the host's first name, not the generic failure page.
-5. Cron reminders are outside the daily mail budget (60/day vs Resend's 100/day free): count them with `recordMail`, or skip when `mailRoom` is 0.
-6. Edit a recurring series in one go (today twelve edits to move a weekly park from 10 h to 11 h).
-7. An invited parent with two children cannot answer for both; a « host lockout » prompt (invite my partner after the first rencontre); free-tier headroom warning in the cron; the export should also include `child_links` and reminder preferences.
-8. A « Reporté / pluie » state with a reason (board post, optional email), instead of cancel-or-edit.
-9. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
-10. The reply page opening offline (shell cache only, never stale answers).
+3. **Cancelling a series: the email offer.** Every later occurrence now gets its change row (shown on its card), but « Annuler » still sends no update email; the « Prévenir » box exists on edit and on Reporter only.
+4. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
+5. The reply page opening offline (shell cache only, never stale answers).
 
 **Budgets (`npm run check:bundle`):** entry 84.8 / 86 KB, every other chunk under 11 KB, stylesheet 5.3 / 5.5 KB. Both dictionaries are lazy chunks (`i18n.fr`, `i18n.en`). Read the output for « exceeded », not only « ok ».
 
@@ -55,6 +50,17 @@
 - **Push straight to `main`.** CI is the gate; fix forward.
 
 ## 3. What just shipped
+
+### Dead links, mail budget, series, Reporté — 2026-10-29
+
+- **Dead link**: a link whose rencontre the host removed answers 410 with the host's first name (`retiredHost` in `r/[token].ts`) and the page says « Cette rencontre est terminée, écris à Marie ». A purged row or a code that never existed stays a plain 404 and counts as a miss.
+- **Cron reminders are in the mail budget**: both reminder jobs read `mailRoom` once per household per run, skip a household with none left UNSTAMPED (a later run sends while the rencontre is ahead) and `recordMail` what left. The cron also logs a warning once the last 24 h pass 80 of Resend's free 100 (`warnIfMailNearFree`, log only).
+- **Edit a series in one go**: « Modifier » on a recurring rencontre has a box « Appliquer aussi aux prochaines dates ». PATCH `series: true` edits this occurrence and every later one, each with its own change row; the hour travels as a shift (`shiftOccurrence`), never the day (a day would drift across DST: 400 if the shift is a day or more). The update email goes for the edited occurrence only. Cancel-series now writes the rows too.
+- **Reporté / pluie**: status `postponed` (no migration: `status` is free text). « Reporter » on the host page: optional reason (posted on the board of each occurrence concerned, `Reporté : …`), optional email (the reason rides in it), optional whole series. Reminders skip a postponed rencontre; the link stays open and answers stay; the reply page says so. Setting a new start on a postponed one puts it back to « proposée ».
+- **Two children, one parent**: the reply card lists the OTHER invitations to the same rencontre whose family has the same email in the same book (`siblings`); « Même réponse pour Léa » posts to that child's own link. Nothing else about another family is ever listed.
+- **Host lockout**: `/auth/me` says `soloHost`; once a rencontre is past, Rencontres shows one line « Invite l'autre parent » (`PartnerNudge`), « Plus tard » hides it on that device.
+- **Export** now has `childLinks`, the parents' reminder choices (`remind_host`, `notify_answers`) and each invitation's `remind_at`.
+- **Budget watch**: `i18n.fr` is 10.4 of 11 KB gzip, entry 84.8 / 86.
 
 ### Hygiene — 2026-10-29
 

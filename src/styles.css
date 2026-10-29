@@ -223,7 +223,8 @@ h2 .ico, h3 .ico, summary .ico { color: var(--accent); }
 .meta li { display: flex; align-items: center; flex-wrap: wrap; gap: 0.1rem; }
 .meta--row { display: flex; flex-wrap: wrap; gap: 0.2rem 0.9rem; margin: 0.35rem 0; }
 .meta--row > span { display: inline-flex; align-items: center; }
-.chip--proposed, .chip--confirmed, .chip--cancelled { margin-left: 0.3rem; }
+.chip--proposed, .chip--confirmed, .chip--postponed, .chip--cancelled { margin-left: 0.3rem; }
+.chip--postponed { background: color-mix(in srgb, currentColor 10%, transparent); border-color: transparent; }
 .chip--confirmed { background: color-mix(in srgb, var(--ok) 16%, transparent); border-color: transparent; }
 .chip--cancelled { background: color-mix(in srgb, var(--bad) 14%, transparent); border-color: transparent; }
 .blist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.65rem; }

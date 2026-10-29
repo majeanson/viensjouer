@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { changeLines, diffEncounter, type Snapshot } from './changes'
+import { changeLines, diffEncounter, shiftOccurrence, type Snapshot } from './changes'
 
 const base: Snapshot = { title: 'Au parc', starts_at: 1_800_000_000, ends_at: null, place: 'Parc Lafontaine', address: null, map_url: null, note: null, planB: null, gift: null, status: 'proposed' }
 
@@ -64,3 +64,20 @@ describe('changeLines in English', () => {
     expect(lines).toEqual(['Place : Parc → Chez nous', 'Address : updated, see the page', 'Status : proposed → cancelled'])
   })
 })
+
+describe('shiftOccurrence (a series edited in one go)', () => {
+  const H = 3600
+  it('moves the start by the edited occurrence’s shift and keeps each own length when the end was not touched', () => {
+    expect(shiftOccurrence(1000, 1000 + 2 * H, { delta: H, duration: undefined })).toEqual({ starts_at: 1000 + H, ends_at: 1000 + 3 * H })
+    expect(shiftOccurrence(1000, null, { delta: -H, duration: undefined })).toEqual({ starts_at: 1000 - H, ends_at: null })
+  })
+  it('gives every date the new length, or no end at all', () => {
+    expect(shiftOccurrence(1000, 1000 + H, { delta: H, duration: 3 * H })).toEqual({ starts_at: 1000 + H, ends_at: 1000 + 4 * H })
+    expect(shiftOccurrence(1000, 1000 + H, { delta: 0, duration: null })).toEqual({ starts_at: 1000, ends_at: null })
+  })
+  it('logs a postponement as a status change, in words', () => {
+    const ch = diffEncounter(base, { ...base, status: 'postponed' })
+    expect(ch).toEqual([{ field: 'status', old: 'proposed', new: 'postponed' }])
+    expect(changeLines(ch, 'America/Toronto', 'fr')).toEqual(['Statut : proposée → reportée'])
+  })
+});

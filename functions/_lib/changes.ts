@@ -50,8 +50,8 @@ const LABEL: Record<MailLang, Record<ChangeField, string>> = {
   en: { title: 'Title', starts_at: 'Start', ends_at: 'End', place: 'Place', address: 'Address', map_url: 'Map', note: 'Good to know', planB: 'Plan B', gift: 'Gift idea', status: 'Status' },
 }
 const STATUS: Record<MailLang, Record<string, string>> = {
-  fr: { proposed: 'proposée', confirmed: 'confirmée', cancelled: 'annulée' },
-  en: { proposed: 'proposed', confirmed: 'confirmed', cancelled: 'cancelled' },
+  fr: { proposed: 'proposée', confirmed: 'confirmée', postponed: 'reportée', cancelled: 'annulée' },
+  en: { proposed: 'proposed', confirmed: 'confirmed', postponed: 'postponed', cancelled: 'cancelled' },
 }
 
 // One readable line per change, for the update email, in the reader's language.
@@ -67,4 +67,17 @@ export function changeLines(changes: Change[], tz: string, lang: MailLang = 'fr'
       ? `${LABEL[lang][c.field]} : ${lang === 'fr' ? 'mise à jour, à voir sur la page' : 'updated, see the page'}`
       : `${LABEL[lang][c.field]} : ${show(c.field, c.old)} → ${show(c.field, c.new)}`,
   )
+}
+
+// « Toute la série »: how the edited occurrence's new start travels to the later ones. `duration` is the new length when
+// the edit set an end (null: no end; undefined: the edit left the end alone, so each keeps its own length).
+export interface Shift {
+  delta: number
+  duration: number | null | undefined
+}
+export function shiftOccurrence(startsAt: number, endsAt: number | null, s: Shift): { starts_at: number; ends_at: number | null } {
+  const starts_at = startsAt + s.delta
+  if (s.duration === null) return { starts_at, ends_at: null }
+  if (typeof s.duration === 'number') return { starts_at, ends_at: starts_at + s.duration }
+  return { starts_at, ends_at: endsAt === null ? null : endsAt + s.delta }
 }

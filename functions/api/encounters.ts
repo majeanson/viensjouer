@@ -2,11 +2,12 @@ import { badRequest, conflict, created, notFound, ok, readJson, str } from '../_
 import { FULL, roomFor } from '../_lib/ceilings'
 import { authed } from '../_lib/route'
 import { freshLinkCode, newId, nowSec, paperCode } from '../_lib/ids'
-import { cleanMapUrl, coverId, isKind, type EncounterRow, type Kind, type Reply, type Status } from '../_lib/encounters'
-import { changeLines, diffEncounter, type Change, type Snapshot } from '../_lib/changes'
+import { cleanMapUrl, coverId, isKind, isStatus, type EncounterRow, type Kind, type Reply, type Status } from '../_lib/encounters'
+import { changeLines, diffEncounter, shiftOccurrence, type Change, type Shift, type Snapshot } from '../_lib/changes'
 import { REMIND_LEAD_SEC } from '../_lib/reminders'
 import { mailEnabled, sendMail } from '../_lib/mail'
-import { mailLang } from '../_lib/lang'
+import { mailLang, requestLang } from '../_lib/lang'
+import { MAX_MESSAGES } from '../_lib/board'
 import { updateMail } from '../_lib/mailCopy'
 import { isDemoEmail } from '../_lib/demo'
 import { mailRoom, recordMail } from '../_lib/mailBudget'
@@ -108,6 +109,7 @@ type Body = {
   mapUrl?: string | null
   note?: string | null
   status?: string
+  reason?: string
   invite?: string[]
 }
 
@@ -183,7 +185,7 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   const body = await readJson<Body>(ctx.request)
   const id = str(body?.id, 20)
   if (!id) return badRequest('id requis.')
-  const own = await ctx.env.DB.prepare('SELECT starts_at, ends_at, status, series_id, default_scope FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(id, actor.householdId).first<{ starts_at: number; ends_at: number | null; status: 'proposed' | 'confirmed' | 'cancelled'; series_id: string | null; default_scope: Scope }>()
+  const own = await ctx.env.DB.prepare('SELECT starts_at, ends_at, status, series_id, default_scope FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(id, actor.householdId).first<{ starts_at: number; ends_at: number | null; status: Status; series_id: string | null; default_scope: Scope }>()
   if (!own) return notFound()
   // « On y est » / « On est partis »: only around the rencontre itself (hereAllowed).
   if (typeof body?.here === 'boolean') {
@@ -193,69 +195,93 @@ export const onRequestPatch = authed(async (ctx, actor) => {
   }
   if (typeof body?.showGuests === 'boolean') await ctx.env.DB.prepare('UPDATE encounters SET show_guests = ?, updated_at = ? WHERE id = ?').bind(body.showGuests ? 1 : 0, nowSec(), id).run()
   const status = body?.status
-  if (status !== undefined && status !== 'proposed' && status !== 'confirmed' && status !== 'cancelled') return badRequest('Statut inconnu.')
-  // « Annuler toute la série »: the same status on this occurrence and every later one.
-  if (body?.series && own.series_id && status !== undefined) {
-    await ctx.env.DB.prepare('UPDATE encounters SET status = ?, updated_at = ? WHERE series_id = ? AND household_id = ? AND starts_at >= ? AND deleted_at IS NULL')
-      .bind(status, nowSec(), own.series_id, actor.householdId, own.starts_at)
-      .run()
-    return ok()
+  if (status !== undefined && !isStatus(status)) return badRequest('Statut inconnu.')
+  const series = body?.series === true && own.series_id !== null
+  // « Toute la série »: this occurrence and every later one, each edited and logged on its own (so every card shows
+  // what moved). The edited occurrence is the model: its change of start becomes a shift applied to the others.
+  const targets = series
+    ? (await ctx.env.DB.prepare('SELECT id FROM encounters WHERE series_id = ? AND household_id = ? AND starts_at >= ? AND deleted_at IS NULL ORDER BY starts_at').bind(own.series_id, actor.householdId, own.starts_at).all<{ id: string }>()).results.map((r) => r.id)
+    : [id]
+  if (!targets.includes(id)) return notFound()
+  type Cur = { title: string; starts_at: number; ends_at: number | null; place: string | null; address: string | null; map_url: string | null; note: string | null; details: string; status: Status; kind: Kind }
+  const plans: { id: string; cur: Cur; before: Snapshot; after: Snapshot }[] = []
+  let shift: Shift | null = null
+  for (const tid of targets) {
+    const cur = await ctx.env.DB.prepare('SELECT title, starts_at, ends_at, place, address, map_url, note, details, status, kind FROM encounters WHERE id = ?').bind(tid).first<Cur>()
+    if (!cur) return notFound()
+    const before: Snapshot = { title: cur.title, starts_at: cur.starts_at, ends_at: cur.ends_at, place: cur.place, address: cur.address, map_url: cur.map_url, note: cur.note, planB: parseDetails(cur.details).planB ?? null, gift: parseDetails(cur.details).gift ?? null, status: cur.status }
+    const after: Snapshot = { ...before }
+    if (body?.title !== undefined) {
+      const t = str(body.title, 120)
+      if (!t) return badRequest('Le titre ne peut pas être vide.')
+      after.title = t
+    }
+    if (tid === id) {
+      if (typeof body?.startsAt === 'number' && Number.isFinite(body.startsAt)) after.starts_at = Math.floor(body.startsAt)
+      if (body?.endsAt === null) after.ends_at = null
+      else if (typeof body?.endsAt === 'number' && Number.isFinite(body.endsAt)) after.ends_at = Math.floor(body.endsAt)
+      if (after.ends_at !== null && after.ends_at <= after.starts_at) return badRequest('La fin doit venir après le début.')
+      if (series) {
+        shift = { delta: after.starts_at - before.starts_at, duration: body?.endsAt === null ? null : typeof body?.endsAt === 'number' ? (after.ends_at ?? after.starts_at) - after.starts_at : undefined }
+        // Only the hour travels down a series: a new day would not survive a change of clock (DST) week after week.
+        if (Math.abs(shift.delta) >= 86_400) return badRequest('Pour toute la série, change seulement l’heure.')
+      }
+    } else if (shift) {
+      Object.assign(after, shiftOccurrence(before.starts_at, before.ends_at, shift))
+    }
+    if (body?.place !== undefined) after.place = str(body.place, 120)
+    if (body?.address !== undefined) after.address = str(body.address, 200)
+    if (body?.mapUrl !== undefined) {
+      const m = cleanMapUrl(body.mapUrl)
+      if (typeof body.mapUrl === 'string' && body.mapUrl.trim() && !m) return badRequest('Lien de carte invalide.')
+      after.map_url = m
+    }
+    if (body?.note !== undefined) after.note = str(body.note, 1000)
+    if (body?.details !== undefined) {
+      const d = cleanDetails(cur.kind, body.details)
+      // Only a key the client actually sent is touched: an older bundle that sends just { gift } must not wipe the plan B.
+      const sent = body.details && typeof body.details === 'object' ? (body.details as Record<string, unknown>) : {}
+      if ('planB' in sent) after.planB = d.planB ?? null
+      if (cur.kind === 'birthday' && 'gift' in sent && !series) after.gift = d.gift ?? null
+    }
+    if (status !== undefined) after.status = status
+    // A postponed rencontre that gets a new start is on again, to be confirmed.
+    else if (cur.status === 'postponed' && after.starts_at !== before.starts_at) after.status = 'proposed'
+    plans.push({ id: tid, cur, before, after })
   }
-  // EDIT: work out what REALLY changes, write it together with the change log (so the invited families can
-  // be shown what moved), and keep the day-before reminders honest if the start moved.
-  const cur = await ctx.env.DB.prepare('SELECT title, starts_at, ends_at, place, address, map_url, note, details, status, kind FROM encounters WHERE id = ?')
-    .bind(id)
-    .first<{ title: string; starts_at: number; ends_at: number | null; place: string | null; address: string | null; map_url: string | null; note: string | null; details: string; status: Status; kind: Kind }>()
-  if (!cur) return notFound()
-  const before: Snapshot = { title: cur.title, starts_at: cur.starts_at, ends_at: cur.ends_at, place: cur.place, address: cur.address, map_url: cur.map_url, note: cur.note, planB: parseDetails(cur.details).planB ?? null, gift: parseDetails(cur.details).gift ?? null, status: cur.status }
-  const after: Snapshot = { ...before }
-  if (body?.title !== undefined) {
-    const t = str(body.title, 120)
-    if (!t) return badRequest('Le titre ne peut pas être vide.')
-    after.title = t
-  }
-  if (typeof body?.startsAt === 'number' && Number.isFinite(body.startsAt)) after.starts_at = Math.floor(body.startsAt)
-  if (body?.endsAt === null) after.ends_at = null
-  else if (typeof body?.endsAt === 'number' && Number.isFinite(body.endsAt)) after.ends_at = Math.floor(body.endsAt)
-  if (after.ends_at !== null && after.ends_at <= after.starts_at) return badRequest('La fin doit venir après le début.')
-  if (body?.place !== undefined) after.place = str(body.place, 120)
-  if (body?.address !== undefined) after.address = str(body.address, 200)
-  if (body?.mapUrl !== undefined) {
-    const m = cleanMapUrl(body.mapUrl)
-    if (typeof body.mapUrl === 'string' && body.mapUrl.trim() && !m) return badRequest('Lien de carte invalide.')
-    after.map_url = m
-  }
-  if (body?.note !== undefined) after.note = str(body.note, 1000)
-  if (body?.details !== undefined) {
-    const d = cleanDetails(cur.kind, body.details)
-    // Only a key the client actually sent is touched: an older bundle that sends just { gift } must not wipe the plan B.
-    const sent = body.details && typeof body.details === 'object' ? (body.details as Record<string, unknown>) : {}
-    if ('planB' in sent) after.planB = d.planB ?? null
-    if (cur.kind === 'birthday' && 'gift' in sent) after.gift = d.gift ?? null
-  }
-  if (status !== undefined) after.status = status
-  const changes = diffEncounter(before, after)
   const ts = nowSec()
-  if (changes.length) {
-    const DB = ctx.env.DB
-    const details = cleanDetails(cur.kind, { gift: after.gift ?? '', planB: after.planB ?? '' })
-    const stmts = [
-      DB.prepare('UPDATE encounters SET title = ?, starts_at = ?, ends_at = ?, place = ?, address = ?, map_url = ?, note = ?, details = ?, status = ?, updated_at = ? WHERE id = ?').bind(after.title, after.starts_at, after.ends_at, after.place, after.address, after.map_url, after.note, JSON.stringify(details), after.status, ts, id),
-      ...changes.map((c) => DB.prepare('INSERT INTO encounter_changes (id, encounter_id, field, old_value, new_value, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), id, c.field, c.old, c.new, ts)),
-    ]
+  const DB = ctx.env.DB
+  const stmts: D1PreparedStatement[] = []
+  const reasonText = status === 'postponed' ? str(body?.reason, 200) : null
+  for (const p of plans) {
+    const changes = diffEncounter(p.before, p.after)
+    if (!changes.length) continue
+    const details = cleanDetails(p.cur.kind, { gift: p.after.gift ?? '', planB: p.after.planB ?? '' })
+    stmts.push(
+      DB.prepare('UPDATE encounters SET title = ?, starts_at = ?, ends_at = ?, place = ?, address = ?, map_url = ?, note = ?, details = ?, status = ?, updated_at = ? WHERE id = ?').bind(p.after.title, p.after.starts_at, p.after.ends_at, p.after.place, p.after.address, p.after.map_url, p.after.note, JSON.stringify(details), p.after.status, ts, p.id),
+      ...changes.map((c) => DB.prepare('INSERT INTO encounter_changes (id, encounter_id, field, old_value, new_value, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), p.id, c.field, c.old, c.new, ts)),
+    )
     // A day-before reminder follows the new start; one already sent for the old time is armed again.
-    if (after.starts_at !== before.starts_at) stmts.push(DB.prepare('UPDATE invitations SET remind_at = MAX(?, ?), reminded_at = NULL, updated_at = ? WHERE encounter_id = ? AND remind_at IS NOT NULL').bind(after.starts_at - REMIND_LEAD_SEC, ts, ts, id))
-    await DB.batch(stmts)
+    if (p.after.starts_at !== p.before.starts_at) stmts.push(DB.prepare('UPDATE invitations SET remind_at = MAX(?, ?), reminded_at = NULL, updated_at = ? WHERE encounter_id = ? AND remind_at IS NOT NULL').bind(p.after.starts_at - REMIND_LEAD_SEC, ts, ts, p.id))
+    // « Reporté »: the host's reason goes on the board of each card it applies to, where the families already look.
+    if (reasonText && p.after.status === 'postponed' && p.before.status !== 'postponed') {
+      const n = await DB.prepare('SELECT COUNT(*) AS n FROM encounter_messages WHERE encounter_id = ? AND deleted_at IS NULL').bind(p.id).first<{ n: number }>()
+      if ((n?.n ?? 0) < MAX_MESSAGES) stmts.push(DB.prepare('INSERT INTO encounter_messages (id, encounter_id, author_kind, author_label, text, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), p.id, 'host', actor.displayName, `${requestLang(ctx.request) === 'en' ? 'Postponed' : 'Reporté'} : ${reasonText}`, ts))
+    }
   }
+  if (stmts.length) await DB.batch(stmts)
+  const main = plans.find((p) => p.id === id)!
+  const changes = diffEncounter(main.before, main.after)
+  const after = main.after
   if (Array.isArray(body?.invite)) await mintInvitations(ctx.env.DB, actor.householdId, id, body!.invite.filter((v) => typeof v === 'string').slice(0, 40), isScope(body?.scope) ? body.scope : own.default_scope)
   // « Prévenir les familles »: one email to each family that has an address and did not say no.
   let notified = 0
   let notifiedSkipped = 0
-  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) ({ sent: notified, skipped: notifiedSkipped } = await notifyChange(ctx.env, ctx.request, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes))
+  if (body?.notify === true && changes.length && mailEnabled(ctx.env) && !isDemoEmail(actor.email)) ({ sent: notified, skipped: notifiedSkipped } = await notifyChange(ctx.env, ctx.request, actor.householdId, new URL(ctx.request.url).origin, actor.displayName, id, after.title, changes, reasonText))
   return ok({ changed: changes.length, notified, notifiedSkipped })
 })
 
-async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Request, householdId: string, origin: string, hostName: string, encounterId: string, title: string, changes: Change[]): Promise<{ sent: number; skipped: number }> {
+async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Request, householdId: string, origin: string, hostName: string, encounterId: string, title: string, changes: Change[], reason: string | null = null): Promise<{ sent: number; skipped: number }> {
   const { results } = await env.DB.prepare(
     `SELECT i.token, f.email, f.lang, f.parent_name, h.tz FROM invitations i
        JOIN friend_families f ON f.id = i.friend_family_id
@@ -271,7 +297,7 @@ async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Req
     const lang = mailLang(r.lang, request)
     const link = `${origin}/${paperCode(r.token)}`
     try {
-      await sendMail(env, { to: r.email, ...updateMail(lang, { parent: r.parent_name, host: hostName, title, lines: changeLines(changes, r.tz, lang), link }) })
+      await sendMail(env, { to: r.email, ...updateMail(lang, { parent: r.parent_name, host: hostName, title, lines: [...changeLines(changes, r.tz, lang), ...(reason ? [`${lang === 'fr' ? 'Le mot de l’hôte' : 'A word from the host'} : ${reason}`] : [])], link }) })
       sent++
     } catch (err) {
       console.error('[mail] change', err)

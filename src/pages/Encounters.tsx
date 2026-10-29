@@ -9,6 +9,7 @@ import { Rel } from '../components/Rel'
 import { paperCode } from '../lib/link'
 import type { Child, Encounter, Family, InvitationSummary } from '../lib/types'
 import { Icon, BigAction, kindIcon } from '../components/Icon'
+import { PartnerNudge } from '../components/PartnerNudge'
 
 type Reply = 'yes' | 'no' | 'maybe' | null
 type CalItem =
@@ -114,6 +115,7 @@ export function Encounters() {
   return (
     <>
       <h1>{t.encounters.title}</h1>
+      <PartnerNudge ready={past.length > 0} />
       {!nothing && <BigAction icon="calendar" href="/rencontres/nouvelle" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}
       {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && (

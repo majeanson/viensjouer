@@ -2,7 +2,7 @@ import type { Env } from '../../_lib/env'
 import { notifyHostOfAnswer } from '../../_lib/answerNotice'
 import { requestLang } from '../../_lib/lang'
 import { lockedOut, lookupMiss } from '../../_lib/guessLimit'
-import { badRequest, ok, readJson, str, tooManyRequests } from '../../_lib/json'
+import { badRequest, gone, ok, readJson, str, tooManyRequests } from '../../_lib/json'
 import { overAuthLimit } from '../../_lib/rateLimit'
 import { newId, normalizeLinkCode, nowSec } from '../../_lib/ids'
 import { MAX_MESSAGES, canDeleteOwn } from '../../_lib/board'
@@ -80,10 +80,29 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
   }
 }
 
+// A real link whose rencontre the host has since removed. The token is still the credential, so it may be told who the
+// host was (first name only): « cette rencontre est terminée, demande à Marie » beats the generic dead end. 410, with the
+// first name as the message (the client prints it, it is not a sentence). A purged row is gone for good: plain 404.
+async function retiredHost(env: Env, raw: string | undefined): Promise<string | null> {
+  const token = normalizeLinkCode(raw)
+  if (!token) return null
+  const row = await env.DB.prepare(
+    `SELECT (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host
+       FROM invitations i JOIN encounters e ON e.id = i.encounter_id WHERE i.token = ? AND e.deleted_at IS NOT NULL`,
+  )
+    .bind(token)
+    .first<{ host: string | null }>()
+  return row ? (row.host ?? '').trim().split(/\s+/)[0] || null : null
+}
+
 export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   if ((await overAuthLimit(ctx.env, ctx.request)) || (await lockedOut(ctx.env, ctx.request))) return tooManyRequests()
   const r = await resolve(ctx.env, ctx.params.token as string | undefined)
-  if (!r) return lookupMiss(ctx.env, ctx.request)
+  if (!r) {
+    const host = await retiredHost(ctx.env, ctx.params.token as string | undefined)
+    if (host) return gone(host)
+    return lookupMiss(ctx.env, ctx.request)
+  }
   const alive = linkAlive(r.encounter, nowSec())
   const { results: messages } = await ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at, pinned, invitation_id FROM encounter_messages WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at')
     .bind(r.encounter.id)
@@ -133,6 +152,16 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
   const { results: changes } = await ctx.env.DB.prepare('SELECT field, old_value, new_value, created_at FROM encounter_changes WHERE encounter_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 10')
     .bind(r.encounter.id, now - 60 * 86_400)
     .all()
+  // Another child of the SAME parent (same book, same email) invited to this rencontre: their own links, so one page can
+  // answer for both. Nothing else about another family is ever listed.
+  const { results: siblings } = r.family.email
+    ? await ctx.env.DB.prepare(
+        `SELECT i.token, f.child_first_name AS child, i.reply FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id
+          WHERE i.encounter_id = ? AND i.id != ? AND f.household_id = ? AND f.deleted_at IS NULL AND lower(f.email) = lower(?) ORDER BY f.child_first_name LIMIT 6`,
+      )
+        .bind(r.encounter.id, r.invitation.id, r.encounter.household_id, r.family.email)
+        .all<{ token: string; child: string; reply: Reply | null }>()
+    : { results: [] as { token: string; child: string; reply: Reply | null }[] }
   const { address: _hidden, map_url: _mapHidden, cover_key, show_guests, household_id: _hh, details, here_at, ...card } = r.encounter
   return ok({
     alive,
@@ -150,6 +179,7 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     you: { ...r.family, reply: r.invitation.reply, replyNote: r.invitation.reply_note, remind: r.invitation.remind_at !== null, adults: r.invitation.adults, kids: r.invitation.kids, scope: r.invitation.scope },
     messages: messages.map(({ invitation_id, ...m }) => ({ ...m, mine: invitation_id === r.invitation.id })),
     series: seriesRows,
+    siblings,
   })
 }
 

@@ -26,6 +26,7 @@
 | `EncounterEdit` | « Modifier » with a live preview of what families see | |
 | `HomeCard` | The « Chez nous » card: form and read-only view | |
 | `ParentInvite` | Inviting the other parent | |
+| `PartnerNudge` | The one line on Rencontres asking a solo host to invite the other parent | |
 | `CalendarFeed` | The host's secret calendar feed | |
 
 ## Styles (`src/styles.css`)

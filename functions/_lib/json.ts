@@ -17,6 +17,7 @@ export const badRequest = (message: string) => body({ error: message }, 400)
 export const unauthorized = (message = 'Pas connecté.') => body({ error: message }, 401)
 export const forbidden = (message = 'Interdit.') => body({ error: message }, 403)
 export const notFound = (message = 'Introuvable.') => body({ error: message }, 404)
+export const gone = (message: string) => body({ error: message }, 410)
 export const conflict = (message: string) => body({ error: message }, 409)
 export const tooManyRequests = (message = 'Trop d’essais. Réessaie dans une minute.') =>
   new Response(JSON.stringify({ error: message }), { status: 429, headers: { ...JSON_HEADERS, 'retry-after': '60' } })

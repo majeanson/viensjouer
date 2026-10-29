@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ApiError, api } from '../lib/api'
+import { ApiError, api, isStatus } from '../lib/api'
 import { clearPending, readPending, writePending } from '../lib/pendingAnswer'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
@@ -35,6 +35,7 @@ interface Card {
   photos: boolean
   messages: Message[]
   series: { token: string; starts_at: number; reply: ReplyKind | null }[]
+  siblings?: { token: string; child: string; reply: ReplyKind | null }[]
   changes: ChangeRow[]
   cover: string | null
   guests: { yes: string[]; maybe: string[]; waiting: number } | null
@@ -131,7 +132,15 @@ function ReplyInner() {
     onError: (e) => setErr(e.message),
   })
 
+  // The same answer for another child of this parent: it goes to that child's own link, like any answer.
+  const alsoFor = useMutation({
+    mutationFn: (s: { token: string; reply: ReplyKind }) => api(`r/${s.token}`, { method: 'POST', body: { reply: s.reply } }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: K.reply(token) }),
+    onError: (e) => setErr(e.message),
+  })
+
   if (q.isLoading) return <Loading page />
+  if (isStatus(q.error, 410)) return <main id="main" className="shell"><div className="notice" role="status">{t.reply.ended((q.error as ApiError).message)}</div></main>
   if (!q.data) return <QueryError page error={q.error} dead={t.reply.dead} onRetry={() => void q.refetch()} />
   const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos, changes: rawChanges, cover, guests, bring: rawBring } = q.data
   const bring = rawBring ?? []
@@ -266,6 +275,7 @@ function ReplyInner() {
         </dl>
         {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
+        {e.status === 'postponed' && alive && <div className="notice" role="status">{t.reply.postponed}</div>}
       </section>
 
       {!alive ? (
@@ -278,6 +288,11 @@ function ReplyInner() {
             <button className="btn" onClick={() => setEditing(true)}>{t.reply.change}</button>
           </div>
           <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.reply.hostKnows(host.parent_name || host.household_name)}</p>
+          {alive && you.reply && (q.data.siblings ?? []).map((s) => s.reply !== null && s.reply === you.reply ? (
+            <p key={s.token} className="muted small" style={{ margin: '0.5rem 0 0' }}><Icon name="check" />{t.reply.siblingSame(s.child, t.encounters.reply[s.reply])}</p>
+          ) : (
+            <button key={s.token} className="btn btn--small" style={{ marginTop: '0.5rem' }} disabled={alsoFor.isPending} onClick={() => alsoFor.mutate({ token: s.token, reply: you.reply! })}>{t.reply.siblingAnswer(s.child, t.encounters.reply[you.reply!])}</button>
+          ))}
           {calendarAfterYes && (
             <div className="cluster" style={{ marginTop: '0.75rem' }}>
               <a className="btn btn--primary" href={`/api/r/${token}/ics`} download="rencontre.ics"><Icon name="calendar" />{t.reply.calendar}</a>

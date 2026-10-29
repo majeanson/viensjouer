@@ -82,13 +82,15 @@ export function EncounterEdit({
     }
     guestsChangedNow.current = read(ev.currentTarget).body.showGuests !== guestsWas.current
     const notify = canNotify && (ev.currentTarget.elements.namedItem('notify') as HTMLInputElement | null)?.checked === true
-    save.mutate({ ...read(ev.currentTarget).body, notify })
+    const series = e.series_id !== null && (ev.currentTarget.elements.namedItem('series') as HTMLInputElement | null)?.checked === true
+    save.mutate({ ...read(ev.currentTarget).body, notify, ...(series ? { series: true } : {}) })
   }
 
   return (
     <form ref={setForm} className="card" onSubmit={submit} onInput={() => setTick((n) => n + 1)}>
       <h3><Icon name="edit" />{t.edit.title}</h3>
       {e.series_id && <p className="muted small">{t.edit.seriesOnly}</p>}
+      {e.series_id && <label className="check"><input type="checkbox" name="series" /><span>{t.edit.seriesAll}</span></label>}
       <label className="field"><span><Icon name="edit" />{t.encounters.titleField}</span><input className="input" name="title" required maxLength={120} defaultValue={e.title} /></label>
       <div className="field"><span><Icon name="calendar" />{t.encounters.when}</span><WhenInput name="startsAt" label={t.encounters.when} defaultValue={toLocalInput(e.starts_at)} /></div>
       <label className="field"><span><Icon name="clock" />{t.encounters.until}</span><input className="input" name="endsAt" type="time" defaultValue={e.ends_at ? toLocalTime(e.ends_at) : ''} /><span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.untilHint}</span></label>

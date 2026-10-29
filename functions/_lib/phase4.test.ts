@@ -24,6 +24,11 @@ describe('cleanDetails', () => {
     expect(cleanDetails('birthday', { gift: '  des livres  ' })).toEqual({ gift: 'des livres' })
     expect(cleanDetails('birthday', { gift: '   ' })).toEqual({})
     expect(cleanDetails('park', { gift: 'x' })).toEqual({})
+  })
+  it('every kind keeps a plan B, trimmed and capped, and drops it when blank', () => {
+    expect(cleanDetails('park', { planB: '  chez nous  ' })).toEqual({ planB: 'chez nous' })
+    expect(cleanDetails('birthday', { planB: 'x'.repeat(300), gift: 'un livre' })).toEqual({ gift: 'un livre', planB: 'x'.repeat(200) })
+    expect(cleanDetails('home', { planB: '   ' })).toEqual({})
     expect(cleanDetails('birthday', 'nope')).toEqual({})
   })
   it('parseDetails survives junk', () => {

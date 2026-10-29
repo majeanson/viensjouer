@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { clientDiff, showValue, type Snap } from './changes'
 
-const base: Snap = { title: 'Au parc', starts_at: 1_800_000_000, ends_at: null, place: 'Parc', address: null, map_url: null, note: null, gift: null, status: 'proposed' }
+const base: Snap = { title: 'Au parc', starts_at: 1_800_000_000, ends_at: null, place: 'Parc', address: null, map_url: null, note: null, planB: null, gift: null, status: 'proposed' }
 
 describe('clientDiff (must match the server rule so the preview never lies)', () => {
   it('is empty for no change, and blank text counts as nothing', () => {

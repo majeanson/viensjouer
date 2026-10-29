@@ -534,6 +534,20 @@ test('the new-rencontre form takes a day and an hour as two pickers and sends on
   expect(body.startsAt).toBe(Math.floor(new Date('2030-05-04T09:30').getTime() / 1000))
 })
 
+test('the new-rencontre form sends the plan B inside details', async ({ page }) => {
+  const stub = await host(page, {
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }),
+    'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'] } }),
+  })
+  await page.goto('/rencontres/nouvelle')
+  await page.getByText('Plus de choix').click()
+  await page.getByLabel('Plan B').fill('S’il pleut : chez nous')
+  await page.getByRole('checkbox').first().check()
+  await page.getByRole('button', { name: /Créer et obtenir/ }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'encounters').length).toBe(1)
+  expect(stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')!.body).toMatchObject({ details: { planB: 'S’il pleut : chez nous' } })
+})
+
 test('the nap chips follow the chosen child: defaults, then their own nap time', async ({ page }) => {
   await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }) })
   await page.goto('/rencontres/nouvelle')

@@ -207,7 +207,7 @@ export const onRequestPatch = authed(async (ctx, actor) => {
     .bind(id)
     .first<{ title: string; starts_at: number; ends_at: number | null; place: string | null; address: string | null; map_url: string | null; note: string | null; details: string; status: Status; kind: Kind }>()
   if (!cur) return notFound()
-  const before: Snapshot = { title: cur.title, starts_at: cur.starts_at, ends_at: cur.ends_at, place: cur.place, address: cur.address, map_url: cur.map_url, note: cur.note, gift: parseDetails(cur.details).gift ?? null, status: cur.status }
+  const before: Snapshot = { title: cur.title, starts_at: cur.starts_at, ends_at: cur.ends_at, place: cur.place, address: cur.address, map_url: cur.map_url, note: cur.note, planB: parseDetails(cur.details).planB ?? null, gift: parseDetails(cur.details).gift ?? null, status: cur.status }
   const after: Snapshot = { ...before }
   if (body?.title !== undefined) {
     const t = str(body.title, 120)
@@ -226,13 +226,17 @@ export const onRequestPatch = authed(async (ctx, actor) => {
     after.map_url = m
   }
   if (body?.note !== undefined) after.note = str(body.note, 1000)
-  if (body?.details !== undefined && cur.kind === 'birthday') after.gift = cleanDetails('birthday', body.details).gift ?? null
+  if (body?.details !== undefined) {
+    const d = cleanDetails(cur.kind, body.details)
+    after.planB = d.planB ?? null
+    if (cur.kind === 'birthday') after.gift = d.gift ?? null
+  }
   if (status !== undefined) after.status = status
   const changes = diffEncounter(before, after)
   const ts = nowSec()
   if (changes.length) {
     const DB = ctx.env.DB
-    const details = cur.kind === 'birthday' ? cleanDetails('birthday', { gift: after.gift ?? '' }) : parseDetails(cur.details)
+    const details = cleanDetails(cur.kind, { gift: after.gift ?? '', planB: after.planB ?? '' })
     const stmts = [
       DB.prepare('UPDATE encounters SET title = ?, starts_at = ?, ends_at = ?, place = ?, address = ?, map_url = ?, note = ?, details = ?, status = ?, updated_at = ? WHERE id = ?').bind(after.title, after.starts_at, after.ends_at, after.place, after.address, after.map_url, after.note, JSON.stringify(details), after.status, ts, id),
       ...changes.map((c) => DB.prepare('INSERT INTO encounter_changes (id, encounter_id, field, old_value, new_value, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(newId(), id, c.field, c.old, c.new, ts)),

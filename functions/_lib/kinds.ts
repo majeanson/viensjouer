@@ -2,15 +2,14 @@
 // only validate with these and store; no rule lives in a handler.
 import type { Kind, Reply, Status } from './encounters'
 
-// Kind-specific details kept in `encounters.details` (JSON, NOT NULL default '{}'): only
-// the birthday has any today — a soft gift wish, never a registry.
+// Optional details kept in `encounters.details` (JSON, NOT NULL default '{}'): « plan B » (every kind: what happens if
+// it rains) and, for a birthday only, a soft gift wish, never a registry.
 export function cleanDetails(kind: Kind, raw: unknown): Record<string, string> {
   const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
-  if (kind === 'birthday' && typeof o.gift === 'string') {
-    const gift = o.gift.trim().slice(0, 200)
-    return gift ? { gift } : {}
-  }
-  return {}
+  const out: Record<string, string> = {}
+  if (kind === 'birthday' && typeof o.gift === 'string' && o.gift.trim()) out.gift = o.gift.trim().slice(0, 200)
+  if (typeof o.planB === 'string' && o.planB.trim()) out.planB = o.planB.trim().slice(0, 200)
+  return out
 }
 export function parseDetails(json: string | null | undefined): Record<string, string> {
   try {

@@ -261,6 +261,7 @@ function ReplyInner() {
           <div><dt><Icon name="tag" />{t.reply.what}</dt><dd>{e.title}{mark(freshOf('title'))}</dd></div>
           <div><dt><Icon name="calendar" />{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}<Rel at={e.starts_at} />{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
           {e.place && <div><dt><Icon name="pin" />{t.reply.where}</dt><dd>{e.place}{mark(freshOf('place'))}</dd></div>}
+          {e.details?.planB && <div><dt><Icon name="umbrella" />{t.encounters.planB}</dt><dd>{e.details.planB}{mark(freshOf('planB'))}</dd></div>}
         </dl>
         {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}

@@ -14,12 +14,14 @@ import { Icon } from './Icon'
 export function EncounterEdit({
   e,
   gift,
+  planB,
   canNotify,
   onClose,
   onSaved,
 }: {
   e: Encounter
   gift: string | null
+  planB: string | null
   canNotify: boolean
   onClose: () => void
   onSaved: (r: { changed: number; notified: number; notifiedSkipped?: number }) => void
@@ -37,7 +39,7 @@ export function EncounterEdit({
     onError: (x) => setErr(x.message),
   })
 
-  const before: Snap = { title: e.title, starts_at: e.starts_at, ends_at: e.ends_at, place: e.place, address: e.address, map_url: e.map_url, note: e.note, gift, status: e.status }
+  const before: Snap = { title: e.title, starts_at: e.starts_at, ends_at: e.ends_at, place: e.place, address: e.address, map_url: e.map_url, note: e.note, planB, gift, status: e.status }
 
   // The form's current values as a Snap (so the preview and the PATCH read the same thing).
   function read(f: HTMLFormElement | null): { snap: Snap; body: Record<string, unknown> } {
@@ -55,12 +57,13 @@ export function EncounterEdit({
       address: f && e.kind !== 'park' ? v('address') : before.address,
       map_url: f ? v('mapUrl') : before.map_url,
       note: f ? v('note') : before.note,
+      planB: f ? v('planB') : before.planB,
       gift: f && e.kind === 'birthday' ? v('gift') : before.gift,
       status: before.status,
     }
     const body: Record<string, unknown> = { title: v('title'), startsAt: start, endsAt: end, place: v('place'), mapUrl: v('mapUrl'), note: v('note') }
     if (e.kind !== 'park') body.address = v('address')
-    if (e.kind === 'birthday') body.details = { gift: v('gift') }
+    body.details = { planB: v('planB'), ...(e.kind === 'birthday' ? { gift: v('gift') } : {}) }
     body.showGuests = f ? (f.elements.namedItem('showGuests') as HTMLInputElement | null)?.checked !== false : guestsWas.current
     return { snap, body }
   }
@@ -93,6 +96,7 @@ export function EncounterEdit({
       <label className="field"><span><Icon name="map" />{t.encounters.mapUrl}</span><input className="input" name="mapUrl" type="url" autoComplete="off" maxLength={300} defaultValue={e.map_url ?? ''} /></label>
       {e.kind !== 'park' && <label className="field"><span><Icon name="home" />{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" defaultValue={e.address ?? ''} /></label>}
       <label className="field"><span><Icon name="note" />{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} defaultValue={e.note ?? ''} /></label>
+      <label className="field"><span><Icon name="umbrella" />{t.encounters.planB}</span><input className="input" name="planB" maxLength={200} defaultValue={planB ?? ''} placeholder={t.encounters.planBPlaceholder} /></label>
       {e.kind === 'birthday' && <label className="field"><span><Icon name="gift" />{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} defaultValue={gift ?? ''} /></label>}
 
       <label className="check"><input type="checkbox" name="showGuests" defaultChecked={guestsWas.current} /><span>{t.roster.showToggle}</span></label>

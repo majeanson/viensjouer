@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { changeLines, diffEncounter, type Snapshot } from './changes'
 
-const base: Snapshot = { title: 'Au parc', starts_at: 1_800_000_000, ends_at: null, place: 'Parc Lafontaine', address: null, map_url: null, note: null, gift: null, status: 'proposed' }
+const base: Snapshot = { title: 'Au parc', starts_at: 1_800_000_000, ends_at: null, place: 'Parc Lafontaine', address: null, map_url: null, note: null, planB: null, gift: null, status: 'proposed' }
 
 describe('diffEncounter', () => {
   it('is empty when nothing changed, and blank counts as nothing', () => {
@@ -22,6 +22,9 @@ describe('diffEncounter', () => {
     const c = diffEncounter({ ...base, address: '12 rue X' }, { ...base, address: '14 rue Y' })
     expect(c).toEqual([{ field: 'address', old: null, new: null }])
     expect(JSON.stringify(c)).not.toContain('rue')
+  })
+  it('logs a plan B added, with its value (it is public to the families)', () => {
+    expect(diffEncounter(base, { ...base, planB: 'Chez nous' })).toEqual([{ field: 'planB', old: null, new: 'Chez nous' }])
   })
   it('logs a status change', () => {
     expect(diffEncounter(base, { ...base, status: 'confirmed' })).toEqual([{ field: 'status', old: 'proposed', new: 'confirmed' }])

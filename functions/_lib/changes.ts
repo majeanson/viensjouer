@@ -5,8 +5,8 @@ import type { Status } from './encounters'
 import { whenLong } from './ids'
 import type { MailLang } from './lang'
 
-export type ChangeField = 'title' | 'starts_at' | 'ends_at' | 'place' | 'address' | 'map_url' | 'note' | 'gift' | 'status'
-export const CHANGE_ORDER: ChangeField[] = ['title', 'starts_at', 'ends_at', 'place', 'address', 'map_url', 'note', 'gift', 'status']
+export type ChangeField = 'title' | 'starts_at' | 'ends_at' | 'place' | 'address' | 'map_url' | 'note' | 'planB' | 'gift' | 'status'
+export const CHANGE_ORDER: ChangeField[] = ['title', 'starts_at', 'ends_at', 'place', 'address', 'map_url', 'note', 'planB', 'gift', 'status']
 
 export interface Snapshot {
   title: string
@@ -16,6 +16,7 @@ export interface Snapshot {
   address: string | null
   map_url: string | null
   note: string | null
+  planB: string | null
   gift: string | null
   status: Status
 }
@@ -45,8 +46,8 @@ export function diffEncounter(before: Snapshot, after: Snapshot): Change[] {
 }
 
 const LABEL: Record<MailLang, Record<ChangeField, string>> = {
-  fr: { title: 'Titre', starts_at: 'Début', ends_at: 'Fin', place: 'Lieu', address: 'Adresse', map_url: 'Carte', note: 'À savoir', gift: 'Idée de cadeau', status: 'Statut' },
-  en: { title: 'Title', starts_at: 'Start', ends_at: 'End', place: 'Place', address: 'Address', map_url: 'Map', note: 'Good to know', gift: 'Gift idea', status: 'Status' },
+  fr: { title: 'Titre', starts_at: 'Début', ends_at: 'Fin', place: 'Lieu', address: 'Adresse', map_url: 'Carte', note: 'À savoir', planB: 'Plan B', gift: 'Idée de cadeau', status: 'Statut' },
+  en: { title: 'Title', starts_at: 'Start', ends_at: 'End', place: 'Place', address: 'Address', map_url: 'Map', note: 'Good to know', planB: 'Plan B', gift: 'Gift idea', status: 'Status' },
 }
 const STATUS: Record<MailLang, Record<string, string>> = {
   fr: { proposed: 'proposée', confirmed: 'confirmée', cancelled: 'annulée' },

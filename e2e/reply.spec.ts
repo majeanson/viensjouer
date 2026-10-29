@@ -75,6 +75,14 @@ test('a birthday asks how many come, only once the answer is yes', async ({ page
   expect(posts[1]).toMatchObject({ adults: 2, kids: 3 })
 })
 
+test('a plan B shows beside the date and place, before the answer', async ({ page }) => {
+  await stub(page, card({ encounter: { ...card().encounter, details: { planB: 'S’il pleut : chez nous' } } }))
+  await page.goto(`/${CODE}`)
+  const first = page.locator('.facts').first()
+  await expect(first.getByText('Plan B')).toBeVisible()
+  await expect(first.getByText('S’il pleut : chez nous')).toBeVisible()
+})
+
 test('English toggle, and the paper spelling works in any case', async ({ page }) => {
   await stub(page, card())
   await page.goto(`/${CODE.toUpperCase()}`)

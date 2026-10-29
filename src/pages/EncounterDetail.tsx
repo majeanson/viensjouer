@@ -196,6 +196,7 @@ export function EncounterDetail() {
         {e.place && <li><Icon name="pin" />{e.place}{e.map_url && <>{' '}· <a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a></>}</li>}
       </ul>
       {e.note && <p>{e.note}</p>}
+      {e.details.planB && <p className="muted"><Icon name="umbrella" />{t.encounters.planB} : {e.details.planB}</p>}
       {e.details.gift && <p className="muted">{t.kinds.birthday.giftIs} : {e.details.gift}</p>}
       {flash && <div className="notice">{flash}</div>}
       {err && <div className="notice notice--err">{err}</div>}
@@ -203,6 +204,7 @@ export function EncounterDetail() {
         <EncounterEdit
           e={e}
           gift={e.details.gift ?? null}
+          planB={e.details.planB ?? null}
           canNotify={!!me.mail && invitations.some((i) => i.email && i.reply !== 'no')}
           onClose={() => setEditing(false)}
           onSaved={(r) => {

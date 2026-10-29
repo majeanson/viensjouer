@@ -4,8 +4,8 @@
 import { whenShort } from './format'
 import type { Lang } from '../i18n'
 
-export type ChangeField = 'title' | 'starts_at' | 'ends_at' | 'place' | 'address' | 'map_url' | 'note' | 'gift' | 'status'
-const ORDER: ChangeField[] = ['title', 'starts_at', 'ends_at', 'place', 'address', 'map_url', 'note', 'gift', 'status']
+export type ChangeField = 'title' | 'starts_at' | 'ends_at' | 'place' | 'address' | 'map_url' | 'note' | 'planB' | 'gift' | 'status'
+const ORDER: ChangeField[] = ['title', 'starts_at', 'ends_at', 'place', 'address', 'map_url', 'note', 'planB', 'gift', 'status']
 
 export interface Snap {
   title: string
@@ -15,6 +15,7 @@ export interface Snap {
   address: string | null
   map_url: string | null
   note: string | null
+  planB: string | null
   gift: string | null
   status: string
 }

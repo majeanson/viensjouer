@@ -124,7 +124,7 @@ export function EncounterNew() {
       mapUrl: f.get('mapUrl') || undefined,
       address: f.get('address') || undefined,
       note: f.get('note') || undefined,
-      ...(kind === 'birthday' && f.get('gift') ? { details: { gift: f.get('gift') } } : {}),
+      details: { planB: f.get('planB'), ...(kind === 'birthday' ? { gift: f.get('gift') } : {}) },
       scope,
       invite: [...picked],
     })
@@ -256,11 +256,13 @@ export function EncounterNew() {
                 <label className="field"><span><Icon name="map" />{t.encounters.mapUrl}</span><input className="input" name="mapUrl" type="url" autoComplete="off" maxLength={300} defaultValue={prev?.map_url ?? ''} placeholder="https://maps.app.goo.gl/…" /></label>
                 {kind !== 'park' && <label className="field"><span><Icon name="home" />{t.encounters.address}</span><input className="input" name="address" maxLength={200} autoComplete="street-address" defaultValue={prev?.address ?? ''} /></label>}
                 {kind === 'birthday' && <label className="field"><span><Icon name="gift" />{t.kinds.birthday.gift}</span><input className="input" name="gift" maxLength={200} defaultValue={prev?.details?.gift ?? ''} placeholder={t.kinds.birthday.giftPlaceholder} /></label>}
+                <label className="field"><span><Icon name="umbrella" />{t.encounters.planB}</span><input className="input" name="planB" maxLength={200} defaultValue={prev?.details?.planB ?? ''} placeholder={t.encounters.planBPlaceholder} /></label>
                 <label className="field"><span><Icon name="note" />{t.encounters.note}</span><textarea className="input" name="note" maxLength={1000} defaultValue={prev?.note ?? ''} placeholder={t.encounters.notePlaceholder} /></label>
                 <WhyMany
                   items={[
                     ...(health.data?.photos ? ([[t.cover.field, 'cover']] as [string, 'cover'][]) : []),
                     [t.encounters.mapUrl, 'mapUrl'],
+                    [t.encounters.planB, 'planB'],
                     ...(kind !== 'park' ? ([[t.encounters.address, 'address']] as [string, 'address'][]) : []),
                     ...(kind === 'birthday' ? ([[t.kinds.birthday.gift, 'gift']] as [string, 'gift'][]) : []),
                   ]}

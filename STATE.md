@@ -14,11 +14,10 @@
 1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
 2. **Cancelling a series: the email offer.** Every later occurrence now gets its change row (shown on its card), but « Annuler » still sends no update email; the « Prévenir » box exists on edit and on Reporter only.
 3. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
-4. The reply page opening offline (shell cache only, never stale answers).
 
 **Budgets (`npm run check:bundle`):** entry 84.8 / 86 KB, every other chunk under 11 KB, stylesheet 5.3 / 5.5 KB. Both dictionaries are lazy chunks (`i18n.fr`, `i18n.en`). Read the output for « exceeded », not only « ok ».
 
-**Don't re-open (decided):** SMS, native app, push, discovery, ranking, hosts choosing their own two words, a class-wide shared code.
+**Don't re-open (decided):** SMS, native app, push, discovery, ranking, hosts choosing their own two words, a class-wide shared code, the reply page opening offline (an answer tapped with no signal is already kept and sent later; the page itself needs a network).
 
 ---
 

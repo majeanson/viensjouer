@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
-import { dayHour, endFromTime, fromLocalInput, nextAt, nextSaturdayTen, sameSlotAhead, toLocalInput, toLocalTime } from '../lib/format'
+import { clockLabel, dayHour, endFromTime, fromLocalInput, nextAt, nextSaturdayTen, napSlots, sameSlotAhead, toLocalInput, toLocalTime } from '../lib/format'
 import { WhyMany } from '../components/WhyMany'
 import { resizeToJpeg } from '../lib/photo'
 import { FREQUENCIES, MAX_OCCURRENCES, repeatTimes, type Frequency } from '../lib/repeat'
@@ -147,6 +147,12 @@ export function EncounterNew() {
     [t.form.quick.tomorrow, nextAt(-1)],
   ]
 
+  const slots = napSlots(children.find((c) => c.id === chosen) ?? { nap_start: null, nap_end: null })
+  const napChips: [string, string][] = [
+    [t.form.quick.beforeNap(clockLabel(slots.before, lang)), slots.before],
+    [t.form.quick.afterNap(clockLabel(slots.after, lang)), slots.after],
+  ]
+
   return (
     <>
       <p className="small"><Link to="/rencontres">← {t.encounters.back}</Link></p>
@@ -197,6 +203,9 @@ export function EncounterNew() {
               <div className="quick">
                 {quick.map(([label, at]) => (
                   <button type="button" key={label} className="btn btn--small" onClick={() => setStart(toLocalInput(at))}>{label}</button>
+                ))}
+                {napChips.map(([label, time]) => (
+                  <button type="button" key={label} className="btn btn--small" onClick={() => setStart((s) => `${s.slice(0, 10)}T${time}`)}>{label}</button>
                 ))}
               </div>
               <WhenInput name="startsAt" label={t.encounters.when} value={start} onChange={setStart} />

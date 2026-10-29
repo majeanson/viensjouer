@@ -10,7 +10,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
   const [household, parents, children, families, encounters, invitations, messages, groups, groupMembers, windows, windowTargets, homeCard, souvenirs, bring, changes] = await db.batch([
     db.prepare('SELECT id, name, tz, created_at FROM households WHERE id = ?').bind(hh),
     db.prepare('SELECT email, display_name, created_at FROM parents WHERE household_id = ?').bind(hh),
-    db.prepare('SELECT id, first_name, birthdate, colour, created_at FROM children WHERE household_id = ? AND deleted_at IS NULL').bind(hh),
+    db.prepare('SELECT id, first_name, birthdate, colour, nap_start, nap_end, created_at FROM children WHERE household_id = ? AND deleted_at IS NULL').bind(hh),
     db.prepare('SELECT id, parent_name, email, phone, child_first_name, child_birthdate, allergies, notes, created_at FROM friend_families WHERE household_id = ? AND deleted_at IS NULL').bind(hh),
     db.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status, series_id, details, created_at FROM encounters WHERE household_id = ? AND deleted_at IS NULL').bind(hh),
     db.prepare('SELECT i.encounter_id, i.friend_family_id, i.reply, i.reply_note, i.reply_at, i.adults, i.kids, i.scope FROM invitations i JOIN encounters e ON e.id = i.encounter_id WHERE e.household_id = ? AND e.deleted_at IS NULL').bind(hh),

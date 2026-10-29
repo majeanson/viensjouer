@@ -8,6 +8,8 @@ export interface Child {
   first_name: string
   birthdate: string | null
   colour: string
+  nap_start: string | null
+  nap_end: string | null
   photo?: string | null
   position: number
 }

@@ -534,6 +534,43 @@ test('the new-rencontre form takes a day and an hour as two pickers and sends on
   expect(body.startsAt).toBe(Math.floor(new Date('2030-05-04T09:30').getTime() / 1000))
 })
 
+test('the nap chips follow the chosen child: defaults, then their own nap time', async ({ page }) => {
+  await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }) })
+  await page.goto('/rencontres/nouvelle')
+  await page.getByLabel('Jour', { exact: true }).fill('2030-05-04')
+  await page.getByRole('button', { name: 'Après la sieste, 15 h' }).click()
+  await expect(page.getByLabel('Heure', { exact: true })).toHaveValue('15:00')
+  await expect(page.getByLabel('Jour', { exact: true })).toHaveValue('2030-05-04') // only the hour moves
+  await page.getByRole('button', { name: 'Avant la sieste, 10 h' }).click()
+  await expect(page.getByLabel('Heure', { exact: true })).toHaveValue('10:00')
+})
+
+test('a nap set on the child shows up on the chips', async ({ page }) => {
+  await host(page, {
+    'GET children': () => ({ json: { children: [{ ...child, nap_start: '13:00', nap_end: '14:30' }] } }),
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }),
+  })
+  await page.goto('/rencontres/nouvelle')
+  await page.getByRole('button', { name: 'Après la sieste, 14 h 30' }).click()
+  await expect(page.getByLabel('Heure', { exact: true })).toHaveValue('14:30')
+  await expect(page.getByRole('button', { name: 'Avant la sieste, 11 h' })).toBeVisible()
+})
+
+test('the child form saves a nap and clears it with empty times', async ({ page }) => {
+  const stub = await host(page, {
+    'GET children': () => ({ json: { children: [{ ...child, nap_start: '13:00', nap_end: '14:30' }] } }),
+    'PATCH children': () => ({ json: {} }),
+  })
+  await page.goto('/enfants')
+  await page.getByRole('button', { name: 'Modifier' }).click()
+  await expect(page.locator('input[name=napStart]')).toHaveValue('13:00')
+  await page.locator('input[name=napStart]').fill('')
+  await page.locator('input[name=napEnd]').fill('15:15')
+  await page.getByRole('button', { name: 'Enregistrer' }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'PATCH' && c.path === 'children').length).toBe(1)
+  expect(stub.calls.find((c) => c.method === 'PATCH')!.body).toMatchObject({ napStart: null, napEnd: '15:15' })
+})
+
 test('the host screens have no serious accessibility violation in dark mode', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.addInitScript(() => { try { localStorage.setItem('vj-theme', 'dark') } catch { /* ignore */ } })

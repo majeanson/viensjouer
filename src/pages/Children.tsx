@@ -50,7 +50,7 @@ export function Children() {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
     const birthdate = String(f.get('birthdate') ?? '')
-    const body: Record<string, unknown> = { firstName: String(f.get('firstName') ?? ''), colour: String(f.get('colour') ?? COLOURS[0]) }
+    const body: Record<string, unknown> = { firstName: String(f.get('firstName') ?? ''), colour: String(f.get('colour') ?? COLOURS[0]), napStart: String(f.get('napStart') ?? '') || null, napEnd: String(f.get('napEnd') ?? '') || null }
     if (cur) {
       body.id = cur.id
       // An emptied date clears it; the endpoint reads `null` as "clear", absent as "keep".
@@ -93,6 +93,14 @@ export function Children() {
           />
           <label className="field"><span><Icon name="smile" />{t.children.firstName}</span><input className="input" name="firstName" required maxLength={40} defaultValue={cur?.first_name} autoFocus /></label>
           <label className="field"><span><Icon name="cake" />{t.children.birthdate}</span><input className="input" name="birthdate" type="date" defaultValue={cur?.birthdate ?? ''} /><Why k="childBirthdate" /></label>
+          <div className="field">
+            <span><Icon name="clock" />{t.children.nap}</span>
+            <div className="cluster">
+              <label className="small">{t.children.napFrom} <input className="input" name="napStart" type="time" step={900} defaultValue={cur?.nap_start ?? ''} /></label>
+              <label className="small">{t.children.napTo} <input className="input" name="napEnd" type="time" step={900} defaultValue={cur?.nap_end ?? ''} /></label>
+            </div>
+            <Why k="nap" />
+          </div>
           <div className="field">
             <span><Icon name="palette" />{t.children.colour}</span>
             <div className="cluster" role="radiogroup" aria-label={t.children.colour}>

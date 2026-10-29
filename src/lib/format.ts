@@ -105,3 +105,20 @@ export function sameSlotAhead(sec: number): number {
   while (d.getTime() <= Date.now()) d.setDate(d.getDate() + 7)
   return Math.floor(d.getTime() / 1000)
 }
+
+// « Avant / après la sieste » on the new-rencontre form, per child. A nap time is 'HH:MM'. Not set: before = 10 h,
+// after = 15 h. Set: after is when the nap ends; before is two hours ahead of when it starts (never earlier than 8 h).
+export function napSlots(nap: { nap_start: string | null; nap_end: string | null }): { before: string; after: string } {
+  const mins = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5))
+  const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+  const before = nap.nap_start ? hhmm(Math.max(8 * 60, Math.floor((mins(nap.nap_start) - 120) / 30) * 30)) : '10:00'
+  return { before, after: nap.nap_end ?? '15:00' }
+}
+
+// 'HH:MM' as a short clock: « 13 h 30 » in French, « 1:30 pm » in English.
+export function clockLabel(hhmm: string, lang: Lang): string {
+  const h = Number(hhmm.slice(0, 2))
+  const m = hhmm.slice(3, 5)
+  if (lang === 'fr') return m === '00' ? `${h} h` : `${h} h ${m}`
+  return `${h % 12 || 12}:${m} ${h < 12 ? 'am' : 'pm'}`
+}

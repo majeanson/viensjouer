@@ -278,7 +278,9 @@ test('« À apporter »: the host adds a line and sees who took what', async ({ 
     'POST bring': () => ({ status: 201, json: { id: 'b3' } }),
   })
   await page.goto('/rencontres/e1')
-  await page.getByText('À apporter (2)').click()
+  // The fold's title already says how many are taken and what is missing.
+  await expect(page.getByText('À apporter (1 sur 2 pris · il manque : des jus)')).toBeVisible()
+  await page.getByText('À apporter (1 sur 2 pris').click()
   await expect(page.getByText('apporté par Julie')).toBeVisible()
   await expect(page.getByText('personne encore')).toBeVisible()
   await page.getByLabel('À apporter', { exact: true }).fill('des fruits')

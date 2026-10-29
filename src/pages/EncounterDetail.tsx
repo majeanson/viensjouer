@@ -159,6 +159,9 @@ export function EncounterDetail() {
   const invitations = inviteRm.visible(q.data.invitations)
   const souvenirs = photoRm.visible(q.data.souvenirs)
   const bring = bringRm.visible(q.data.bring ?? [])
+  // One line the host reads without opening the fold: how many are taken, and what is still missing.
+  const open = bring.filter((b) => !b.claimed_label)
+  const bringLine = open.length === 0 ? t.bring.allTaken : `${t.bring.taken(bring.length - open.length, bring.length)} · ${t.bring.missing(open.slice(0, 2).map((b) => b.label).join(', ') + (open.length > 2 ? '…' : ''))}`
   const nowSecs = Math.floor(Date.now() / 1000)
   const canThank = e.status !== 'cancelled' && e.starts_at <= nowSecs && nowSecs - e.starts_at <= 30 * 86_400 && !e.thanked_at
   const changes = rawChanges ?? []
@@ -359,7 +362,7 @@ export function EncounterDetail() {
 
         <div>
           <details className="fold">
-            <summary><span><Icon name="bag" />{t.bring.title}{bring.length > 0 ? ` (${bring.length})` : ''}</span></summary>
+            <summary><span><Icon name="bag" />{t.bring.title}{bring.length > 0 ? ` (${bringLine})` : ''}</span></summary>
             <div>
               <p className="muted small">{t.bring.hint}</p>
               {bring.map((b) => (

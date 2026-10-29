@@ -11,7 +11,7 @@
 **Where it stands (2026-10-29).** Phases 1 to 5 are shipped and live; the audit, paper-cards and declutter passes are done. Everything between §3 and the end of this file is a dated ledger of *why* things are the way they are: search it (`grep -n "keyword" STATE.md`), do not read it top to bottom.
 
 **Open, in order:**
-1. Walk it on two real phones with two real emails (the only human step left from Phase 1).
+1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
 3. A « Reporté / pluie » state with a reason (board post, optional email), instead of cancel-or-edit.
 4. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
 5. The reply page opening offline (shell cache only, never stale answers).
@@ -53,6 +53,18 @@
 ### Hygiene — 2026-10-29
 
 `functions/_lib/purge.ts`, run by the hourly `tidy`: a rencontre, window, group, message, photo, family or child removed more than 30 days ago is deleted for good (a family or child still named by a surviving invitation, rencontre or link is kept, its book entry makes the history readable; R2 blobs go with them). Share words of a rencontre or window over for 90 days are retired (`token` becomes `old-<id>`), so the two-word space is reusable while the row and its answer stay. Bounded to 25 / 200 rows per run. `purge.test.ts` runs the real migrations on `node:sqlite` (planted red once). The privacy page says 30 days.
+
+### The night's batch — 2026-10-29
+
+- **Nap times, per child** (migration 0018 `children.nap_start / nap_end`, optional, « Sa sieste habituelle » on the child form with its Pourquoi). The new-rencontre form offers « Avant la sieste, 11 h » / « Après la sieste, 14 h 30 » beside Samedi / Dimanche / Demain and moves only the hour; defaults 10 h and 15 h; before = two hours ahead of the nap start, never earlier than 8 h (`napSlots`). Follows the chosen child.
+- **Quiet hours**: both cron reminders (the invited parent's and the host's) are held between 21 h and 7 h in the household's own time zone (`inQuietHours`); held ones are picked up after 7 h, a start before then simply gets none.
+- **Plan B** (`details.planB`, every kind, no migration): one optional line (« S'il pleut : chez nous ») on the form, in « Modifier », on the host page, and on the reply page in the first card next to when and where. It is in the change log (`planB`), so « Modifié » marks and the update email carry it.
+- **À apporter summary**: the fold title reads « (1 sur 2 pris · il manque : des jus) » without opening it.
+- **« Les mêmes familles que la dernière fois »** (`GET /api/last-guests?child=`): ticks the families invited to the child's latest past, live, non-cancelled rencontre (removed families skipped). Ids only: no count, no « usually comes » tag (that would rank families, so it was left out on purpose).
+- **A family's card**: « Déjà ensemble » on Amis now also offers « Carte à imprimer pour la prochaine rencontre » (`family-history` returns `next`); `/rencontres/:id/cartes?family=` opens with only that family ticked. **Not a standing code**: a code still dies the day after its date, so a weekly park card is one per week.
+- **Screen-reader pass (tree, not a real device)**: the Reply, WindowReply, Door, Privacy, Join, Forgot and Keep pages had no `<main>` (so focus-after-navigation silently missed) and no skip link: both fixed (the skip link now lives in `Header`). Reply: h1 then h2 (was h3), the three answers are a named group, the « → » of a time range is hidden and a « jusqu'à » is spoken, errors are `role=alert`. `e2e/screenreader.spec.ts`. **Still a human step**: one VoiceOver and one TalkBack pass on the reply page.
+- **Test tooling**: `functions/_lib/testDb.ts` runs every migration on `node:sqlite` behind the D1 methods, for tests that need real SQL (`purge.test`, `lastGuests.test`). The real walk now reads the new endpoints against real D1.
+- **Budget watch**: `i18n.fr` is 10.1 of 11 KB gzip; the next copy needs the dictionary cap looked at on purpose, not a quiet raise.
 
 ### French is its own lazy chunk — 2026-10-29
 

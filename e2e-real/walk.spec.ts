@@ -20,11 +20,27 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await expect(host).toHaveURL(/\/rencontres\/(?!nouvelle)[A-Za-z0-9]+$/)
   const hostUrl = host.url()
 
+  // -- the newer reads agree with the real schema (nap columns, last guests, the next card to print)
+  const reads = await host.evaluate(async () => {
+    const get = async (p: string) => ({ status: (await fetch('/api/' + p, { credentials: 'same-origin' })).status })
+    const kids = (await (await fetch('/api/children', { credentials: 'same-origin' })).json()) as { children: { id: string; nap_start: string | null }[] }
+    const fams = (await (await fetch('/api/families', { credentials: 'same-origin' })).json()) as { families: { id: string }[] }
+    const last = await (await fetch('/api/last-guests?child=' + kids.children[0].id, { credentials: 'same-origin' })).json()
+    const hist = fams.families[0] ? await (await fetch('/api/family-history?id=' + fams.families[0].id, { credentials: 'same-origin' })).json() : null
+    return { napKey: 'nap_start' in kids.children[0], last, hist, bad: await get('last-guests') }
+  })
+  expect(reads.napKey).toBe(true)
+  expect(Array.isArray(reads.last.familyIds)).toBe(true)
+  if (reads.hist) expect(reads.hist).toHaveProperty('next')
+  expect(reads.bad.status).toBe(400)
+
   // -- the host adds something to bring, and finds the short link
   await host.getByText(/^À apporter/).click()
   await host.getByLabel('À apporter', { exact: true }).fill('la collation')
   await host.getByRole('button', { name: 'Ajouter', exact: true }).click()
-  await expect(host.getByText('la collation')).toBeVisible()
+  await expect(host.getByText('la collation · personne encore')).toBeVisible()
+  // the fold's own title says what is taken and what is missing, without opening it
+  await expect(host.getByText('À apporter (0 sur 1 pris · il manque : la collation)')).toBeVisible()
   await host.getByText('Plus de choix').first().click()
   const written = await host.locator('.paper').first().innerText()
   const firstCode = written.match(/([a-z]{3,7}-[a-z]{3,7})$/)?.[1]

@@ -150,7 +150,7 @@ export function EncounterNew() {
     <>
       <p className="small"><Link to="/rencontres">← {t.encounters.back}</Link></p>
       <h1>{t.encounters.new}</h1>
-      <div className="seg" role="tablist" style={{ marginBottom: '0.75rem' }}>
+      <div className="seg" role="tablist" style={{ margin: '0.9rem 0 1rem' }}>
         <button type="button" role="tab" aria-selected={mode === 'plan'} className={`btn ${mode === 'plan' ? 'btn--on' : ''}`} onClick={() => setMode('plan')}>{t.form.plan}</button>
         <button type="button" role="tab" aria-selected={mode === 'free'} className={`btn ${mode === 'free' ? 'btn--on' : ''}`} onClick={() => setMode('free')}>{t.form.free}</button>
       </div>

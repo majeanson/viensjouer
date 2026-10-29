@@ -34,6 +34,13 @@
 
 ## 3. What just shipped
 
+### Screenshot review polish — 2026-10-28
+
+Birthday line on Rencontres uses the cake icon instead of a stray bullet; a card no longer
+repeats the place when it equals the kind label ("Chez nous" twice); breathing room around
+the plan / free toggle on the new-rencontre form; the reply answer bar keeps "Peut-être" on
+one line at 320 px.
+
 ### Skeleton — 2026-10-27
 
 Phase 1 of the plan, end to end: signup / login / logout / me (email + password, PBKDF2,

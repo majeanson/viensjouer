@@ -45,7 +45,7 @@ export function Encounters() {
       <p className="meta--row muted small">
         <span><Icon name={kindIcon(e.kind)} />{t.encounters.kind[e.kind]}</span>
         <span><Icon name="clock" />{whenShort(e.starts_at, lang)}<Rel at={e.starts_at} /></span>
-        {e.place && <span><Icon name="pin" />{e.place}</span>}
+        {e.place && e.place !== t.encounters.kind[e.kind] && <span><Icon name="pin" />{e.place}</span>}
         {e.status !== 'proposed' && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
       </p>
       <div className="cluster">
@@ -71,7 +71,7 @@ export function Encounters() {
             <p className="meta--row muted small">
               <span><Icon name={kindIcon(it.kind)} />{t.encounters.kind[it.kind]}</span>
               <span><Icon name="clock" />{whenShort(it.at, lang)}<Rel at={it.at} /></span>
-              {it.place && <span><Icon name="pin" />{it.place}</span>}
+              {it.place && it.place !== t.encounters.kind[it.kind] && <span><Icon name="pin" />{it.place}</span>}
               <span className={`chip ${it.reply ? `chip--${it.reply}` : ''}`}>{it.reply ? t.encounters.reply[it.reply] : t.encounters.reply.none}</span>
             </p>
           </Link>
@@ -99,7 +99,7 @@ export function Encounters() {
       key: `b-${b.name}-${b.date}`,
       node: (
         <p className="muted small birthday">
-          <span aria-hidden="true">◦</span> {t.agenda.birthday(b.name, b.turns)} · {new Intl.DateTimeFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(b.date + 'T12:00:00'))}
+          <Icon name="cake" />{t.agenda.birthday(b.name, b.turns)} · {new Intl.DateTimeFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(b.date + 'T12:00:00'))}
         </p>
       ),
     })

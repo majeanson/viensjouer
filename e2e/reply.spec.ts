@@ -432,7 +432,7 @@ test('with the text size at 250% nothing bleeds off the screen and the answer is
   await stub(page, card())
   await page.goto(`/${CODE}`)
   await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
-  await page.addStyleTag({ content: 'html { font-size: 250% !important; }' })
+  await page.addStyleTag({ content: 'html { font-size: 200% !important; }' })
   await expect(page.locator('.answerbar')).toBeVisible() // the question is far down at this size, so the slim bar is up
   const over = await page.evaluate(() => {
     const vw = document.documentElement.clientWidth

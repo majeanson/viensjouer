@@ -41,7 +41,7 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await expect(host.getByText('la collation · personne encore')).toBeVisible()
   // the fold's own title says what is taken and what is missing, without opening it
   await expect(host.getByText('À apporter (0 sur 1 pris · il manque : la collation)')).toBeVisible()
-  await host.getByText('Plus de choix').first().click()
+  await host.getByText('Plus de choix', { exact: true }).first().click()
   const written = await host.locator('.paper').first().innerText()
   const firstCode = written.match(/([a-z]{3,7}-[a-z]{3,7})$/)?.[1]
   expect(firstCode, `a two-word link in "${written}"`).toBeTruthy()
@@ -63,6 +63,7 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await guest.getByRole('button', { name: 'Oui, on y sera' }).click()
   await expect(guest.getByText('Marc voit ta réponse', { exact: false }).or(guest.getByText(/voit ta réponse/))).toBeVisible()
   const board = guest.getByLabel('Le tableau', { exact: true })
+  await board.locator('summary').click() // one line until opened
   await board.getByLabel('Écrire sur le tableau…').fill('On arrive vers 14 h')
   await board.getByRole('button', { name: 'Publier' }).click()
   await expect(board.getByText('On arrive vers 14 h')).toBeVisible()
@@ -96,7 +97,7 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await expect(paper).toContainText(code!.split('-').join(' · '))
   await expect(host.locator('.sheet')).not.toContainText('Chez nous')
   await host.goto(hostUrl)
-  await host.getByText('Plus de choix').first().click()
+  await host.getByText('Plus de choix', { exact: true }).first().click()
   await host.getByRole('group', { name: 'Noter sa réponse' }).getByRole('button', { name: 'Peut-être' }).click()
   await expect.poll(async () => ((await (await guest.request.get(`/api/r/${code}`)).json()) as { you: { reply: string } }).you.reply).toBe('maybe')
 

@@ -438,6 +438,7 @@ export const FR = {
     hour: 'Heure',
     again: 'Refaire pareil',
     quick: { sat: 'Samedi 10 h', sun: 'Dimanche 10 h', tomorrow: 'Demain 10 h', beforeNap: (at: string) => `Avant la sieste, ${at}`, afterNap: (at: string) => `Après la sieste, ${at}` },
+    sameAsLast: 'Les mêmes familles que la dernière fois',
     more: 'Plus de choix',
     moreHint: 'Fin, répétition, adresse, lien de carte, note…',
     reused: 'Lien de carte et adresse repris de la dernière fois.',

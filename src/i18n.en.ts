@@ -440,6 +440,7 @@ export const EN: Dict = {
     hour: 'Time',
     again: 'Do it again',
     quick: { sat: 'Saturday 10 am', sun: 'Sunday 10 am', tomorrow: 'Tomorrow 10 am', beforeNap: (at: string) => `Before nap, ${at}`, afterNap: (at: string) => `After nap, ${at}` },
+    sameAsLast: 'The same families as last time',
     more: 'More choices',
     moreHint: 'End time, repeat, address, map link, note…',
     reused: 'Map link and address reused from last time.',

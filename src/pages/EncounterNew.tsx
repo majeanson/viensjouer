@@ -96,6 +96,9 @@ export function EncounterNew() {
 
   const children = kids.data?.children ?? []
   const chosen = childId ?? children[0]?.id ?? null
+  // « Les mêmes familles que la dernière fois »: not offered when this form is already « Refaire pareil » (it has its own).
+  const last = useQuery({ queryKey: K.lastGuests(chosen ?? ''), queryFn: () => api<{ familyIds: string[] }>(`last-guests?child=${chosen}`), enabled: !!chosen && !from })
+  const lastIds = (last.data?.familyIds ?? []).filter((id) => (fams.data?.families ?? []).some((f) => f.id === id))
   const prev = src.data?.encounter
   const prevEnd = prev?.ends_at ? toLocalTime(prev.ends_at) : ''
 
@@ -187,6 +190,7 @@ export function EncounterNew() {
 
           <div className="card">
             <h3><Icon name="users" />{t.encounters.invite}</h3>
+            {lastIds.length > 0 && !lastIds.every((id) => picked.has(id)) && <button type="button" className="btn btn--small" onClick={() => setPicked((p) => new Set([...p, ...lastIds]))}><Icon name="history" />{t.form.sameAsLast}</button>}
             <FamilyPicker loaded={!!fams.data} families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
             <h3 style={{ marginTop: '1rem' }}><Icon name="users" />{t.scope.label}</h3>
             <div className="seg" role="radiogroup" aria-label={t.scope.label}>

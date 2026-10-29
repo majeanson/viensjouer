@@ -16,5 +16,6 @@ export const K = {
   homeCard: ['home-card'] as const,
   encounters: ['encounters'] as const,
   encounter: (id: string) => ['encounter', id] as const,
+  lastGuests: (child: string) => ['last-guests', child] as const,
   reply: (token: string) => ['reply', token] as const,
 }

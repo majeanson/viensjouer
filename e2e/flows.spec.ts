@@ -550,6 +550,21 @@ test('the new-rencontre form sends the plan B inside details', async ({ page }) 
   expect(stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')!.body).toMatchObject({ details: { planB: 'S’il pleut : chez nous' } })
 })
 
+test('« Les mêmes familles que la dernière fois » ticks last time’s families and vanishes once they are all ticked', async ({ page }) => {
+  await host(page, {
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie'), fam('f2', 'Max', 'Paul')] } }),
+    'GET last-guests': () => ({ json: { familyIds: ['f1'] } }),
+  })
+  await page.goto('/rencontres/nouvelle')
+  const btn = page.getByRole('button', { name: 'Les mêmes familles que la dernière fois' })
+  await expect(btn).toBeVisible()
+  await expect(page.getByRole('checkbox', { name: /Léa/ })).not.toBeChecked()
+  await btn.click()
+  await expect(page.getByRole('checkbox', { name: /Léa/ })).toBeChecked()
+  await expect(page.getByRole('checkbox', { name: /Max/ })).not.toBeChecked()
+  await expect(btn).toHaveCount(0)
+})
+
 test('the nap chips follow the chosen child: defaults, then their own nap time', async ({ page }) => {
   await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }) })
   await page.goto('/rencontres/nouvelle')

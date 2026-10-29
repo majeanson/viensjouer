@@ -40,6 +40,7 @@ import * as password from '../functions/api/password'
 import * as sessions from '../functions/api/sessions'
 import * as testMail from '../functions/api/test-mail'
 import * as familyHistory from '../functions/api/family-history'
+import * as lastGuests from '../functions/api/last-guests'
 import * as bring from '../functions/api/bring'
 import * as replyBring from '../functions/api/r/bring'
 import * as feed from '../functions/api/feed'
@@ -89,6 +90,7 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['sessions', sessions],
   ['test-mail', testMail],
   ['family-history', familyHistory],
+  ['last-guests', lastGuests],
   ['bring', bring],
   ['feed/:token', feed],
   ['cal-link', calLink],

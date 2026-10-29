@@ -110,9 +110,11 @@ test('an invited parent is offered an account only after answering, and it never
   await page.goto('/lune-miel')
   await expect(page.getByRole('button', { name: 'Oui, on y sera' })).toBeVisible()
   // before the answer: no account pitch competing with the question
-  await expect(page.getByRole('heading', { name: 'Envie de revoir Noé ?' })).toHaveCount(0)
+  await expect(page.getByText('Envie de revoir Noé ?')).toHaveCount(0)
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
-  await expect(page.getByRole('heading', { name: 'Envie de revoir Noé ?' })).toBeVisible()
+  // the account pitch is one calm line to open, never a card competing with the answer
+  await expect(page.getByText('Envie de revoir Noé ?')).toBeVisible()
+  await page.getByText('Envie de revoir Noé ?').click()
   await expect(page.getByText(/Rien d’obligatoire/)).toBeVisible()
   await page.getByRole('button', { name: 'Créer mon compte pour inviter à mon tour' }).click()
   await expect(page.getByRole('button', { name: 'Créer mon compte', exact: true })).toBeVisible()

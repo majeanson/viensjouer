@@ -115,6 +115,7 @@ test('each rencontre shows who is coming, who is maybe, who is not and who has n
 test('cancelling a rencontre happens at once and can be taken back from the undo bar', async ({ page }) => {
   const stub = await host(page, { 'GET encounters': () => ({ json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes')]) }) })
   await page.goto('/rencontres/e1')
+  await page.getByText('Plus d’options', { exact: true }).click()
   await page.getByRole('button', { name: 'Annuler la rencontre' }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'PATCH').length).toBe(1)
   expect(stub.calls.find((c) => c.method === 'PATCH')!.body).toMatchObject({ id: 'e1', status: 'cancelled' })
@@ -128,6 +129,7 @@ test('cancelling a rencontre happens at once and can be taken back from the undo
 test('deleting waits behind the undo bar: undone, nothing is ever sent; left alone, it is', async ({ page }) => {
   const stub = await host(page, { 'GET encounters': () => ({ json: detail([]) }) })
   await page.goto('/rencontres/e1')
+  await page.getByText('Plus d’options', { exact: true }).click()
   await page.getByRole('button', { name: 'Supprimer', exact: true }).click()
   await expect(page).toHaveURL(/\/rencontres$/)
   await expect(page.locator('.toast')).toContainText('Rencontre supprimée.')
@@ -136,6 +138,7 @@ test('deleting waits behind the undo bar: undone, nothing is ever sent; left alo
   expect(stub.calls.filter((c) => c.method === 'DELETE')).toHaveLength(0)
 
   await page.goto('/rencontres/e1')
+  await page.getByText('Plus d’options', { exact: true }).click()
   await page.getByRole('button', { name: 'Supprimer', exact: true }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'DELETE').length, { timeout: 9000 }).toBe(1)
   expect(stub.calls.find((c) => c.method === 'DELETE')!.body).toEqual({ id: 'e1' })
@@ -762,6 +765,7 @@ test('Reporter asks for a reason, sends it with the email choice, and the card s
     'PATCH encounters': (b) => { status = String(b?.status ?? status); return { json: { changed: 1, notified: 1 } } },
   })
   await page.goto('/rencontres/e1')
+  await page.getByText('Plus d’options', { exact: true }).click()
   await page.getByRole('button', { name: 'Reporter', exact: true }).click()
   const form = page.locator('form', { hasText: 'Les réponses restent' })
   await form.getByLabel('Pourquoi ? (facultatif)').fill('Il pleut')

@@ -27,7 +27,7 @@
 | `HomeCard` | The « Chez nous » card: form and read-only view | |
 | `ParentInvite` | Inviting the other parent | |
 | `ImportFriends` | Adding many friend families from one paste (or the contact picker) | Says what it understood before saving; a line it cannot read stays a line to fix. |
-| `Credit` | The « Bâti par marc.portal » line under every screen | Plain link out, hidden in print. |
+| `Credit` | The « Bâti par marc.portal » signature: front page and account page only | Plain link out, hidden in print. |
 | `InstallOffer` | One card, after three different days of use: keep it on the home screen | Native prompt where the browser has one, the iPhone steps otherwise; « Plus tard » is final. |
 | `Turnstile` | The Cloudflare bot check on signup and forgot-password | Mounted only when /api/health reports a site key; hands its token to the form in a hidden `turnstile` field. |
 | `NewForYou` | « Nouveau » on Rencontres: what happened that you have not read (invited, changed, answered, reminder) | Needs no permission; the same list the phone notification is made from. |

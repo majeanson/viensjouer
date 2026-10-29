@@ -109,6 +109,8 @@ export function MessageBoard({
   const pinned = useMemo(() => messages.filter((m) => m.pinned), [messages])
   const rest = useMemo(() => messages.filter((m) => !m.pinned), [messages])
   const fresh = messages.filter(isNew).length
+  // Closed until there is something new: the host and the families see one line, « Le tableau (3) », and open it when curious.
+  const [open, setOpen] = useState(fresh > 0)
 
   function submit(ev: FormEvent) {
     ev.preventDefault()
@@ -155,12 +157,12 @@ export function MessageBoard({
   )
 
   return (
-    <section className={`card board ${full ? 'board--full' : ''}`} aria-label={t.board.title}>
-      <div className="row" style={{ alignItems: 'center' }}>
-        <h3 style={{ margin: 0 }}><Icon name="message" />{t.board.title}{messages.length > 0 ? ` (${messages.length})` : ''}</h3>
-        {fresh > 0 && <span className="changed" aria-live="polite">{t.board.newCount(fresh)}</span>}
-      </div>
-      <p className="muted small" style={{ margin: '0.25rem 0 0.75rem' }}>{t.board.hint}</p>
+    <details className={`fold board ${full ? 'board--full' : ''}`} aria-label={t.board.title} open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>
+        <span><Icon name="message" />{t.board.title}{messages.length > 0 ? ` (${messages.length})` : ''}{fresh > 0 && <span className="changed" aria-live="polite" style={{ marginLeft: '0.5rem' }}>{t.board.newCount(fresh)}</span>}</span>
+      </summary>
+      <div>
+      <p className="muted small" style={{ margin: '0 0 0.75rem' }}>{t.board.hint}</p>
 
       {pinned.length > 0 && (
         <ul className="blist blist--pinned" aria-label={t.board.pinned}>
@@ -197,6 +199,7 @@ export function MessageBoard({
       ) : (
         messages.length > 0 && <p className="muted small" style={{ margin: '0.75rem 0 0' }}>{t.board.closed}</p>
       )}
-    </section>
+      </div>
+    </details>
   )
 }

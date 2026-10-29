@@ -7,6 +7,7 @@ import { useT } from '../i18n'
 import { Header } from '../components/Header'
 import { Icon } from '../components/Icon'
 import { Turnstile } from '../components/Turnstile'
+import { Credit } from '../components/Credit'
 import { CardCode } from '../components/CardCode'
 
 // The front door: one sentence, sign in or create an account, or try it. A signed-in parent
@@ -60,11 +61,6 @@ export function Door() {
       <section className="hero">
         <h1>{t.tagline}</h1>
         <p className="muted">{t.door.pitch}</p>
-        <ul className="points">
-          <li><Icon name="calendar" /><span>{t.door.points[0]}</span></li>
-          <li><Icon name="share" /><span>{t.door.points[1]}</span></li>
-          <li><Icon name="check" /><span>{t.door.points[2]}</span></li>
-        </ul>
       </section>
       <CardCode />
       <form className="card" onSubmit={submit}>
@@ -85,12 +81,15 @@ export function Door() {
         <button type="button" className="btn" disabled={busy} onClick={() => void go('demo')}>{t.trial.button}</button>
         <p className="muted small">{t.trial.hint}</p>
       </div>
-      <section className="how" aria-labelledby="how-title">
-        <h2 id="how-title">{t.door.how.title}</h2>
-        <ol>{t.door.how.steps.map((x) => <li key={x}>{x}</li>)}</ol>
-        <p className="muted small">{t.door.how.note}</p>
-      </section>
+      <details className="fold how" aria-label={t.door.how.title}>
+        <summary><span>{t.door.how.title}</span></summary>
+        <div>
+          <ol>{t.door.how.steps.map((x) => <li key={x}>{x}</li>)}</ol>
+          <p className="muted small">{t.door.how.note}</p>
+        </div>
+      </details>
       <p className="small" style={{ textAlign: 'center' }}><Link to="/confidentialite">{t.privacy.link}</Link></p>
+      <Credit />
       </main>
     </div>
   )

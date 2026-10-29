@@ -202,7 +202,7 @@ export function EncounterDetail() {
     <>
       <Link to="/rencontres" className="muted small">← {t.encounters.back}</Link>
       <div style={{ marginTop: '0.5rem' }}>
-        <CoverPicture encounterId={e.id} cover={e.cover ?? null} enabled={!!health.data?.photos && e.status !== 'cancelled'} onChanged={refresh} />
+        <CoverPicture mode="show" encounterId={e.id} cover={e.cover ?? null} enabled={false} onChanged={refresh} />
       </div>
       <div className="row">
         <h1>{e.title}</h1>
@@ -265,8 +265,9 @@ export function EncounterDetail() {
           )}
 
           {/* Until someone answers, « Les invitations » below already says « Sans réponse » for each family: no second list. */}
-          {(invitations.length === 0 || invitations.some((i) => i.reply)) && <div className="card" aria-label={t.roster.title}>
-            <h3><Icon name="users" />{t.roster.title}</h3>
+          {(invitations.length === 0 || invitations.some((i) => i.reply)) && <details className="fold" aria-label={t.roster.title}>
+            <summary><span><Icon name="users" />{t.roster.title}</span></summary>
+            <div>
             <p className="muted small" style={{ margin: '0 0 0.4rem' }}>{e.show_guests === false ? null : t.roster.public}</p>
             {invitations.length === 0 && <p className="muted small" style={{ margin: 0 }}>{t.roster.empty}</p>}
             {groups.filter(([, list]) => list.length > 0).map(([label, list, kind]) => (
@@ -276,7 +277,8 @@ export function EncounterDetail() {
               </div>
             ))}
             {yes.length > 0 && <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.kinds.birthday.summary(totalKids, totalAdults)}</p>}
-          </div>}
+            </div>
+          </details>}
 
           <div className="card">
             <h3><Icon name="share" />{t.encounters.links}</h3>
@@ -360,7 +362,7 @@ export function EncounterDetail() {
                 )}
               </div>
             ))}
-            {silentWithMail.length > 0 && <p style={{ margin: '0.75rem 0 0' }}><button className="btn" disabled={resendAll.isPending} onClick={() => resendAll.mutate(silentWithMail.map((i) => i.id))}><Icon name="mail" />{t.encounters.resendAll(silentWithMail.length)}</button></p>}
+            {silentWithMail.length > 1 && <p style={{ margin: '0.75rem 0 0' }}><button className="btn" disabled={resendAll.isPending} onClick={() => resendAll.mutate(silentWithMail.map((i) => i.id))}><Icon name="mail" />{t.encounters.resendAll(silentWithMail.length)}</button></p>}
             {invitations.length > 0 && silent.length > 0 && (
               <details className="more" open={!anyEmail} style={{ marginTop: '0.75rem' }}>
                 <summary>{t.encounters.howTitle}</summary>
@@ -511,12 +513,16 @@ export function EncounterDetail() {
       )}
       <div className="endactions">
         {e.status === 'proposed' && <button className="btn btn--primary btn--big" onClick={() => patch.mutate({ status: 'confirmed' })}><Icon name="check" />{t.encounters.confirm}</button>}
-        <div className="cluster">
-          {e.status !== 'cancelled' && e.status !== 'postponed' && <button className="btn" onClick={() => setPostponing(true)}><Icon name="umbrella" />{t.encounters.postpone}</button>}
-          {e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => cancel(false, e.status)}>{t.encounters.cancel}</button>}
-          {e.series_id && e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => cancel(true, e.status)}>{t.encounters.cancelSeries}</button>}
-          <button className="btn btn--danger" onClick={deleteIt}><Icon name="trash" />{t.encounters.delete}</button>
-        </div>
+        <details className="more">
+          <summary>{t.encounters.moreOptions}</summary>
+          <CoverPicture mode="controls" encounterId={e.id} cover={e.cover ?? null} enabled={!!health.data?.photos && e.status !== 'cancelled'} onChanged={refresh} />
+          <div className="cluster" style={{ marginTop: '0.5rem' }}>
+            {e.status !== 'cancelled' && e.status !== 'postponed' && <button className="btn" onClick={() => setPostponing(true)}><Icon name="umbrella" />{t.encounters.postpone}</button>}
+            {e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => cancel(false, e.status)}>{t.encounters.cancel}</button>}
+            {e.series_id && e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => cancel(true, e.status)}>{t.encounters.cancelSeries}</button>}
+            <button className="btn btn--danger" onClick={deleteIt}><Icon name="trash" />{t.encounters.delete}</button>
+          </div>
+        </details>
       </div>
     </>
   )

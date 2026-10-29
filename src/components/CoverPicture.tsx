@@ -7,7 +7,8 @@ import { useToast } from '../lib/toast'
 // The host's cover picture for a rencontre: shown at the top of the card and on every invitation.
 // Optional like every photo: with no bucket (`enabled` false) and no picture, nothing is shown.
 // The picker offers the camera AND the library; the phone decides.
-export function CoverPicture({ encounterId, cover, enabled, onChanged }: { encounterId: string; cover: string | null; enabled: boolean; onChanged: () => void }) {
+// `mode`: « show » is the picture alone (the top of the card), « controls » is the buttons alone (under « Plus d'options »).
+export function CoverPicture({ encounterId, cover, enabled, onChanged, mode }: { encounterId: string; cover: string | null; enabled: boolean; onChanged: () => void; mode?: 'show' | 'controls' }) {
   const t = useT()
   const toast = useToast()
   const input = useRef<HTMLInputElement>(null)
@@ -45,11 +46,13 @@ export function CoverPicture({ encounterId, cover, enabled, onChanged }: { encou
   }
 
   const shown = cover && !hidden
-  if (!shown && !enabled) return null
+  const showPicture = mode !== 'controls' && !!shown
+  const showControls = mode !== 'show' && enabled
+  if (!showPicture && !showControls) return null
   return (
     <div className="coverbox">
-      {shown && <img className="cover" src={`/api/cover/${encounterId}?v=${cover}`} alt="" />}
-      {enabled && (
+      {showPicture && <img className="cover" src={`/api/cover/${encounterId}?v=${cover}`} alt="" />}
+      {showControls && (
         <div className="cluster">
           <input ref={input} type="file" accept="image/*" hidden onChange={(e) => void pick(e.target.files)} />
           <button type="button" className="btn btn--small" disabled={busy} onClick={() => input.current?.click()}>{busy ? t.souvenirs.adding : shown ? t.cover.change : t.cover.add}</button>

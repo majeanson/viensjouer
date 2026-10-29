@@ -43,19 +43,18 @@ export function Encounters() {
   const Mine = ({ e }: { e: Encounter }) => (
     <Link to={`/rencontres/${e.id}`} className="card card--tap">
       <div className="row">
-        <span className="cluster"><strong>{e.title}</strong></span>
+        <strong><Icon name={kindIcon(e.kind)} />{e.title}</strong>
+        {e.status !== 'proposed' && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
       </div>
       <p className="meta--row muted small">
-        <span><Icon name={kindIcon(e.kind)} />{t.encounters.kind[e.kind]}</span>
         <span><Icon name="clock" />{whenShort(e.starts_at, lang)}<Rel at={e.starts_at} /></span>
         {e.place && e.place !== t.encounters.kind[e.kind] && <span><Icon name="pin" />{e.place}</span>}
-        {e.status !== 'proposed' && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
       </p>
-      <div className="cluster">
-        {(byEnc.get(e.id) ?? []).map((i) => (
-          <span key={i.id} className={`chip ${i.reply ? `chip--${i.reply}` : ''}`}>{i.child_first_name} · {i.reply ? t.encounters.reply[i.reply] : t.encounters.reply.none}</span>
-        ))}
-      </div>
+      {(byEnc.get(e.id) ?? []).length > 0 && (
+        <div className="cluster">
+          {(['yes', 'maybe', 'no', 'none'] as const).map((k) => ({ k, n: (byEnc.get(e.id) ?? []).filter((i) => (i.reply ?? 'none') === k).length })).filter((x) => x.n > 0).map((x) => <span key={x.k} className={`chip ${x.k === 'none' ? '' : `chip--${x.k}`}`}>{t.encounters.reply[x.k]} · {x.n}</span>)}
+        </div>
+      )}
     </Link>
   )
 
@@ -70,9 +69,8 @@ export function Encounters() {
         key: `i-${it.id}`,
         node: (
           <Link to={`/${paperCode(it.token)}`} className="card card--tap">
-            <div className="row"><strong>{it.title}</strong><span className="chip chip--kind">{t.agenda.invited(it.host ?? '')}</span></div>
+            <div className="row"><strong><Icon name={kindIcon(it.kind)} />{it.title}</strong><span className="chip chip--kind">{t.agenda.invited(it.host ?? '')}</span></div>
             <p className="meta--row muted small">
-              <span><Icon name={kindIcon(it.kind)} />{t.encounters.kind[it.kind]}</span>
               <span><Icon name="clock" />{whenShort(it.at, lang)}<Rel at={it.at} /></span>
               {it.place && it.place !== t.encounters.kind[it.kind] && <span><Icon name="pin" />{it.place}</span>}
               <span className={`chip ${it.reply ? `chip--${it.reply}` : ''}`}>{it.reply ? t.encounters.reply[it.reply] : t.encounters.reply.none}</span>

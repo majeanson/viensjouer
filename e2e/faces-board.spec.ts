@@ -124,7 +124,9 @@ test('the host\'s board: write, pin at the top, remove with an undo, links are l
   })
   await page.goto('/rencontres/e1')
   const board = page.getByLabel('Le tableau', { exact: true })
-  await expect(board.getByRole('heading', { name: /Le tableau \(3\)/ })).toBeVisible()
+  // closed until there is something new: one line with the count, opened when curious
+  await expect(board.locator('summary')).toContainText('Le tableau (3)')
+  await board.locator('summary').click()
   // the pinned one leads, in its own block
   await expect(board.locator('.blist--pinned')).toContainText('Rendez-vous à la fontaine')
   await expect(board.locator('.blist--pinned .bmsg')).toHaveCount(1)
@@ -146,10 +148,10 @@ test('the host\'s board: write, pin at the top, remove with an undo, links are l
   expect(calls.find((c) => c.method === 'PATCH' && c.path === 'messages')!.body).toMatchObject({ pinned: true })
   // remove: gone at once, undoable, nothing sent yet
   await board.getByRole('button', { name: 'Retirer' }).first().click()
-  await expect(board.getByRole('heading', { name: /Le tableau \(2\)/ })).toBeVisible()
+  await expect(board.locator('summary')).toContainText('Le tableau (2)')
   expect(calls.filter((c) => c.method === 'DELETE' && c.path === 'messages')).toHaveLength(0)
   await page.locator('.toast').getByRole('button', { name: 'Annuler' }).click()
-  await expect(board.getByRole('heading', { name: /Le tableau \(3\)/ })).toBeVisible()
+  await expect(board.locator('summary')).toContainText('Le tableau (3)')
 })
 
 // ---- the invited side
@@ -273,6 +275,7 @@ test('the new screens hold up at 320px in the dark', async ({ browser }) => {
 test('« Courriel d’essai »: one tap sends a sample to my own address, and only when mail is wired for a real account', async ({ page }) => {
   const calls = await host(page, { 'POST test-mail': () => ({ json: { ok: true, to: 'm@example.com' } }) }, { me: { mail: true } })
   await page.goto('/compte')
+  await page.getByText('Courriels et rappels', { exact: true }).click()
   await page.getByRole('button', { name: 'M’envoyer un courriel d’essai' }).click()
   await expect(page.getByText('Courriel envoyé à m@example.com.')).toBeVisible()
   expect(calls.filter((c) => c.method === 'POST' && c.path === 'test-mail')).toHaveLength(1)
@@ -305,6 +308,7 @@ test('« Déjà ensemble »: a friend opens the past get-togethers and starts th
 test('the host reminder is a plain checkbox in my profile, off unless asked for, and only when mail is wired', async ({ page }) => {
   const calls = await host(page, { 'PATCH profile': () => ({ json: { ok: true } }) }, { me: { mail: true } })
   await page.goto('/compte')
+  await page.getByText('Courriels et rappels', { exact: true }).click()
   const box = page.getByLabel(/Me rappeler la veille de mes rencontres/)
   await expect(box).not.toBeChecked()
   await box.click()

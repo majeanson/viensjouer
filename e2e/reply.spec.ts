@@ -191,10 +191,10 @@ test('the shared page says what it is, the facts, who it is for and what happens
   await expect(page.locator('.steps li.now')).toHaveCount(1)
   await expect(page.getByText('Pas de compte à créer.').first()).toBeVisible()
   await expect(page.getByText(/ne demande aucun compte/)).toBeVisible()
-  // after the answer the page says the host already knows, and step one is done
+  // after the answer the page says the host already knows, and the how-it-works card is gone (it was for before)
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   await expect(page.getByText('Marc voit ta réponse. Tu peux la changer jusqu’à la rencontre.')).toBeVisible()
-  await expect(page.locator('.steps li.done')).toHaveCount(2)
+  await expect(page.locator('.steps')).toHaveCount(0)
 })
 
 test('a two-word link works in any case and with spaces or dots', async ({ page }) => {

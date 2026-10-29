@@ -129,7 +129,7 @@ test('a family with no email gets a ready-to-send message with the short link', 
   })
   await page.goto('/rencontres/e1')
   // one calm line per family; the short link and the hint sit under « Plus de choix »
-  await page.getByText('Plus de choix').first().click()
+  await page.getByText('Plus de choix', { exact: true }).first().click()
   await expect(page.locator('.paper').getByText(/\/lune-miel$/)).toBeVisible()
   // the message that goes out is shown before it is sent
   await expect(page.locator('.msgpreview').first()).toContainText('/lune-miel')

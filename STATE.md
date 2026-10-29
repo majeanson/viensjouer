@@ -293,6 +293,18 @@ Two read-only audits produced a ranked list; it is worked through in order, one 
 
 Opening a form or tapping a button never focuses a text field: the three `autoFocus` (group, child, family forms) are gone, and the board's refocus after sending or after an empty send goes through `focusIfFinePointer` (`src/lib/focus.ts`), which only focuses with a mouse-and-keyboard pointer. `noAutofocus.test.ts` fails on any `autoFocus` and on a `.focus()` outside the skip link, the route change and `focus.ts` (planted red once).
 
+### Simple by default, deeper for the curious — 2026-10-29
+
+The rule: a screen shows the ONE thing it is for; everything else is one tap away (a fold, « Plus d'options », « Plus de choix »), never gone.
+- **Host card**: the main thing (when, where, the invitations with their one button, « Confirmer ») is in view. « Qui vient » is a closed fold (the invitations card already says who answered), « Le tableau (n) » is one line that opens by itself when something is new (`MessageBoard` is now a `details`; seen-state as before), the cover picture shows on top but its buttons, « Reporter », « Annuler » and « Supprimer » sit under « Plus d'options ». « Renvoyer aux N » only appears from two families up.
+- **List**: one calm card per rencontre: kind icon + title, when, where, and the answers as counts (« Oui · 2 · Peut-être · 1 »), never one chip per family.
+- **Reply page**: the three-step explanation only before answering; « Envie de revoir Noé ? » and « Qui vient » are folds; the board is one line.
+- **Front page**: the three bullets are gone (« Comment ça marche » says it all, as a fold).
+- **Compte**: the three e-mail switches and the test mail are one fold, « Courriels et rappels ».
+- **Credit** (« Bâti par marc.portal »): front page and Compte only, no longer under every screen.
+- **The card box** (« Tu as reçu une carte ? ") is straight (the −0.8° tilt is gone) and is drawn as a ticket: a half-moon bitten out of each side and a dotted tear line between the two words.
+- Tests moved with it (open the fold first); new ones pin the rules (`newthings.spec.ts`).
+
 ### Notifications — 2026-10-29 (the « no push » decision was reversed by Marc)
 
 - **In the app, always**: `notifications` (migration 0021) holds what a signed-in parent was told; « Nouveau » on Rencontres lists the unread (`NewForYou`), a tap opens it and marks it read. No permission, no email needed: this is what the second test account was missing.

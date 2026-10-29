@@ -36,18 +36,27 @@ async function host(page: Page, handlers: Record<string, Handler> = {}, signedIn
   return stub
 }
 
-test('the foot of the door and of the signed-in screens credits marc.portal with a plain link', async ({ page }) => {
+test('marc.portal is credited with a plain link on the front page and on the account page, and nowhere else', async ({ page }) => {
   await host(page, {}, false)
   await page.goto('/')
   await expect(page.locator('.credit').getByRole('link', { name: 'marc.portal', exact: true })).toHaveAttribute('href', 'https://marcportal.com')
   await expect(page.locator('.credit')).toContainText('Bâti par')
   await page.unroute('**/api/**')
   await host(page)
-  for (const path of ['/rencontres', '/amis', '/enfants', '/compte']) {
+  await page.goto('/compte')
+  await expect(page.locator('h1').first()).toBeVisible()
+  await expect(page.locator('.credit').getByRole('link', { name: 'marc.portal', exact: true })).toHaveAttribute('href', 'https://marcportal.com')
+  // a signature, not a banner under every screen
+  for (const path of ['/rencontres', '/amis', '/enfants', '/rencontres/nouvelle']) {
     await page.goto(path)
     await expect(page.locator('h1').first()).toBeVisible()
-    await expect(page.locator('.credit').getByRole('link', { name: 'marc.portal', exact: true }), path).toHaveAttribute('href', 'https://marcportal.com')
+    await expect(page.locator('.credit'), path).toHaveCount(0)
   }
+  await page.unroute('**/api/**')
+  await host(page, {}, false)
+  await page.goto('/confidentialite')
+  await expect(page.locator('h1').first()).toBeVisible()
+  await expect(page.locator('.credit')).toHaveCount(0)
 })
 
 test('the slots clear the nap of every family picked, not only the host’s child', async ({ page }) => {
@@ -254,10 +263,106 @@ test('Compte, Notifications: with phone push not switched on yet, it says so and
 test('the front page explains how it works, including that nothing is sent unless you decide', async ({ page }) => {
   await host(page, {}, false)
   await page.goto('/')
-  const how = page.getByRole('region', { name: 'Comment ça marche' })
-  await expect(how).toBeVisible()
+  // one line to open, not a wall of text under the form
+  const how = page.locator('details.how')
+  await expect(how.locator('summary')).toHaveText('Comment ça marche')
+  await how.locator('summary').click()
   await expect(how.getByRole('listitem')).toHaveCount(4)
   await expect(how).toContainText('par courriel, par texto, ou avec une carte à imprimer. Rien n’est envoyé sans que tu le décides.')
   await expect(how).toContainText('Pas de compte, pas d’application à installer.')
   await expect(how).toContainText('reçoit les nouvelles dans l’appli, et sur son téléphone si elle le permet')
+})
+
+// ---- simple by default, deeper for the curious ------------------------------------------------------------------------
+
+const DETAIL = (over: Record<string, unknown> = {}, invitations: unknown[] = [], messages: unknown[] = []) => ({
+  encounter: { id: 'e1', child_id: 'c1', kind: 'park', title: 'Au parc', starts_at: Math.floor(Date.now() / 1000) + 86_400, ends_at: null, place: 'Parc', address: null, map_url: null, note: null, status: 'proposed', series_id: null, details: {}, hereOpen: false, ...over },
+  invitations,
+  messages,
+  relais: [],
+  souvenirs: [],
+  changes: [],
+})
+const INV = (id: string, kid: string, reply: string | null, over: Record<string, unknown> = {}) => ({ id, friend_family_id: `f-${id}`, token: `tok-${id}`, reply, reply_note: null, reply_at: null, sent_at: null, parent_name: 'P', child_first_name: kid, email: null, allergies: null, adults: null, kids: null, scope: 'family', ...over })
+
+test('the host card keeps the main thing in view and tucks the rest under « Plus d’options » (cancel, delete, picture)', async ({ page }) => {
+  await host(page, { 'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: DETAIL({}, [INV('i1', 'Léa', 'yes')]) } : { json: { encounters: [], invitations: [] } }) })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByRole('button', { name: 'Confirmer la rencontre' })).toBeVisible()
+  for (const name of ['Annuler la rencontre', 'Supprimer', 'Reporter']) await expect(page.getByRole('button', { name, exact: true })).toBeHidden()
+  await page.getByText('Plus d’options', { exact: true }).click()
+  for (const name of ['Annuler la rencontre', 'Supprimer', 'Reporter']) await expect(page.getByRole('button', { name, exact: true })).toBeVisible()
+})
+
+test('who is coming is one folded line, opened only by the curious', async ({ page }) => {
+  await host(page, { 'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: DETAIL({}, [INV('i1', 'Léa', 'yes'), INV('i2', 'Max', null)]) } : { json: { encounters: [], invitations: [] } }) })
+  await page.goto('/rencontres/e1')
+  const roster = page.locator('details[aria-label="Qui vient"]')
+  await expect(roster.locator('summary')).toBeVisible()
+  await expect(roster).not.toHaveAttribute('open', '')
+  await roster.locator('summary').click()
+  await expect(roster).toContainText('Léa (P)')
+})
+
+test('with a single family left to nudge there is no second « Renvoyer » button', async ({ page }) => {
+  await host(page, {
+    'GET auth/me': () => ({ json: { signedIn: true, email: 'm@example.com', displayName: 'Marc', household: { id: 'h', name: 'H', tz: 'America/Toronto' }, mail: true, demo: false } }),
+    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: DETAIL({}, [INV('i1', 'Max', null, { email: 'p@example.com', sent_at: 5 })]) } : { json: { encounters: [], invitations: [] } }),
+  })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByRole('button', { name: 'Renvoyer', exact: true })).toHaveCount(1)
+  await expect(page.getByRole('button', { name: /^Renvoyer aux/ })).toHaveCount(0)
+})
+
+test('the board is one line until something is new, then it opens by itself', async ({ page }) => {
+  const now = Math.floor(Date.now() / 1000)
+  const m = (id: string, ago: number, who = 'guest') => ({ id, author_kind: who, author_label: 'Julie', text: `mot ${id}`, created_at: now - ago, pinned: 0, mine: false, invitation_id: null })
+  await page.addInitScript((seen) => localStorage.setItem('vj-board-h-e1', String(seen)), now - 3600)
+  await host(page, { 'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: DETAIL({}, [INV('i1', 'Léa', 'yes')], [m('m1', 7200), m('m2', 60)]) } : { json: { encounters: [], invitations: [] } }) })
+  await page.goto('/rencontres/e1')
+  const board = page.locator('details.board')
+  await expect(board).toHaveAttribute('open', '') // m2 came after the last visit
+  await expect(board.locator('summary')).toContainText('1 nouveau')
+  await expect(board).toContainText('mot m2')
+})
+
+test('the board stays closed when nothing is new', async ({ page }) => {
+  const now = Math.floor(Date.now() / 1000)
+  await page.addInitScript((seen) => localStorage.setItem('vj-board-h-e1', String(seen)), now)
+  await host(page, { 'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: DETAIL({}, [INV('i1', 'Léa', 'yes')], [{ id: 'm1', author_kind: 'guest', author_label: 'Julie', text: 'vieux mot', created_at: now - 7200, pinned: 0, mine: false, invitation_id: null }]) } : { json: { encounters: [], invitations: [] } }) })
+  await page.goto('/rencontres/e1')
+  await expect(page.locator('details.board')).not.toHaveAttribute('open', '')
+  await expect(page.locator('details.board summary')).toContainText('Le tableau (1)')
+})
+
+test('the list shows one calm line per rencontre: when, where, and the answers as counts', async ({ page }) => {
+  const soon = Math.floor(Date.now() / 1000) + 86_400
+  await host(page, {
+    'GET encounters': () => ({
+      json: {
+        encounters: [{ id: 'e1', child_id: 'c1', kind: 'park', title: 'Au parc', starts_at: soon, ends_at: null, place: 'Parc Lafontaine', address: null, note: null, status: 'proposed', series_id: null }],
+        invitations: ['yes', 'yes', 'maybe', null, null, null].map((r, n) => ({ encounter_id: 'e1', id: `i${n}`, reply: r, parent_name: 'P', child_first_name: `K${n}` })),
+      },
+    }),
+  })
+  await page.goto('/rencontres')
+  const card = page.locator('a.card--tap', { hasText: 'Au parc' })
+  await expect(card).toContainText('Oui · 2')
+  await expect(card).toContainText('Peut-être · 1')
+  await expect(card).toContainText('Pas de réponse · 3')
+  await expect(card).not.toContainText('K0 ·') // never one chip per family
+})
+
+test('the card box is straight (never tilted), and is drawn as a ticket with a dotted tear line between the two words', async ({ page }) => {
+  await host(page, {}, false)
+  await page.goto('/')
+  const paper = page.locator('.cardcode__paper')
+  await expect(paper).toBeVisible()
+  await expect(paper).toHaveCSS('transform', 'none')
+  await expect(page.locator('.cardcode__dot')).toHaveCSS('border-left-style', 'dotted')
+  // still straight once both words are in (the « ready » state used to straighten it, now it never tilts at all)
+  const inputs = paper.locator('input')
+  await inputs.nth(0).fill('lune')
+  await inputs.nth(1).fill('miel')
+  await expect(paper).toHaveCSS('transform', 'none')
 })

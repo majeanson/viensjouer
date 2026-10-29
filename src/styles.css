@@ -139,8 +139,7 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .linkrow:first-of-type { border-top: 0; }
 .paper { font-family: ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace; font-size: 1.05rem; letter-spacing: 0.03em; padding: 0.4rem 0.6rem; border: 1px dashed var(--muted); border-radius: var(--radius); background: var(--paper); word-break: break-all; user-select: all; }
 .footer { text-align: center; padding: 2rem 0; }
-.credit { max-width: 640px; margin: 0 auto; padding: 0 var(--gutter); text-align: center; }
-.shell + .credit { margin-top: -3rem; padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
+.credit { margin: 1.5rem 0 0; text-align: center; }
 @media print { .credit { display: none; } }
 
 .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem; }
@@ -290,13 +289,16 @@ main:focus { outline: none; }
 /* The two-word card: a slightly tilted paper with one big box per word. It lights up when the shape is right. */
 .cardcode { background: color-mix(in srgb, var(--accent) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: var(--r-lg); padding: 1.1rem 1rem; margin-bottom: 0.9rem; box-shadow: var(--shadow); }
 .cardcode h2 { margin-top: 0; }
-.cardcode__paper { display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0; padding: 0.9rem 0.7rem; background: var(--card); border: 2px dashed color-mix(in srgb, var(--accent) 60%, var(--line)); border-radius: var(--r-lg); transform: rotate(-0.8deg); transition: border-color 0.2s var(--ease), transform 0.25s var(--ease); }
-.cardcode--ready .cardcode__paper { border-style: solid; border-color: var(--ok); transform: rotate(0deg); }
+.cardcode__paper { display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0; padding: 0.9rem 1.2rem; background: var(--card); border: 1.5px solid color-mix(in srgb, var(--accent) 50%, var(--line)); border-radius: var(--r-lg); transition: border-color 0.2s var(--ease);
+  /* a ticket, not a box: a half-moon bitten out of each side, a dotted tear line between the two words */
+  -webkit-mask: radial-gradient(circle 0.6rem at 0 50%, #0000 96%, #000) left / 51% 100% no-repeat, radial-gradient(circle 0.6rem at 100% 50%, #0000 96%, #000) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle 0.6rem at 0 50%, #0000 96%, #000) left / 51% 100% no-repeat, radial-gradient(circle 0.6rem at 100% 50%, #0000 96%, #000) right / 51% 100% no-repeat; }
+.cardcode--ready .cardcode__paper { border-color: var(--ok); }
 .cardcode__in { flex: 1 1 0; min-width: 0; width: 100%; text-align: center; font: inherit; font-size: 1.35rem; font-weight: 600; letter-spacing: 0.02em; color: var(--ink); background: transparent; border: 0; border-bottom: 2px solid var(--line); border-radius: 0; padding: 0.4rem 0.2rem; min-height: var(--target); }
 .cardcode__in::placeholder { color: var(--muted); opacity: 0.55; font-weight: 400; }
 .cardcode__in:focus-visible { outline: none; border-bottom-color: var(--accent); }
 .cardcode--ready .cardcode__in { border-bottom-color: var(--ok); }
-.cardcode__dot { flex: none; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--accent); }
+.cardcode__dot { flex: none; width: 0; height: 2.6rem; border-left: 3px dotted color-mix(in srgb, var(--accent) 70%, var(--line)); }
 .cardcode .btn--big { width: 100%; }
 @media (prefers-reduced-motion: reduce) { .cardcode__paper { transition: none; } }
 .btn, .input, .nav a, .tool { border-radius: var(--r-md); }

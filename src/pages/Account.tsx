@@ -12,6 +12,7 @@ import { AvatarPicker } from '../components/AvatarPicker'
 import { useQuery } from '@tanstack/react-query'
 import { Icon } from '../components/Icon'
 import { NotificationsCard } from '../components/NotificationsCard'
+import { Credit } from '../components/Credit'
 
 // « Mon compte » — one tab at a time, kept in the address (?tab=) so a link or a refresh lands on it:
 // who I am, my household, my calendar and the app, my security, my data (what is kept, a download, « tout effacer »).
@@ -94,7 +95,9 @@ export function Account() {
             </form>
             {err && <div className="notice notice--err" style={{ marginTop: '0.75rem' }}>{err}</div>}
             {me.mail && !me.demo && (
-              <>
+              <details className="fold" style={{ marginTop: '1rem' }}>
+                <summary><span><Icon name="mail" />{t.profile.emails}</span></summary>
+                <div>
                 {([
                   ['remindHost', !!me.remindHost, t.profile.remindHost, t.profile.remindHostHint],
                   ['notifyAnswers', !!me.notifyAnswers, t.profile.notifyAnswers, t.profile.notifyAnswersHint],
@@ -139,7 +142,8 @@ export function Account() {
                   </button>
                   {testSent && <p className="small" role="status" style={{ margin: '0.4rem 0 0' }}>{testSent}</p>}
                 </div>
-              </>
+                </div>
+              </details>
             )}
           </div>
         )}
@@ -227,6 +231,7 @@ export function Account() {
           </>
         )}
       </div>
+      <Credit />
     </>
   )
 }

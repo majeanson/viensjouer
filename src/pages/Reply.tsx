@@ -327,21 +327,25 @@ function ReplyInner() {
       {details}
 
       {offerAccount && (claiming ? claimForm : (
-        <section className="card" aria-label={t.reply.moreTitle(host.child_first_name)}>
-          <h2><Icon name="heart" />{t.reply.moreTitle(host.child_first_name)}</h2>
-          <p className="muted small">{t.reply.moreHint}</p>
-          <button className="btn" onClick={() => setClaiming(true)}>{t.reply.create}</button>
-        </section>
+        <details className="fold" aria-label={t.reply.moreTitle(host.child_first_name)}>
+          <summary><span><Icon name="heart" />{t.reply.moreTitle(host.child_first_name)}</span></summary>
+          <div>
+            <p className="muted small">{t.reply.moreHint}</p>
+            <button className="btn" onClick={() => setClaiming(true)}>{t.reply.create}</button>
+          </div>
+        </details>
       ))}
 
       {guests && (guests.yes.length > 0 || guests.maybe.length > 0) && (
-        <section className="card guests" aria-label={t.roster.guestsTitle}>
-          <h2><Icon name="users" />{t.roster.guestsTitle}</h2>
+        <details className="fold guests" aria-label={t.roster.guestsTitle}>
+          <summary><span><Icon name="users" />{t.roster.guestsTitle}</span></summary>
+          <div>
           {guests.yes.length > 0 && <p><strong>{t.roster.yes} ({guests.yes.length})</strong> : {guests.yes.join(', ')}</p>}
           {guests.maybe.length > 0 && <p><strong>{t.roster.maybe} ({guests.maybe.length})</strong> : {guests.maybe.join(', ')}</p>}
           {guests.waiting > 0 && <p className="muted small">{t.roster.waiting(guests.waiting)}</p>}
           <p className="muted small">{t.roster.public}</p>
-        </section>
+          </div>
+        </details>
       )}
 
       {(bring.length > 0 || canBring) && (
@@ -416,14 +420,14 @@ function ReplyInner() {
         </div>
       )}
 
-      <section className="card">
+      {!answered && <section className="card">
         <h2><Icon name="info" />{t.reply.stepsTitle}</h2>
         <ol className="steps">
           <li className={answered ? 'done' : 'now'}>{t.reply.step1}</li>
           <li className={answered ? 'done' : ''}>{t.reply.step2(host.parent_name || host.household_name)}</li>
           <li className={answered && you.reply === 'yes' ? 'now' : ''}>{t.reply.step3}</li>
         </ol>
-      </section>
+      </section>}
 
       <MessageBoard
         messages={messages}

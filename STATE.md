@@ -12,7 +12,6 @@
 
 **Open, in order:**
 1. Walk it on two real phones with two real emails (the only human step left from Phase 1).
-2. Hygiene: hard-delete soft-deleted rows and old invitations in the hourly `tidy` (the privacy page says removed rows stay until « Tout effacer »; codes are never reused while rows exist).
 3. A « Reporté / pluie » state with a reason (board post, optional email), instead of cancel-or-edit.
 4. Bounce awareness: Resend webhooks so the host sees which email did not arrive.
 5. The reply page opening offline (shell cache only, never stale answers).
@@ -50,6 +49,10 @@
 - **Push straight to `main`.** CI is the gate; fix forward.
 
 ## 3. What just shipped
+
+### Hygiene — 2026-10-29
+
+`functions/_lib/purge.ts`, run by the hourly `tidy`: a rencontre, window, group, message, photo, family or child removed more than 30 days ago is deleted for good (a family or child still named by a surviving invitation, rencontre or link is kept, its book entry makes the history readable; R2 blobs go with them). Share words of a rencontre or window over for 90 days are retired (`token` becomes `old-<id>`), so the two-word space is reusable while the row and its answer stay. Bounded to 25 / 200 rows per run. `purge.test.ts` runs the real migrations on `node:sqlite` (planted red once). The privacy page says 30 days.
 
 ### French is its own lazy chunk — 2026-10-29
 

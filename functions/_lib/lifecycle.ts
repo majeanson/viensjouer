@@ -1,9 +1,11 @@
 // What the hourly cron tidies so nothing outlives its purpose: spent or expired password-reset and second-parent
 // tokens (a week after they stopped working, long enough to answer « why did my link die »), the mail ledger, and
-// sandboxes that aged out while nobody minted a new one (the sweep otherwise only ran on a mint).
+// sandboxes that aged out while nobody minted a new one (the sweep otherwise only ran on a mint), rows removed more
+// than a month ago, and the share words of rencontres long over (purge.ts).
 import type { Env } from './env'
 import { sweepDemos } from './demo'
 import { purgeMailLedger } from './mailBudget'
+import { purgeRemoved, retireLinks } from './purge'
 import { nowSec } from './ids'
 
 export const TOKEN_GRACE_SEC = 7 * 24 * 3600
@@ -18,6 +20,8 @@ export async function tidy(env: Env, now = nowSec()): Promise<void> {
     ])],
     ['mail ledger', () => purgeMailLedger(env)],
     ['sandboxes', () => sweepDemos(env, now)],
+    ['removed rows', () => purgeRemoved(env, now)],
+    ['ended links', () => retireLinks(env, now)],
   ]
   for (const [name, run] of steps) {
     try {

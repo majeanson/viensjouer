@@ -182,11 +182,18 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   const addr = `walk-${Date.now()}@example.com`
   const probeCtx = await browser.newContext() // its own cookies: a signup signs its caller in
   const mk = (password: string) => probeCtx.request.post('/api/auth/signup', { data: { email: addr, password, displayName: 'Walk' } })
-  expect((await mk('un-bon-mot-de-passe')).status()).toBe(201)
-  const again = await mk('pas-le-bon-mot-de-passe')
-  expect(again.status()).toBe(409)
-  expect(await again.text()).not.toMatch(/existe déjà/)
-  expect((await mk('un-bon-mot-de-passe')).status()).toBe(201)
+  // With Turnstile on (production) a bare API signup is refused for lack of a token, which is the guard working: assert that and
+  // stop, so the nightly run neither fails on it nor leaves a real account behind. Without it (local), run the whole probe.
+  const health = await (await probeCtx.request.get('/api/health')).json()
+  if (health.turnstile) {
+    expect((await mk('un-bon-mot-de-passe')).status()).toBe(400)
+  } else {
+    expect((await mk('un-bon-mot-de-passe')).status()).toBe(201)
+    const again = await mk('pas-le-bon-mot-de-passe')
+    expect(again.status()).toBe(409)
+    expect(await again.text()).not.toMatch(/existe déjà/)
+    expect((await mk('un-bon-mot-de-passe')).status()).toBe(201)
+  }
   await probeCtx.close()
 
   // -- « Me déconnecter partout »: a copy of this session (another device) dies, this one stays signed in

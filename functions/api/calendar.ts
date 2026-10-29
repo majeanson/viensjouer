@@ -22,17 +22,22 @@ export const onRequestGet = authed(async (ctx, actor) => {
       `SELECT e.id, e.title, e.kind, e.starts_at, e.place, e.status FROM encounters e
         WHERE e.household_id = ? AND e.deleted_at IS NULL AND e.status != 'cancelled' AND e.starts_at BETWEEN ? AND ? ORDER BY e.starts_at`,
     ).bind(hh, now - 3600, until),
-    // Rencontres hosted by a family LINKED to me where my household is the invited family.
+    // Rencontres I am invited to: by a family LINKED to me (the live link), or simply because the invited family's email is the email
+    // of an account of mine (the host typed my address: it shows up without any link; « Lier nos familles » makes it permanent).
     ctx.env.DB.prepare(
       `SELECT e.id, e.title, e.kind, e.starts_at, e.place, e.status, i.token, i.reply,
               (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent
          FROM invitations i
          JOIN friend_families f ON f.id = i.friend_family_id
          JOIN encounters e ON e.id = i.encounter_id
-         JOIN child_links l ON l.revoked_at IS NULL AND ((l.household_a = e.household_id AND l.household_b = ?1) OR (l.household_b = e.household_id AND l.household_a = ?1))
-        WHERE f.linked_household_id = ?1 AND e.household_id != ?1 AND e.deleted_at IS NULL AND e.status != 'cancelled' AND e.starts_at BETWEEN ?2 AND ?3
+        WHERE e.household_id != ?1 AND e.deleted_at IS NULL AND e.status != 'cancelled' AND e.starts_at BETWEEN ?2 AND ?3 AND f.deleted_at IS NULL
+          AND (
+            (f.linked_household_id = ?1 AND EXISTS (SELECT 1 FROM child_links l WHERE l.revoked_at IS NULL AND ((l.household_a = e.household_id AND l.household_b = ?1) OR (l.household_b = e.household_id AND l.household_a = ?1))))
+            OR (f.email IS NOT NULL AND lower(f.email) IN (SELECT lower(email) FROM parents WHERE household_id = ?1))
+          )
         GROUP BY e.id ORDER BY e.starts_at`,
-    ).bind(hh, now - 3600, until),
+    )
+    .bind(hh, now - 3600, until),
     ctx.env.DB.prepare('SELECT id, starts_at, ends_at, note FROM open_windows WHERE household_id = ? AND deleted_at IS NULL AND ends_at > ? AND starts_at < ? ORDER BY starts_at').bind(hh, now, until),
     ctx.env.DB.prepare('SELECT first_name, birthdate FROM children WHERE household_id = ? AND deleted_at IS NULL AND birthdate IS NOT NULL').bind(hh),
     ctx.env.DB.prepare(

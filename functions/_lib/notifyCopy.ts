@@ -13,6 +13,10 @@ export const NOTE = {
     title: pick(lang, `${v.host} t’invite`, `${v.host} invites you`),
     body: `${v.title}, ${v.when}`,
   }),
+  linked: (lang: MailLang, v: { name: string; child: string }): Words => ({
+    title: pick(lang, `${v.name} est sur Viens jouer`, `${v.name} is on Viens jouer`),
+    body: pick(lang, `${v.child} est maintenant dans ton cercle.`, `${v.child} is now in your circle.`),
+  }),
   changed: (lang: MailLang, v: { title: string; lines: string[] }): Words => ({
     title: pick(lang, `Changement : ${v.title}`, `Change: ${v.title}`),
     body: v.lines.slice(0, 3).join(' · '),

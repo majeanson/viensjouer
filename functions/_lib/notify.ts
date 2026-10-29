@@ -9,7 +9,7 @@ import { isLang, type MailLang } from './lang'
 import { pushEnabled, pushTickle } from './webpush'
 import type { Words } from './notifyCopy'
 
-export type NoteKind = 'invited' | 'changed' | 'cancelled' | 'postponed' | 'answered' | 'reminder' | 'test'
+export type NoteKind = 'linked' | 'invited' | 'changed' | 'cancelled' | 'postponed' | 'answered' | 'reminder' | 'test'
 export interface Recipient {
   email: string
   lang: MailLang

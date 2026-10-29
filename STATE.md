@@ -293,6 +293,14 @@ Two read-only audits produced a ranked list; it is worked through in order, one 
 
 Opening a form or tapping a button never focuses a text field: the three `autoFocus` (group, child, family forms) are gone, and the board's refocus after sending or after an empty send goes through `focusIfFinePointer` (`src/lib/focus.ts`), which only focuses with a mouse-and-keyboard pointer. `noAutofocus.test.ts` fails on any `autoFocus` and on a `.focus()` outside the skip link, the route change and `focus.ts` (planted red once).
 
+### Cross links between accounts — 2026-10-29
+
+Your case: one person, two accounts (marc.jeanson92@… invites marc_jeanson@…) saw nothing on the second one.
+- **The agenda finds it by email**: a rencontre shows in an account's agenda when the invited family's email is the email of one of that household's parents, with no link and no email sent (`calendar.ts`). It works for invitations already sent. A removed family or a cancelled rencontre drops out.
+- **« Lier nos familles »** (`POST /api/link-invitation`, `LinkFamilies` on the invitation page, for someone signed in with their own account): one tap makes the bilateral `child_links` row (host child and the chosen child of mine; my only child automatically, a child made from the invitation when I have none, a picker when I have several), marks the host's book entry as linked and puts the host back in MY book already linked, so I can invite back. The host gets a « Marc_ est sur Viens jouer » notification. Not for the host's own rencontre (400), a family already linked to another account (409), a sandbox (403); pressing twice changes nothing. `GET` says which case applies. Before this, only a brand-new account made through the reply page's « claim » could be linked.
+- The header shows the face only (the name is its tooltip and label for a screen reader).
+- `testDb.batch` now returns one result per statement like D1 (the calendar handler needs it).
+
 ### Simple by default, deeper for the curious — 2026-10-29
 
 The rule: a screen shows the ONE thing it is for; everything else is one tap away (a fold, « Plus d'options », « Plus de choix »), never gone.

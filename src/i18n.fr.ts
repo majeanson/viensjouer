@@ -358,6 +358,15 @@ export const FR = {
     undo: 'Finalement, je veux les recevoir',
     hint: 'Ton lien d’invitation continue de marcher.',
   },
+  link: {
+    title: 'Lier nos familles',
+    hint: (host: string, child: string) => `${host || 'L’hôte'} t’a invité avec ton compte. Lie vos familles : ${child} et ton enfant entrent dans le cercle de l’autre, la rencontre va dans ton agenda, et tu pourras inviter à ton tour.`,
+    pick: 'Lequel de tes enfants est invité ?',
+    go: 'Lier nos familles',
+    done: 'C’est fait : vos familles sont liées.',
+    already: 'Vos familles sont liées.',
+    agenda: 'Voir mon agenda',
+  },
   notif: {
     title: 'Notifications',
     intro: 'Viens jouer te prévient, dans l’appli et sur ton téléphone si tu veux, quand :',

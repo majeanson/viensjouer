@@ -32,6 +32,7 @@
 | `Turnstile` | The Cloudflare bot check on signup and forgot-password | Mounted only when /api/health reports a site key; hands its token to the form in a hidden `turnstile` field. |
 | `NewForYou` | « Nouveau » on Rencontres: what happened that you have not read (invited, changed, answered, reminder) | Needs no permission; the same list the phone notification is made from. |
 | `NotificationsCard` | Compte, Notifications: what you are told, and the switch for this device | In plain words; on iPhone it says to add the app to the home screen first. |
+| `LinkFamilies` | On an invitation page, for someone signed in with their own account: one tap links the two households | Not shown to the host, to a family already linked to another account, or in a trial. |
 | `PartnerNudge` | The one line on Rencontres asking a solo host to invite the other parent | |
 | `CardCode` | Home page: the two words of a card, one box each (a space jumps, a paste spreads); focus moves only while typing | |
 | `CalendarFeed` | The host's secret calendar feed | |

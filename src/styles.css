@@ -220,7 +220,6 @@ h2 .ico, h3 .ico, summary .ico { color: var(--accent); }
 .faces { display: flex; margin-bottom: 0.5rem; }
 .faces .face + .face { margin-left: -0.6rem; box-shadow: 0 0 0 3px var(--card); }
 .btn .face { margin-right: 0.4rem; }
-.tool__name { max-width: 6rem; overflow: hidden; text-overflow: ellipsis; margin-left: 0.4rem; }
 .meta { list-style: none; margin: 0 0 0.75rem; padding: 0; display: grid; gap: 0.25rem; color: var(--muted); }
 .meta li { display: flex; align-items: center; flex-wrap: wrap; gap: 0.1rem; }
 .meta--row { display: flex; flex-wrap: wrap; gap: 0.2rem 0.9rem; margin: 0.35rem 0; }
@@ -273,7 +272,7 @@ h2 .ico, h3 .ico, summary .ico { color: var(--accent); }
 .head { min-width: 0; flex-wrap: wrap; }
 .head__tools { min-width: 0; flex-shrink: 1; }
 .brand { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-@media (max-width: 420px) { .tool__name { display: none; } .tool { min-width: 44px; padding: 0.35rem 0.25rem; } .head__tools { gap: 0; } }
+@media (max-width: 420px) { .tool { min-width: 44px; padding: 0.35rem 0.25rem; } .head__tools { gap: 0; } }
 
 /* Keyboard users: a way past the header, and a focus target that does not draw a box around the whole page. */
 .skip { position: absolute; left: 0.5rem; top: -4rem; z-index: var(--z-skip); background: var(--ink); color: var(--paper); padding: 0.6rem 0.9rem; border-radius: var(--radius); text-decoration: none; font-weight: 600; }

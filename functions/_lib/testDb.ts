@@ -17,7 +17,12 @@ export function realDb() {
     all: async () => ({ results: db.prepare(sql).all(...(binds as never[])) }),
     first: async () => db.prepare(sql).get(...(binds as never[])) ?? null,
   })
-  const DB = { prepare: (sql: string) => stmt(sql), batch: async (ss: { run: () => Promise<unknown> }[]) => { for (const s of ss) await s.run(); return [] } }
+  const DB = { prepare: (sql: string) => stmt(sql), batch: async (ss: { sql: string; run: () => Promise<unknown>; all: () => Promise<unknown> }[]) => {
+      // Like D1: one result per statement (the rows of a SELECT, the change count of the rest).
+      const out: unknown[] = []
+      for (const x of ss) out.push(['select', 'with'].some((w) => x.sql.trim().toLowerCase().startsWith(w)) ? await x.all() : await x.run())
+      return out
+    } }
   const deleted: string[] = []
   const PHOTOS = { delete: async (k: string) => void deleted.push(k) }
   return { db, env: { DB, PHOTOS } as unknown as Env, deleted }

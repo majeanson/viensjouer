@@ -512,3 +512,64 @@ test('the reply page still fits a 375px screen with the text at 200%, once answe
   })
   expect(over).toEqual([])
 });
+
+// ---- « Lier nos familles »: someone who already has an account opens an invitation while signed in --------------------------
+const SIGNED_IN = { signedIn: true, email: 'marc_jeanson@example.org', displayName: 'Marc_', household: { id: 'h2', name: 'Marc_', tz: 'America/Toronto' }, mail: false, demo: false }
+async function signedInOnInvitation(page: Page, info: Record<string, unknown> | null) {
+  const posts: unknown[] = []
+  await stub(page, card())
+  await page.route('**/api/auth/me', (r) => r.fulfill({ json: SIGNED_IN }))
+  await page.route('**/api/link-invitation**', (r) => {
+    if (r.request().method() === 'POST') {
+      posts.push(r.request().postDataJSON())
+      info = { ...(info ?? {}), state: 'linked' }
+      return r.fulfill({ json: { state: 'linked' } })
+    }
+    return r.fulfill(info ? { json: info } : { status: 404, json: { error: 'x' } })
+  })
+  return posts
+}
+const linkable = { state: 'linkable', hostName: 'Marc', hostChild: 'Noé', familyChild: 'Léa', children: [{ id: 'k0', first_name: 'Léa' }] }
+
+test('signed in with your own account: one tap links the two families, and the page says so', async ({ page }) => {
+  const posts = await signedInOnInvitation(page, linkable)
+  await page.goto(`/${CODE}`)
+  const box = page.getByRole('region', { name: 'Lier nos familles' })
+  await expect(box).toContainText('Marc t’a invité avec ton compte')
+  await box.getByRole('button', { name: 'Lier nos familles' }).click()
+  await expect.poll(() => posts.length).toBe(1)
+  expect(posts[0]).toEqual({ code: CODE })
+  await expect(page.getByText('C’est fait : vos familles sont liées.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Voir mon agenda' })).toHaveAttribute('href', '/rencontres')
+})
+
+test('with several children it asks which one is invited, and sends the choice', async ({ page }) => {
+  const posts = await signedInOnInvitation(page, { ...linkable, children: [{ id: 'k0', first_name: 'Léa' }, { id: 'k1', first_name: 'Max' }] })
+  await page.goto(`/${CODE}`)
+  const box = page.getByRole('region', { name: 'Lier nos familles' })
+  await expect(box.getByRole('button', { name: 'Lier nos familles' })).toBeDisabled()
+  await box.getByLabel('Lequel de tes enfants est invité ?').selectOption('k1')
+  await box.getByRole('button', { name: 'Lier nos familles' }).click()
+  await expect.poll(() => posts.length).toBe(1)
+  expect(posts[0]).toEqual({ code: CODE, childId: 'k1' })
+})
+
+test('nothing to link: the host’s own page, a family taken by another account, and an already linked one stay quiet or say so', async ({ page }) => {
+  await signedInOnInvitation(page, { ...linkable, state: 'own' })
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('heading', { name: /Noé invite Léa/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Lier nos familles' })).toHaveCount(0)
+  await signedInOnInvitation(page, { ...linkable, state: 'taken' })
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('region', { name: 'Lier nos familles' })).toHaveCount(0)
+  await signedInOnInvitation(page, { ...linkable, state: 'linked' })
+  await page.goto(`/${CODE}`)
+  await expect(page.getByText('Vos familles sont liées.')).toBeVisible()
+})
+
+test('a visitor with no account is never offered the link (they are offered an account after answering)', async ({ page }) => {
+  await stub(page, card())
+  await page.goto(`/${CODE}`)
+  await expect(page.getByRole('heading', { name: /Noé invite Léa/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Lier nos familles' })).toHaveCount(0)
+})

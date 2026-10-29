@@ -20,6 +20,7 @@ import { Loading } from '../components/Loading'
 import { Rel } from '../components/Rel'
 import { QueryError } from '../components/QueryError'
 import { Icon } from '../components/Icon'
+import { LinkFamilies } from '../components/LinkFamilies'
 import { Face } from '../components/Face'
 import { MessageBoard } from '../components/MessageBoard'
 import { OfflineNotice } from '../components/ErrorBoundary'
@@ -325,6 +326,7 @@ function ReplyInner() {
         </section>
       )}
       {details}
+      {me.signedIn && <LinkFamilies token={token} />}
 
       {offerAccount && (claiming ? claimForm : (
         <details className="fold" aria-label={t.reply.moreTitle(host.child_first_name)}>

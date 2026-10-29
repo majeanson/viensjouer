@@ -360,6 +360,15 @@ export const EN: Dict = {
     undo: 'Actually, send them again',
     hint: 'Your invitation link keeps working.',
   },
+  link: {
+    title: 'Link our families',
+    hint: (host: string, child: string) => `${host || 'The host'} invited you with your account. Link your families: ${child} and your child join each other’s circle, the get-together goes in your agenda, and you can invite back.`,
+    pick: 'Which of your children is invited?',
+    go: 'Link our families',
+    done: 'Done: your families are linked.',
+    already: 'Your families are linked.',
+    agenda: 'See my agenda',
+  },
   notif: {
     title: 'Notifications',
     intro: 'Viens jouer tells you, in the app and, if you want, on your phone, when:',

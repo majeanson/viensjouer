@@ -203,8 +203,8 @@ export function EncounterDetail() {
         />
       ) : (
         <p className="cluster" style={{ margin: '0 0 0.75rem' }}>
-          {e.status !== 'cancelled' && <button className="linkbtn" onClick={() => setEditing(true)}>{t.edit.button}</button>}
-          <Link to={`/rencontres/nouvelle?from=${e.id}`} className="linkbtn">{t.form.again}</Link>
+          {e.status !== 'cancelled' && <button className="btn btn--small" onClick={() => setEditing(true)}><Icon name="edit" />{t.edit.button}</button>}
+          <Link to={`/rencontres/nouvelle?from=${e.id}`} className="btn btn--small"><Icon name="repeat" />{t.form.again}</Link>
         </p>
       )}
 
@@ -260,7 +260,7 @@ export function EncounterDetail() {
                 {i.reply === 'yes' && <p className="small muted" style={{ margin: 0 }}>{t.kinds.birthday.theyCome(kidsComing(i.scope, i.kids), i.adults ?? 0)}</p>}
                 <div className="cluster">
                   <button className={`btn btn--small ${!i.email || !me.mail ? 'btn--primary' : ''}`} onClick={() => void shareMessage(i)}>{copied === 's' + i.id ? t.encounters.copied : t.share.button}</button>
-                  {me.mail && i.email && <button className="linkbtn" disabled={send.isPending} onClick={() => send.mutate(i.id)}>{i.sent_at ? t.encounters.resend : t.encounters.send}</button>}
+                  {me.mail && i.email && <button className="btn btn--small" disabled={send.isPending} onClick={() => send.mutate(i.id)}>{i.sent_at ? t.encounters.resend : t.encounters.send}</button>}
                   <details className="more">
                     <summary>{t.form.more}</summary>
                     <div className="stack">
@@ -268,8 +268,8 @@ export function EncounterDetail() {
                         <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.encounters.theLink}</p>
                         <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
                         <div className="cluster">
-                          <button className="linkbtn" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
-                          {!i.reply && !i.sent_at && <button className="linkbtn" disabled={reshuffle.isPending} onClick={() => reshuffle.mutate(i.id)}>{t.encounters.reshuffle}</button>}
+                          <button className="btn btn--small" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
+                          {!i.reply && !i.sent_at && <button className="btn btn--small" disabled={reshuffle.isPending} onClick={() => reshuffle.mutate(i.id)}>{t.encounters.reshuffle}</button>}
                         </div>
                       </div>
                       <div>
@@ -289,9 +289,9 @@ export function EncounterDetail() {
                         </div>
                       </div>
                       <div className="cluster">
-                        {e.kind === 'home' && <button className="linkbtn" onClick={() => setRelaisFor(relaisFor === i.id ? null : i.id)}>{relaisOf(i.id) ? t.kinds.relais.edit : t.kinds.relais.write}</button>}
+                        {e.kind === 'home' && <button className="btn btn--small" onClick={() => setRelaisFor(relaisFor === i.id ? null : i.id)}>{relaisOf(i.id) ? t.kinds.relais.edit : t.kinds.relais.write}</button>}
                         <button
-                          className="linkbtn linkbtn--danger"
+                          className="btn btn--small btn--danger"
                           onClick={() => inviteRm.remove(i.id, t.undo.removed, async () => { await api('invitations', { method: 'DELETE', body: { id: i.id } }); refresh() })}
                         >
                           {t.encounters.withdraw}
@@ -316,7 +316,7 @@ export function EncounterDetail() {
                 )}
               </div>
             ))}
-            {invitations.length > 0 && <p style={{ margin: '0.75rem 0 0' }}><Link to={`/rencontres/${e.id}/cartes`} className="linkbtn"><Icon name="note" />{t.cards.title}</Link></p>}
+            {invitations.length > 0 && <p style={{ margin: '0.75rem 0 0' }}><Link to={`/rencontres/${e.id}/cartes`} className="btn btn--small"><Icon name="note" />{t.cards.title}</Link></p>}
             {notYet.length > 0 && (addMore ? (
               <div className="stack" style={{ marginTop: '0.75rem' }}>
                 {notYet.map((f) => (
@@ -337,7 +337,7 @@ export function EncounterDetail() {
               {bring.map((b) => (
                 <div key={b.id} className="row linkrow">
                   <span>{b.label} <span className="muted small">· {b.claimed_label ? t.bring.byName(b.claimed_label) : t.bring.nobody}</span></span>
-                  <button className="linkbtn linkbtn--danger" onClick={() => bringRm.remove(b.id, t.undo.removed, async () => { await api('bring', { method: 'DELETE', body: { id: b.id } }); refresh() })}>{t.bring.remove}</button>
+                  <button className="btn btn--small btn--danger" onClick={() => bringRm.remove(b.id, t.undo.removed, async () => { await api('bring', { method: 'DELETE', body: { id: b.id } }); refresh() })}>{t.bring.remove}</button>
                 </div>
               ))}
               <form
@@ -409,11 +409,13 @@ export function EncounterDetail() {
         </div>
       </div>
 
-      <div className="cluster">
-        {e.status === 'proposed' && <button className="btn btn--primary" onClick={() => patch.mutate({ status: 'confirmed' })}>{t.encounters.confirm}</button>}
-        {e.status !== 'cancelled' && <button className="linkbtn linkbtn--danger" onClick={() => cancel(false, e.status)}>{t.encounters.cancel}</button>}
-        {e.series_id && e.status !== 'cancelled' && <button className="linkbtn linkbtn--danger" onClick={() => cancel(true, e.status)}>{t.encounters.cancelSeries}</button>}
-        <button className="linkbtn linkbtn--danger" onClick={deleteIt}>{t.encounters.delete}</button>
+      <div className="endactions">
+        {e.status === 'proposed' && <button className="btn btn--primary btn--big" onClick={() => patch.mutate({ status: 'confirmed' })}><Icon name="check" />{t.encounters.confirm}</button>}
+        <div className="cluster">
+          {e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => cancel(false, e.status)}>{t.encounters.cancel}</button>}
+          {e.series_id && e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => cancel(true, e.status)}>{t.encounters.cancelSeries}</button>}
+          <button className="btn btn--danger" onClick={deleteIt}><Icon name="trash" />{t.encounters.delete}</button>
+        </div>
       </div>
     </>
   )

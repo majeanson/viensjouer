@@ -34,6 +34,13 @@
 
 ## 3. What just shipped
 
+### Actions are buttons — 2026-10-28
+
+Every action that was an underlined word (Modifier, Refaire pareil, Renvoyer, Copier, Annuler la rencontre,
+Supprimer, board pin / remove, cover change / remove, calendar feed, friends, "Plus d'options") is a real
+button. On the rencontre page, Confirmer is one full-width primary under a divider with the destructive
+buttons apart. Rule in CLAUDE.md, guarded by `functions/_lib/buttons.test.ts`.
+
 ### Screenshot review polish — 2026-10-28
 
 Birthday line on Rencontres uses the cake icon instead of a stray bullet; a card no longer

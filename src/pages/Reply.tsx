@@ -240,7 +240,7 @@ function ReplyInner() {
         {!calendarAfterYes && (
           <div className="cluster">
             <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
-            <a className="linkbtn" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
+            <a className="btn btn--small" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
           </div>
         )}
         {changes.length > 0 && (
@@ -271,7 +271,7 @@ function ReplyInner() {
           {calendarAfterYes && (
             <div className="cluster" style={{ marginTop: '0.75rem' }}>
               <a className="btn btn--primary" href={`/api/r/${token}/ics`} download="rencontre.ics"><Icon name="calendar" />{t.reply.calendar}</a>
-              <a className="linkbtn" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
+              <a className="btn btn--small" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
             </div>
           )}
           <details className="why" key={String(justAnswered)} open={justAnswered && you.reply === 'yes' && (e.kind === 'birthday' || you.scope === 'family')} style={{ marginTop: '0.75rem' }}>
@@ -343,7 +343,7 @@ function ReplyInner() {
             <div key={b.id} className="row linkrow">
               <span>{b.label} <span className="muted small">· {b.by ? (b.mine ? t.bring.byName(you.parent_name) : t.bring.byName(b.by)) : t.bring.nobody}</span></span>
               {canBring && !b.by && <button className="btn btn--small" disabled={bringPost.isPending} onClick={() => bringPost.mutate({ claim: b.id })}>{t.bring.take}</button>}
-              {canBring && b.mine && <button className="linkbtn" disabled={bringPost.isPending} onClick={() => bringPost.mutate({ release: b.id })}>{t.bring.release}</button>}
+              {canBring && b.mine && <button className="btn btn--small" disabled={bringPost.isPending} onClick={() => bringPost.mutate({ release: b.id })}>{t.bring.release}</button>}
             </div>
           ))}
           {canBring ? (

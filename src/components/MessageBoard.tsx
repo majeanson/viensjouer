@@ -132,12 +132,12 @@ export function MessageBoard({
         {(onPin || onDelete) && (isHost || m.mine) && (
           <div className="cluster bmsg__tools">
             {isHost && onPin && (
-              <button type="button" className="linkbtn" onClick={() => onPin(m, !m.pinned)}>
+              <button type="button" className="btn btn--small" onClick={() => onPin(m, !m.pinned)}>
                 <Icon name="pushpin" />{m.pinned ? t.board.unpin : t.board.pin}
               </button>
             )}
             {onDelete && (isHost || m.mine) && (
-              <button type="button" className="linkbtn linkbtn--danger" onClick={() => onDelete(m)}>
+              <button type="button" className="btn btn--small btn--danger" onClick={() => onDelete(m)}>
                 <Icon name="trash" />{t.board.remove}
               </button>
             )}

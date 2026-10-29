@@ -52,8 +52,8 @@ export function CoverPicture({ encounterId, cover, enabled, onChanged }: { encou
       {enabled && (
         <div className="cluster">
           <input ref={input} type="file" accept="image/*" hidden onChange={(e) => void pick(e.target.files)} />
-          <button type="button" className="linkbtn" disabled={busy} onClick={() => input.current?.click()}>{busy ? t.souvenirs.adding : shown ? t.cover.change : t.cover.add}</button>
-          {shown && <button type="button" className="linkbtn linkbtn--danger" onClick={remove}>{t.cover.remove}</button>}
+          <button type="button" className="btn btn--small" disabled={busy} onClick={() => input.current?.click()}>{busy ? t.souvenirs.adding : shown ? t.cover.change : t.cover.add}</button>
+          {shown && <button type="button" className="btn btn--small btn--danger" onClick={remove}>{t.cover.remove}</button>}
         </div>
       )}
       {err && <div className="notice notice--err">{err}</div>}

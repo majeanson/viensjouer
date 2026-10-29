@@ -83,7 +83,7 @@ export function Door() {
         {mode === 'login' && health.data?.mail && <p className="small" style={{ margin: '0.75rem 0 0' }}><Link to="/oubli">{t.auth.forgot}</Link></p>}
       </form>
       <p className="small" style={{ textAlign: 'center' }}>
-        <button type="button" className="linkbtn" disabled={busy} onClick={() => void go('demo')}>{t.trial.button}</button>
+        <button type="button" className="btn" disabled={busy} onClick={() => void go('demo')}>{t.trial.button}</button>
         <span className="muted"> · {t.trial.hint}</span>
       </p>
       <p className="small" style={{ textAlign: 'center' }}><Link to="/confidentialite">{t.privacy.link}</Link></p>

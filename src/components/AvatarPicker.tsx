@@ -69,7 +69,7 @@ export function AvatarPicker({
             {shown && (
               <button
                 type="button"
-                className="linkbtn linkbtn--danger"
+                className="btn btn--small btn--danger"
                 onClick={() => {
                   if (preview) {
                     setPreview(null)

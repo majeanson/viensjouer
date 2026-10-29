@@ -44,7 +44,7 @@ function Together({ familyId }: { familyId: string }) {
         {q.data && q.data.past.length === 0 && <p className="muted small">{t.friends.togetherNone}</p>}
         {q.data?.past.map((p) => (
           <p key={p.id} className="small" style={{ margin: '0.25rem 0' }}>
-            {whenShort(p.startsAt, lang)} · {p.title}{p.place ? ` · ${p.place}` : ''} <Link to={`/rencontres/nouvelle?from=${p.id}`} className="linkbtn">{t.form.again}</Link>
+            {whenShort(p.startsAt, lang)} · {p.title}{p.place ? ` · ${p.place}` : ''} <Link to={`/rencontres/nouvelle?from=${p.id}`} className="btn btn--small">{t.form.again}</Link>
           </p>
         ))}
       </div>
@@ -145,8 +145,8 @@ export function Friends() {
               <div className="row">
                 <span><strong>{f.child_first_name}</strong> <span className="muted small">· {f.parent_name}</span></span>
                 <span className="cluster">
-                  <button className="linkbtn" onClick={() => setEditing(f)}>{t.encounters.edit}</button>
-                  <button className="linkbtn linkbtn--danger" onClick={() => rm.remove(f.id, t.undo.removed, async () => { await api('families', { method: 'DELETE', body: { id: f.id } }); void invalidate() })}>{t.families.remove}</button>
+                  <button className="btn btn--small" onClick={() => setEditing(f)}>{t.encounters.edit}</button>
+                  <button className="btn btn--small btn--danger" onClick={() => rm.remove(f.id, t.undo.removed, async () => { await api('families', { method: 'DELETE', body: { id: f.id } }); void invalidate() })}>{t.families.remove}</button>
                 </span>
               </div>
               {(tags.length > 0 || l) && (
@@ -157,7 +157,7 @@ export function Friends() {
               )}
               <p className="small muted" style={{ margin: '0.35rem 0 0' }}>{[f.email, f.phone, l ? dates(l) : null, f.allergies && `${t.families.allergies} : ${f.allergies}`, f.notes].filter(Boolean).join(' · ')}</p>
               <Together familyId={f.id} />
-              {l && <button className="linkbtn linkbtn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button>}
+              {l && <button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button>}
             </div>
           )
         })}
@@ -170,7 +170,7 @@ export function Friends() {
           {others.map((l) => (
             <div key={l.linkId} className="card row">
               <span><strong>{l.childName}</strong> <span className="muted small">· {l.parentName} {dates(l) ? `· ${dates(l)}` : ''}</span></span>
-              <button className="linkbtn linkbtn--danger" onClick={() => cutLink(l)}>{t.circle.cut}</button>
+              <button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.circle.cut}</button>
             </div>
           ))}
         </section>

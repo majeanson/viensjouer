@@ -54,12 +54,12 @@ export function CalendarFeed() {
             <div className="cluster" style={{ marginTop: '0.75rem' }}>
               <span className="small">{t.calfeed.rotateWarn}</span>
               <button className="btn btn--small" disabled={make.isPending} onClick={() => make.mutate()}>{t.calfeed.confirm}</button>
-              <button className="linkbtn" onClick={() => setAsking(false)}>{t.calfeed.cancel}</button>
+              <button className="btn btn--small" onClick={() => setAsking(false)}>{t.calfeed.cancel}</button>
             </div>
           ) : (
             <div className="cluster" style={{ marginTop: '0.5rem' }}>
-              <button className="linkbtn" onClick={() => setAsking(true)}>{t.calfeed.rotate}</button>
-              <button className="linkbtn linkbtn--danger" disabled={off.isPending} onClick={() => off.mutate()}>{t.calfeed.off}</button>
+              <button className="btn btn--small" onClick={() => setAsking(true)}>{t.calfeed.rotate}</button>
+              <button className="btn btn--small btn--danger" disabled={off.isPending} onClick={() => off.mutate()}>{t.calfeed.off}</button>
             </div>
           )}
         </>

@@ -108,6 +108,7 @@ export const EN: Dict = {
     remove: 'Remove',
   },
   encounters: {
+    morePage: 'More: bring list, messages, photos, history',
     title: 'Get-togethers',
     empty: 'Nothing planned. Propose one, a park, a Saturday, a link.',
     new: 'Propose a get-together',
@@ -135,8 +136,8 @@ export const EN: Dict = {
     noFamilies: 'No family in your book yet: add the first one here.',
     create: 'Invite',
     links: 'The invitations',
-    sendNow: 'Email the invitations right away',
-    sendNowHint: (n: number) => `${n} ${n > 1 ? 'families have' : 'family has'} an email. For the others you choose on the next page: text message or printed card.`,
+    autoSend: (n: number) => `The links go out by email to ${n} ${n > 1 ? 'families' : 'family'} as soon as you invite (6 seconds to undo).`,
+    autoSending: (n: number) => `Sending the links to ${n} ${n > 1 ? 'families' : 'family'}.`,
     sendNowNone: 'None of the families you picked has an email. After creating, you can text them or print cards.',
     sentNow: (n: number) => `${n} invitation${n > 1 ? 's' : ''} emailed.`,
     howTitle: 'Other ways to invite',
@@ -185,6 +186,7 @@ export const EN: Dict = {
     cancelSeries: 'Cancel the whole series',
   },
   reply: {
+    moreAll: 'Address, who is coming, what to bring, messages',
     yesShort: 'Yes',
     maybeShort: 'Maybe',
     noShort: 'No',

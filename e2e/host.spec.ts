@@ -171,6 +171,7 @@ test('the host edits a rencontre, sees what will change, and the PATCH carries o
     return j({})
   })
   await page.goto('/rencontres/e1')
+  await page.locator('summary', { hasText: /^Plus : / }).click() // the host page keeps the rest in one fold
   await expect(page.getByText('Historique des modifications')).toBeVisible()
   await page.getByRole('button', { name: 'Modifier', exact: true }).click()
   // untouched form: nothing to save

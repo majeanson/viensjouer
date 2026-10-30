@@ -35,6 +35,7 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   expect(reads.bad.status).toBe(400)
 
   // -- the host adds something to bring, and finds the short link
+  await host.locator('summary', { hasText: /^Plus : / }).click() // the rest of the host page is one fold
   await host.getByText(/^À apporter/).click()
   await host.getByLabel('À apporter', { exact: true }).fill('la collation')
   await host.getByRole('button', { name: 'Ajouter', exact: true }).click()
@@ -79,6 +80,7 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await expect(roster).toContainText('Viennent (1)')
   await expect(roster).toContainText('Léa')
   await expect(host.getByLabel('Les messages', { exact: true })).toContainText('On arrive vers 14 h')
+  await host.locator('summary', { hasText: /^Plus : / }).click() // the rest of the host page is one fold
   await host.getByText(/^À apporter/).click()
   await expect(host.getByText(/apporté par/)).toBeVisible()
 

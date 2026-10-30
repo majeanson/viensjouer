@@ -106,6 +106,7 @@ export const FR = {
     remove: 'Retirer',
   },
   encounters: {
+    morePage: 'Plus : à apporter, messages, photos, historique',
     title: 'Rencontres',
     empty: 'Rien de prévu. Propose une rencontre, un parc, un samedi, un lien.',
     new: 'Proposer une rencontre',
@@ -133,8 +134,8 @@ export const FR = {
     noFamilies: 'Pas encore de famille dans ton carnet : ajoute la première ici.',
     create: 'Inviter',
     links: 'Les invitations',
-    sendNow: 'Envoyer les invitations par courriel tout de suite',
-    sendNowHint: (n: number) => `${n} famille${n > 1 ? 's ont' : ' a'} un courriel. Pour les autres, tu choisis sur la page suivante : texto ou carte imprimée.`,
+    autoSend: (n: number) => `Les liens partent par courriel à ${n} famille${n > 1 ? 's' : ''} dès que tu invites (6 secondes pour annuler).`,
+    autoSending: (n: number) => `Les liens partent à ${n} famille${n > 1 ? 's' : ''}.`,
     sendNowNone: 'Aucune famille choisie n’a de courriel : texto ou carte imprimée, après la création.',
     sentNow: (n: number) => `${n} invitation${n > 1 ? 's envoyées' : ' envoyée'} par courriel.`,
     howTitle: 'Autres façons d’inviter',
@@ -183,6 +184,7 @@ export const FR = {
     cancelSeries: 'Annuler toute la série',
   },
   reply: {
+    moreAll: 'Adresse, qui vient, à apporter, messages',
     yesShort: 'Oui',
     maybeShort: 'Peut-être',
     noShort: 'Non',

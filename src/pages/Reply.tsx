@@ -350,127 +350,134 @@ function ReplyInner() {
         </section>
       )}
 
-      {details}
       {me.signedIn && <LinkFamilies token={token} />}
 
-      {offerAccount && (claiming ? claimForm : (
-        <details className="fold" aria-label={t.reply.moreTitle(host.child_first_name)}>
-          <summary><span><Icon name="heart" />{t.reply.moreTitle(host.child_first_name)}</span></summary>
-          <div>
-            <p className="muted small">{t.reply.moreHint}</p>
-            <button className="btn" onClick={() => setClaiming(true)}>{t.reply.create}</button>
-          </div>
-        </details>
-      ))}
-
-      {guests && (guests.yes.length > 0 || guests.maybe.length > 0) && (
-        <details className="fold guests" aria-label={t.roster.guestsTitle}>
-          <summary><span><Icon name="users" />{t.roster.guestsTitle}</span></summary>
-          <div>
-          {guests.yes.length > 0 && <p><strong>{t.roster.yes} ({guests.yes.length})</strong> : {guests.yes.join(', ')}</p>}
-          {guests.maybe.length > 0 && <p><strong>{t.roster.maybe} ({guests.maybe.length})</strong> : {guests.maybe.join(', ')}</p>}
-          {guests.waiting > 0 && <p className="muted small">{t.roster.waiting(guests.waiting)}</p>}
-          <p className="muted small">{t.roster.public}</p>
-          </div>
-        </details>
-      )}
-
-      {(bring.length > 0 || canBring) && (
-        <section className="card" aria-label={t.bring.title}>
-          <h2><Icon name="bag" />{t.bring.title}</h2>
-          {bring.map((b) => (
-            <div key={b.id} className="row linkrow">
-              <span>{b.label} <span className="muted small">· {b.by ? (b.mine ? t.bring.byName(you.parent_name) : t.bring.byName(b.by)) : t.bring.nobody}</span></span>
-              {canBring && !b.by && <button className="btn btn--small" disabled={bringPost.isPending} onClick={() => bringPost.mutate({ claim: b.id })}>{t.bring.take}</button>}
-              {canBring && b.mine && <button className="btn btn--small" disabled={bringPost.isPending} onClick={() => bringPost.mutate({ release: b.id })}>{t.bring.release}</button>}
+      {/* The invitation is the cover, the when and where, and the answer. Everything else is one tap away, and open once you answered. */}
+      <details className="fold" open={answered || fresh.length > 0}>
+        <summary><span><Icon name="info" />{t.reply.moreAll}</span></summary>
+        <div className="stack">
+        {details}
+  
+        {offerAccount && (claiming ? claimForm : (
+          <details className="fold" aria-label={t.reply.moreTitle(host.child_first_name)}>
+            <summary><span><Icon name="heart" />{t.reply.moreTitle(host.child_first_name)}</span></summary>
+            <div>
+              <p className="muted small">{t.reply.moreHint}</p>
+              <button className="btn" onClick={() => setClaiming(true)}>{t.reply.create}</button>
             </div>
-          ))}
-          {canBring ? (
-            <form
-              className="cluster"
-              style={{ marginTop: '0.5rem' }}
-              onSubmit={(ev) => {
-                ev.preventDefault()
-                const f = ev.currentTarget
-                const add = String(new FormData(f).get('add') ?? '').trim()
-                if (add) bringPost.mutate({ add })
-                f.reset()
+          </details>
+        ))}
+  
+        {guests && (guests.yes.length > 0 || guests.maybe.length > 0) && (
+          <details className="fold guests" aria-label={t.roster.guestsTitle}>
+            <summary><span><Icon name="users" />{t.roster.guestsTitle}</span></summary>
+            <div>
+            {guests.yes.length > 0 && <p><strong>{t.roster.yes} ({guests.yes.length})</strong> : {guests.yes.join(', ')}</p>}
+            {guests.maybe.length > 0 && <p><strong>{t.roster.maybe} ({guests.maybe.length})</strong> : {guests.maybe.join(', ')}</p>}
+            {guests.waiting > 0 && <p className="muted small">{t.roster.waiting(guests.waiting)}</p>}
+            <p className="muted small">{t.roster.public}</p>
+            </div>
+          </details>
+        )}
+  
+        {(bring.length > 0 || canBring) && (
+          <section className="card" aria-label={t.bring.title}>
+            <h2><Icon name="bag" />{t.bring.title}</h2>
+            {bring.map((b) => (
+              <div key={b.id} className="row linkrow">
+                <span>{b.label} <span className="muted small">· {b.by ? (b.mine ? t.bring.byName(you.parent_name) : t.bring.byName(b.by)) : t.bring.nobody}</span></span>
+                {canBring && !b.by && <button className="btn btn--small" disabled={bringPost.isPending} onClick={() => bringPost.mutate({ claim: b.id })}>{t.bring.take}</button>}
+                {canBring && b.mine && <button className="btn btn--small" disabled={bringPost.isPending} onClick={() => bringPost.mutate({ release: b.id })}>{t.bring.release}</button>}
+              </div>
+            ))}
+            {canBring ? (
+              <form
+                className="cluster"
+                style={{ marginTop: '0.5rem' }}
+                onSubmit={(ev) => {
+                  ev.preventDefault()
+                  const f = ev.currentTarget
+                  const add = String(new FormData(f).get('add') ?? '').trim()
+                  if (add) bringPost.mutate({ add })
+                  f.reset()
+                }}
+              >
+                <input className="input" name="add" maxLength={60} placeholder={t.bring.addMine} aria-label={t.bring.addMine} style={{ flex: '1 1 10rem' }} />
+                <button className="btn" disabled={bringPost.isPending}>{t.bring.add}</button>
+              </form>
+            ) : (
+              <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.bring.answerFirst}</p>
+            )}
+          </section>
+        )}
+  
+        {homeCard && <HomeCardView card={homeCard} />}
+        {relais && (
+          <div className="card">
+            <h2><Icon name="home" />{t.kinds.relais.title}</h2>
+            {relais.nap && <p style={{ margin: 0 }}><strong>{t.kinds.relais.nap} :</strong> {relais.nap}</p>}
+            {relais.ate && <p style={{ margin: 0 }}><strong>{t.kinds.relais.ate} :</strong> {relais.ate}</p>}
+            {relais.mood && <p style={{ margin: 0 }}><strong>{t.kinds.relais.mood} :</strong> {relais.mood}</p>}
+            {relais.note && <p style={{ margin: 0 }}>{relais.note}</p>}
+          </div>
+        )}
+  
+        {souvenirsOpen && (photos || souvenirs.length > 0) && (
+          <div className="card">
+            <h2><Icon name="camera" />{t.souvenirs.title}</h2>
+            <p className="muted small">{t.souvenirs.hint}</p>
+            <Why k="photos" />
+            <PhotoGrid
+              items={souvenirs}
+              src={(pid) => `/api/r/${token}/photo/${pid}`}
+              enabled={photos}
+              onUpload={async (blob) => {
+                await api(`r/${token}/photo`, { method: 'POST', body: blob })
+                await qc.invalidateQueries({ queryKey: K.reply(token) })
               }}
-            >
-              <input className="input" name="add" maxLength={60} placeholder={t.bring.addMine} aria-label={t.bring.addMine} style={{ flex: '1 1 10rem' }} />
-              <button className="btn" disabled={bringPost.isPending}>{t.bring.add}</button>
-            </form>
-          ) : (
-            <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.bring.answerFirst}</p>
-          )}
-        </section>
-      )}
-
-      {homeCard && <HomeCardView card={homeCard} />}
-      {relais && (
-        <div className="card">
-          <h2><Icon name="home" />{t.kinds.relais.title}</h2>
-          {relais.nap && <p style={{ margin: 0 }}><strong>{t.kinds.relais.nap} :</strong> {relais.nap}</p>}
-          {relais.ate && <p style={{ margin: 0 }}><strong>{t.kinds.relais.ate} :</strong> {relais.ate}</p>}
-          {relais.mood && <p style={{ margin: 0 }}><strong>{t.kinds.relais.mood} :</strong> {relais.mood}</p>}
-          {relais.note && <p style={{ margin: 0 }}>{relais.note}</p>}
-        </div>
-      )}
-
-      {souvenirsOpen && (photos || souvenirs.length > 0) && (
-        <div className="card">
-          <h2><Icon name="camera" />{t.souvenirs.title}</h2>
-          <p className="muted small">{t.souvenirs.hint}</p>
-          <Why k="photos" />
-          <PhotoGrid
-            items={souvenirs}
-            src={(pid) => `/api/r/${token}/photo/${pid}`}
-            enabled={photos}
-            onUpload={async (blob) => {
-              await api(`r/${token}/photo`, { method: 'POST', body: blob })
-              await qc.invalidateQueries({ queryKey: K.reply(token) })
-            }}
-          />
-        </div>
-      )}
-
-      {series.length > 0 && (
-        <details className="fold">
-          <summary><span><Icon name="repeat" />{t.reply.seriesTitle} ({series.length})</span></summary>
-          <div>
-          {series.map((w) => (
-            <Link key={w.token} to={`/${paperCode(w.token)}`} className="row linkrow" style={{ textDecoration: 'none' }}>
-              <span>{whenShort(w.starts_at, lang)}</span>
-              <span className={`chip ${w.reply ? `chip--${w.reply}` : ''}`}>{w.reply ? t.encounters.reply[w.reply] : t.encounters.reply.none}</span>
-            </Link>
-          ))}
+            />
           </div>
-        </details>
-      )}
-
-      {!answered && (
-        <details className="fold" aria-label={t.reply.stepsTitle}>
-          <summary><span><Icon name="info" />{t.reply.stepsTitle}</span></summary>
-          <div>
-            <ol className="steps">
-              <li className="now">{t.reply.step1}</li>
-              <li>{t.reply.step2(host.parent_name || host.household_name)}</li>
-              <li>{t.reply.step3}</li>
-            </ol>
+        )}
+  
+        {series.length > 0 && (
+          <details className="fold">
+            <summary><span><Icon name="repeat" />{t.reply.seriesTitle} ({series.length})</span></summary>
+            <div>
+            {series.map((w) => (
+              <Link key={w.token} to={`/${paperCode(w.token)}`} className="row linkrow" style={{ textDecoration: 'none' }}>
+                <span>{whenShort(w.starts_at, lang)}</span>
+                <span className={`chip ${w.reply ? `chip--${w.reply}` : ''}`}>{w.reply ? t.encounters.reply[w.reply] : t.encounters.reply.none}</span>
+              </Link>
+            ))}
+            </div>
+          </details>
+        )}
+  
+        {!answered && (
+          <details className="fold" aria-label={t.reply.stepsTitle}>
+            <summary><span><Icon name="info" />{t.reply.stepsTitle}</span></summary>
+            <div>
+              <ol className="steps">
+                <li className="now">{t.reply.step1}</li>
+                <li>{t.reply.step2(host.parent_name || host.household_name)}</li>
+                <li>{t.reply.step3}</li>
+              </ol>
+            </div>
+          </details>
+        )}
+  
+        <MessageBoard
+          messages={messages}
+          canPost={alive}
+          posting={post.isPending}
+          isHost={false}
+          seenKey={token}
+          full
+          onPost={(text) => post.mutate({ message: text })}
+          onDelete={(m) => post.mutate({ deleteMessage: m.id })}
+        />
           </div>
-        </details>
-      )}
-
-      <MessageBoard
-        messages={messages}
-        canPost={alive}
-        posting={post.isPending}
-        isHost={false}
-        seenKey={token}
-        full
-        onPost={(text) => post.mutate({ message: text })}
-        onDelete={(m) => post.mutate({ deleteMessage: m.id })}
-      />
+      </details>
 
       </main>
       <footer className="footer muted small">

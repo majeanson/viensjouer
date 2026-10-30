@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -36,6 +36,19 @@ interface Detail {
 
 // The host's card. Left: the plan, WHO IS COMING, and one calm line per family (share, with the rest
 // under « Plus »). Right: the talk and the photos, folded. Undo instead of « are you sure ? ».
+// Straight from the new-rencontre form: the links go out by email by themselves, a few seconds later, unless « Annuler » is tapped.
+function AutoSend({ ids, send }: { ids: string[]; send: (ids: string[]) => Promise<unknown> }) {
+  const t = useT()
+  const toast = useToast()
+  const fired = useRef(false)
+  useEffect(() => {
+    if (fired.current) return
+    fired.current = true
+    toast.later(t.encounters.autoSending(ids.length), () => send(ids))
+  }, [ids, send, t, toast])
+  return null
+}
+
 export function EncounterDetail() {
   const { id = '' } = useParams()
   const t = useT()
@@ -58,8 +71,8 @@ export function EncounterDetail() {
   const [editing, setEditing] = useState(false)
   const [postponing, setPostponing] = useState(false)
   // Straight from « Envoyer tout de suite » on the new-rencontre form: say what went out.
-  const justSent = (useLocation().state as { sent?: number; skipped?: number } | null) ?? null
-  const [flash, setFlash] = useState<string | null>(() => (justSent?.sent ? t.encounters.sentNow(justSent.sent) + (justSent.skipped ? ` ${t.common.mailCapped}` : '') : null))
+  const justSent = (useLocation().state as { autoSend?: boolean } | null) ?? null
+  const [flash, setFlash] = useState<string | null>(null)
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: K.encounter(id) })
     void qc.invalidateQueries({ queryKey: K.encounters })
@@ -237,6 +250,7 @@ export function EncounterDetail() {
           {invitations.length === 0 ? t.step.invite : unsentMail.length > 0 ? t.step.send(unsentMail.length) : silent.length > 0 ? t.step.wait(silent.length) : t.step.ready}
         </p>
       )}
+      {justSent?.autoSend && unsentMail.length > 0 && !editing && <AutoSend ids={unsentMail.map((i) => i.id)} send={async (ids) => { await resendAll.mutateAsync(ids); setFlash(t.encounters.sentNow(ids.length)); setTimeout(() => setFlash(null), 6000) }} />}
       {flash && <div className="notice">{flash}</div>}
       {err && <div className="notice notice--err">{err}</div>}
       {editing ? (
@@ -431,82 +445,88 @@ export function EncounterDetail() {
               ))}
             </section>
           )}
+          {/* Everything that is not the plan or the families: one fold, so the page is the rencontre and who is coming. */}
           <details className="fold">
-            <summary><span><Icon name="bag" />{t.bring.title}{bring.length > 0 ? ` (${bringLine})` : ''}</span></summary>
-            <div>
-              <p className="muted small">{t.bring.hint}</p>
-              {bring.map((b) => (
-                <div key={b.id} className="row linkrow">
-                  <span>{b.label} <span className="muted small">· {b.claimed_label ? t.bring.byName(b.claimed_label) : t.bring.nobody}</span></span>
-                  <button className="btn btn--small btn--danger" onClick={() => bringRm.remove(b.id, t.undo.removed, async () => { await api('bring', { method: 'DELETE', body: { id: b.id } }); refresh() })}>{t.bring.remove}</button>
+            <summary><span><Icon name="more" />{t.encounters.morePage}</span></summary>
+            <div className="stack">
+              <details className="fold">
+                <summary><span><Icon name="bag" />{t.bring.title}{bring.length > 0 ? ` (${bringLine})` : ''}</span></summary>
+                <div>
+                  <p className="muted small">{t.bring.hint}</p>
+                  {bring.map((b) => (
+                    <div key={b.id} className="row linkrow">
+                      <span>{b.label} <span className="muted small">· {b.claimed_label ? t.bring.byName(b.claimed_label) : t.bring.nobody}</span></span>
+                      <button className="btn btn--small btn--danger" onClick={() => bringRm.remove(b.id, t.undo.removed, async () => { await api('bring', { method: 'DELETE', body: { id: b.id } }); refresh() })}>{t.bring.remove}</button>
+                    </div>
+                  ))}
+                  <form
+                    className="cluster"
+                    style={{ marginTop: '0.5rem' }}
+                    onSubmit={(ev) => {
+                      ev.preventDefault()
+                      const f = ev.currentTarget
+                      const label = String(new FormData(f).get('label') ?? '').trim()
+                      if (label) addBring.mutate(label)
+                      f.reset()
+                    }}
+                  >
+                    <input className="input" name="label" maxLength={60} placeholder={t.bring.placeholder} aria-label={t.bring.title} style={{ flex: '1 1 10rem' }} />
+                    <button className="btn" disabled={addBring.isPending}>{t.bring.add}</button>
+                  </form>
                 </div>
-              ))}
-              <form
-                className="cluster"
-                style={{ marginTop: '0.5rem' }}
-                onSubmit={(ev) => {
-                  ev.preventDefault()
-                  const f = ev.currentTarget
-                  const label = String(new FormData(f).get('label') ?? '').trim()
-                  if (label) addBring.mutate(label)
-                  f.reset()
-                }}
-              >
-                <input className="input" name="label" maxLength={60} placeholder={t.bring.placeholder} aria-label={t.bring.title} style={{ flex: '1 1 10rem' }} />
-                <button className="btn" disabled={addBring.isPending}>{t.bring.add}</button>
-              </form>
+              </details>
+              {/* The day's photos: offered once the day has started (or when there already are some), not as an empty fold for days before. */}
+              {((health.data?.photos && e.starts_at <= nowSecs) || souvenirs.length > 0) && (
+                <details className="fold">
+                  <summary><span><Icon name="camera" />{t.souvenirs.title}{souvenirs.length > 0 ? ` (${souvenirs.length})` : ''}</span></summary>
+                  <div>
+                    <p className="muted small">{t.souvenirs.hint}</p>
+                    <Why k="photos" />
+                    <PhotoGrid
+                      items={souvenirs}
+                      src={(pid) => `/api/souvenirs/${pid}`}
+                      enabled={!!health.data?.photos && e.status !== 'cancelled'}
+                      onUpload={async (blob) => {
+                        await api(`souvenirs?encounter=${id}`, { method: 'POST', body: blob })
+                        refresh()
+                      }}
+                      onDelete={(pid) => photoRm.remove(pid, t.undo.removed, async () => { await api('souvenirs', { method: 'DELETE', body: { id: pid } }); refresh() })}
+                    />
+                  </div>
+                </details>
+              )}
+
+              <MessageBoard
+                messages={messages}
+                canPost
+                posting={message.isPending}
+                isHost
+                seenKey={`h-${id}`}
+                onPost={(text) => message.mutate(text)}
+                onPin={(m, pinned) => pin.mutate({ id: m.id, pinned })}
+                onDelete={(m) => msgRm.remove(m.id, t.undo.removed, async () => { await api('messages', { method: 'DELETE', body: { id: m.id } }); refresh() })}
+              />
+
+              {changes.length > 0 && (
+                <details className="fold">
+                  <summary><span><Icon name="history" />{t.edit.history}</span></summary>
+                  <div>
+                    <ul className="small" style={{ margin: 0 }}>
+                      {changes.map((c, n) => {
+                        const d = fromRow(c)
+                        return (
+                          <li key={n}>
+                            <span className="muted">{whenShort(c.created_at, lang)} · {t.edit.fields[c.field]} :</span>{' '}
+                            {isPrivate(c.field) ? t.edit.hidden[c.field] : <><s>{showValue(c.field, d.from, lang, t.edit.status, t.edit.empty)}</s> → {showValue(c.field, d.to, lang, t.edit.status, t.edit.empty)}</>}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                </details>
+              )}
             </div>
           </details>
-          {/* The day's photos: offered once the day has started (or when there already are some), not as an empty fold for days before. */}
-          {((health.data?.photos && e.starts_at <= nowSecs) || souvenirs.length > 0) && (
-            <details className="fold">
-              <summary><span><Icon name="camera" />{t.souvenirs.title}{souvenirs.length > 0 ? ` (${souvenirs.length})` : ''}</span></summary>
-              <div>
-                <p className="muted small">{t.souvenirs.hint}</p>
-                <Why k="photos" />
-                <PhotoGrid
-                  items={souvenirs}
-                  src={(pid) => `/api/souvenirs/${pid}`}
-                  enabled={!!health.data?.photos && e.status !== 'cancelled'}
-                  onUpload={async (blob) => {
-                    await api(`souvenirs?encounter=${id}`, { method: 'POST', body: blob })
-                    refresh()
-                  }}
-                  onDelete={(pid) => photoRm.remove(pid, t.undo.removed, async () => { await api('souvenirs', { method: 'DELETE', body: { id: pid } }); refresh() })}
-                />
-              </div>
-            </details>
-          )}
-
-          <MessageBoard
-            messages={messages}
-            canPost
-            posting={message.isPending}
-            isHost
-            seenKey={`h-${id}`}
-            onPost={(text) => message.mutate(text)}
-            onPin={(m, pinned) => pin.mutate({ id: m.id, pinned })}
-            onDelete={(m) => msgRm.remove(m.id, t.undo.removed, async () => { await api('messages', { method: 'DELETE', body: { id: m.id } }); refresh() })}
-          />
-
-          {changes.length > 0 && (
-            <details className="fold">
-              <summary><span><Icon name="history" />{t.edit.history}</span></summary>
-              <div>
-                <ul className="small" style={{ margin: 0 }}>
-                  {changes.map((c, n) => {
-                    const d = fromRow(c)
-                    return (
-                      <li key={n}>
-                        <span className="muted">{whenShort(c.created_at, lang)} · {t.edit.fields[c.field]} :</span>{' '}
-                        {isPrivate(c.field) ? t.edit.hidden[c.field] : <><s>{showValue(c.field, d.from, lang, t.edit.status, t.edit.empty)}</s> → {showValue(c.field, d.to, lang, t.edit.status, t.edit.empty)}</>}
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            </details>
-          )}
         </div>
       </div>
 

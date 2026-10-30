@@ -175,40 +175,44 @@ test('the bot check appears on signup and on forgot-password only when a site ke
   await expect(page.getByTestId('turnstile')).toHaveCount(0)
 })
 
-test('« envoyer tout de suite » is a tickbox, off by default, only offered when someone can be emailed, and says what went out', async ({ page }) => {
+test('the links go out by email by themselves, a few seconds later, with a way to undo; nothing is promised when nobody can be emailed', async ({ page }) => {
   const MAIL = { signedIn: true, email: 'm@example.com', displayName: 'Marc', household: { id: 'h', name: 'Les Jeanson', tz: 'America/Toronto' }, mail: true, demo: false }
   const stub = await host(page, {
     'GET auth/me': () => ({ json: MAIL }),
     'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie', { email: 'j@example.com' }), fam('f2', 'Max', 'Paul'), fam('f3', 'Zoé', 'Anne', { email: 'a@example.com', mail_stopped_at: 5 })] } }),
     'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'], sent: 1, skipped: 0 } }),
-    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: { encounter: { id: 'e9', child_id: 'c1', kind: 'park', title: 'Au parc', starts_at: Math.floor(Date.now() / 1000) + 86400, ends_at: null, place: null, address: null, map_url: null, note: null, status: 'proposed', series_id: null, details: {}, hereOpen: false }, invitations: [], messages: [], relais: [], souvenirs: [], changes: [] } } : { json: { encounters: [], invitations: [] } }),
+    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: { encounter: { id: 'e9', child_id: 'c1', kind: 'park', title: 'Au parc', starts_at: Math.floor(Date.now() / 1000) + 86400, ends_at: null, place: null, address: null, map_url: null, note: null, status: 'proposed', details: {}, hereOpen: false }, invitations: [{ id: 'i1', friend_family_id: 'f1', token: 'ours-miel', reply: null, reply_note: null, reply_at: null, sent_at: null, parent_name: 'Julie', child_first_name: 'Léa', email: 'j@example.com', scope: 'family' }], messages: [], relais: [], souvenirs: [], changes: [], bring: [] } } : { json: { encounters: [], invitations: [] } }),
+    'POST invitations': () => ({ json: { ok: true } }),
   })
   await page.goto('/rencontres/nouvelle')
-  await expect(page.getByLabel('Envoyer les invitations par courriel tout de suite')).toHaveCount(0) // nobody picked yet
   await page.getByRole('checkbox', { name: /Max/ }).check()
   await expect(page.getByText(/Aucune famille choisie n’a de courriel/)).toBeVisible() // Max has no address
   await page.getByRole('checkbox', { name: /Zoé/ }).check()
   await expect(page.getByText(/Aucune famille choisie n’a de courriel/)).toBeVisible() // Zoé asked to stop: not counted
   await page.getByRole('checkbox', { name: /Léa/ }).check()
-  const box = page.getByLabel('Envoyer les invitations par courriel tout de suite')
-  await expect(box).not.toBeChecked()
-  await expect(page.getByText('1 famille a un courriel.')).toBeVisible()
-  await box.check()
+  await expect(page.getByText(/Les liens partent par courriel à 1 famille/)).toBeVisible()
   await page.getByRole('button', { name: 'Inviter', exact: true }).click()
-  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')?.body).toMatchObject({ sendNow: true })
-  await expect(page.getByText('1 invitation envoyée par courriel.')).toBeVisible()
+  expect(stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')!.body).not.toHaveProperty('sendNow')
+  // on the host page the send waits a few seconds, and « Annuler » stops it
+  await expect(page.locator('.toast', { hasText: 'Les liens partent à 1 famille' })).toBeVisible()
+  await page.locator('.toast').getByRole('button', { name: 'Annuler' }).click()
+  await page.waitForTimeout(6500)
+  expect(stub.calls.filter((c) => c.method === 'POST' && c.path === 'invitations')).toHaveLength(0)
 })
 
-test('without ticking it, nothing is asked to be sent', async ({ page }) => {
+test('without an undo, the links are sent once the few seconds have passed', async ({ page }) => {
   const stub = await host(page, {
     'GET auth/me': () => ({ json: { signedIn: true, email: 'm@example.com', displayName: 'Marc', household: { id: 'h', name: 'H', tz: 'America/Toronto' }, mail: true, demo: false } }),
     'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie', { email: 'j@example.com' })] } }),
     'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'] } }),
+    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: { encounter: { id: 'e9', child_id: 'c1', kind: 'park', title: 'Au parc', starts_at: Math.floor(Date.now() / 1000) + 86400, ends_at: null, place: null, address: null, map_url: null, note: null, status: 'proposed', details: {}, hereOpen: false }, invitations: [{ id: 'i1', friend_family_id: 'f1', token: 'ours-miel', reply: null, reply_note: null, reply_at: null, sent_at: null, parent_name: 'Julie', child_first_name: 'Léa', email: 'j@example.com', scope: 'family' }], messages: [], relais: [], souvenirs: [], changes: [], bring: [] } } : { json: { encounters: [], invitations: [] } }),
+    'POST invitations': () => ({ json: { ok: true } }),
   })
   await page.goto('/rencontres/nouvelle')
   await page.getByRole('checkbox', { name: /Léa/ }).check()
   await page.getByRole('button', { name: 'Inviter', exact: true }).click()
-  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')?.body).toMatchObject({ sendNow: false })
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'invitations').length, { timeout: 12_000 }).toBe(1)
+  expect(stub.calls.find((c) => c.method === 'POST' && c.path === 'invitations')!.body).toMatchObject({ id: 'i1' })
 })
 
 // ---- notifications --------------------------------------------------------------------------------------------------

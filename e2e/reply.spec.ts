@@ -20,6 +20,9 @@ const card = (over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
+// Before an answer, the address, who is coming, what to bring and the messages sit in one closed fold.
+const openMore = async (page: Page) => { if (!(await page.locator('main#main > details.fold').first().evaluate((d) => (d as HTMLDetailsElement).open))) await page.locator('main#main > details.fold > summary').first().click() }
+
 async function stub(page: Page, data: unknown, status = 200) {
   const posts: unknown[] = []
   // Like the real server: once a reply is posted, the next read carries it.
@@ -54,6 +57,7 @@ test('the invited parent sees the plan and the home card, then answers yes', asy
   const posts = await stub(page, card())
   await page.goto(`/${CODE}`)
   await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
+  await openMore(page)
   await expect(page.getByText('À savoir avant de venir')).toBeVisible()
   await expect(page.getByText('Le chien est doux')).toBeVisible()
   // The address is NOT shown before a yes.
@@ -76,6 +80,7 @@ test('the invited parent sees the plan and the home card, then answers yes', asy
 test('a birthday asks how many come, only once the answer is yes', async ({ page }) => {
   const posts = await stub(page, card({ encounter: { ...card().encounter, kind: 'birthday', details: { gift: 'Un livre' } }, homeCard: null }))
   await page.goto(`/${CODE}`)
+  await openMore(page)
   await expect(page.getByText('Un livre')).toBeVisible()
   await expect(page.getByLabel('Adultes qui restent')).toHaveCount(0)
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
@@ -100,6 +105,7 @@ test('English toggle, and the paper spelling works in any case', async ({ page }
   await page.goto(`/${CODE.toUpperCase()}`)
   await page.getByRole('button', { name: 'English' }).click()
   await expect(page.getByRole('heading', { name: 'Noé invites Léa' })).toBeVisible()
+  await openMore(page)
   await expect(page.getByText('Good to know before you come')).toBeVisible()
 })
 
@@ -195,6 +201,7 @@ test('the shared page says what it is, the facts, who it is for and what happens
   await expect(page.getByText(/^Invitation · /)).toBeVisible()
   await expect(page.getByText('Organisé par Marc, le parent de Noé.')).toBeVisible()
   // the facts as labelled rows, folded under « Tous les détails »
+  await openMore(page)
   await page.getByText('Tous les détails').click()
   for (const label of ['Quoi', 'Quand', 'Où', 'Adresse', 'À savoir']) await expect(page.getByText(label, { exact: true }).first()).toBeVisible()
   await expect(page.getByText('Sieste à 13 h')).toBeVisible()
@@ -251,6 +258,7 @@ test('a first-time visitor sees no « new » marks, but can read the history', a
   await page.goto(`/${CODE}`)
   await expect(page.getByText('Mis à jour depuis ta dernière visite')).toHaveCount(0)
   await expect(page.locator('.changed')).toHaveCount(0)
+  await openMore(page)
   await page.getByText('Historique des modifications').click()
   await expect(page.getByText('Début :', { exact: false }).first()).toBeVisible()
   await expect(page.getByText('L’adresse a été mise à jour.')).toBeVisible()
@@ -262,6 +270,7 @@ test('an invited family sees the cover picture and who is coming (names of child
   await stub(page, card({ cover: 'abc123', guests: { yes: ['Max', 'Zoé'], maybe: ['Eli'], waiting: 2 }, homeCard: null }))
   await page.goto(`/${CODE}`)
   await expect(page.locator('img.cover')).toHaveAttribute('src', `/api/r/${CODE}/cover?v=abc123`)
+  await openMore(page)
   const guests = page.getByLabel('Qui vient')
   await expect(guests).toContainText('Viennent (2) : Max, Zoé')
   await expect(guests).toContainText('Peut-être (1) : Eli')
@@ -430,11 +439,10 @@ test.describe('the theme button', () => {
 })
 
 test('the slim answer bar keeps each word on one line at 320px', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 640 })
+  await page.setViewportSize({ width: 320, height: 380 }) // short, so the question is below the first screen and the slim bar is up
   await stub(page, card())
   await page.goto(`/${CODE}`)
   await expect(page.getByRole('heading', { name: 'Noé invite Léa' })).toBeVisible()
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
   const bar = page.locator('.answerbar')
   await expect(bar).toBeVisible()
   const heights = await bar.getByRole('button').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().height)))

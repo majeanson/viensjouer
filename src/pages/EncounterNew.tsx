@@ -85,6 +85,8 @@ export function EncounterNew() {
     setStart(toLocalInput(sameSlotAhead(e.starts_at)))
   }, [src.data])
 
+  // The links go out by email by themselves (the host page waits a few seconds, with « Annuler »): set when this form is sent.
+  const willMail = useRef(false)
   const create = useMutation({
     mutationFn: (body: unknown) => api<{ id: string; ids: string[]; sent?: number; skipped?: number }>('encounters', { method: 'POST', body }),
     onSuccess: async (r) => {
@@ -99,7 +101,7 @@ export function EncounterNew() {
       }
       void qc.invalidateQueries({ queryKey: K.encounters })
       void qc.invalidateQueries({ queryKey: K.calendar })
-      nav(`/rencontres/${r.id}`, { replace: true, state: r.sent ? { sent: r.sent, skipped: r.skipped ?? 0 } : undefined })
+      nav(`/rencontres/${r.id}`, { replace: true, state: willMail.current ? { autoSend: true } : undefined })
     },
     onError: (e) => setErr(e.message),
   })
@@ -136,6 +138,7 @@ export function EncounterNew() {
     fill(params.get('say') ?? '')
   }, [fams.data])
 
+  const mailableNow = (fams.data?.families ?? []).some((f) => picked.has(f.id) && f.email && !f.mail_stopped_at && !f.email_bounced_at)
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setErr(null)
@@ -150,6 +153,7 @@ export function EncounterNew() {
     }
     const count = Number(f.get('count') ?? 4)
     const title = String(f.get('title') ?? '').trim() || `${t.form.autoTitle[kind]}, ${dayHour(startsAt, lang)}`
+    willMail.current = !!me.mail && mailableNow
     create.mutate({
       childId: chosen,
       kind,
@@ -165,7 +169,6 @@ export function EncounterNew() {
       details: { planB: f.get('planB'), ...(kind === 'birthday' ? { gift: f.get('gift') } : {}) },
       scope,
       invite: [...picked],
-      sendNow: f.get('sendNow') === 'on',
     })
   }
 
@@ -242,14 +245,9 @@ export function EncounterNew() {
             <h3><Icon name="users" />{t.encounters.invite}</h3>
             {lastIds.length > 0 && !lastIds.every((id) => picked.has(id)) && <button type="button" className="btn btn--small" onClick={() => setPicked((p) => new Set([...p, ...lastIds]))}><Icon name="history" />{t.form.sameAsLast}</button>}
             <FamilyPicker loaded={!!fams.data} families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
-            {me.mail && picked.size > 0 && (mailable > 0 ? (
-              <label className="check" style={{ marginTop: '0.75rem' }}>
-                <input type="checkbox" name="sendNow" />
-                <span><Icon name="mail" />{t.encounters.sendNow}<span className="small muted" style={{ display: 'block', fontWeight: 400 }}>{t.encounters.sendNowHint(mailable)}</span></span>
-              </label>
-            ) : (
-              <p className="muted small" style={{ margin: '0.75rem 0 0' }}><Icon name="note" />{t.encounters.sendNowNone}</p>
-            ))}
+            {me.mail && picked.size > 0 && (
+              <p className="muted small" style={{ margin: '0.75rem 0 0' }}><Icon name={mailable > 0 ? 'mail' : 'note'} />{mailable > 0 ? t.encounters.autoSend(mailable) : t.encounters.sendNowNone}</p>
+            )}
             <details className="more" style={{ marginTop: '1rem' }}>
               <summary><Icon name="users" />{t.scope.label} : {t.scope[scope]}</summary>
               <div>

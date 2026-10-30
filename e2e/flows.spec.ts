@@ -389,6 +389,7 @@ test('« À apporter »: the host adds a line and sees who took what', async ({ 
     'POST bring': () => ({ status: 201, json: { id: 'b3' } }),
   })
   await page.goto('/rencontres/e1')
+  await page.locator('summary', { hasText: /^Plus : / }).click() // the host page keeps the rest in one fold
   // The fold's title already says how many are taken and what is missing.
   await expect(page.getByText('À apporter (1 sur 2 pris · il manque : des jus)')).toBeVisible()
   await page.getByText('À apporter (1 sur 2 pris').click()

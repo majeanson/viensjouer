@@ -125,6 +125,7 @@ test('the host\'s board: write, pin at the top, remove with an undo, links are l
     'PATCH messages': () => ({ json: { ok: true } }),
   })
   await page.goto('/rencontres/e1')
+  await page.locator('summary', { hasText: /^Plus : / }).click() // the host page keeps the rest in one fold
   const board = page.getByLabel('Les messages', { exact: true })
   // closed until there is something new: one line with the count, opened when curious
   await expect(board.locator('summary')).toContainText('Les messages (3)')
@@ -185,6 +186,7 @@ test('an invited family sees the host faces, reads the board, marks what is new,
   await page.addInitScript((t) => localStorage.setItem('vj-board-lune-miel', String(t)), now - 5000)
   const posts = await guest(page, card({ messages: [msg('m1', 'host', 'Marc', 'On se retrouve à la fontaine', 7200), msg('m2', 'guest', 'Paul', 'Je viens avec Max', 600), msg('m3', 'guest', 'Julie', 'Super !', 300, { mine: true })] }))
   await page.goto('/lune-miel')
+  await page.locator('main#main > details.fold > summary').first().click() // the reply page keeps the rest in one fold
   await expect(page.locator('.faces .face img')).toHaveCount(2)
   const board = page.getByLabel('Les messages', { exact: true })
   // new since the last visit on this device: Paul's note, not the older host one and not my own

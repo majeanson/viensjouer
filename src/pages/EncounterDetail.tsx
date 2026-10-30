@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -16,7 +16,7 @@ import { kidsComing } from '../lib/scope'
 import { useDeferredRemove, useToast } from '../lib/toast'
 import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
 import { Icon, kindIcon } from '../components/Icon'
-import { MessageBoard } from '../components/MessageBoard'
+import { MessageBoard, boardNewCount, type BoardMessage } from '../components/MessageBoard'
 import { Loading } from '../components/Loading'
 import { Rel } from '../components/Rel'
 import { Face } from '../components/Face'
@@ -36,6 +36,18 @@ interface Detail {
 
 // The host's card. Left: the plan, WHO IS COMING, and one calm line per family (share, with the rest
 // under « Plus »). Right: the talk and the photos, folded. Undo instead of « are you sure ? ».
+// The fold that holds everything but the plan and the families. It says (and opens itself) when a guest wrote since the board was last open here.
+function PlusFold({ messages, seenKey, children }: { messages: BoardMessage[]; seenKey: string; children: ReactNode }) {
+  const t = useT()
+  const [fresh] = useState(() => boardNewCount(messages, seenKey, true))
+  return (
+    <details className="fold" open={fresh > 0}>
+      <summary><span><Icon name="more" />{t.encounters.morePage}{fresh > 0 && <span className="changed" aria-live="polite" style={{ marginLeft: '0.5rem' }}>{t.board.newCount(fresh)}</span>}</span></summary>
+      <div className="stack">{children}</div>
+    </details>
+  )
+}
+
 // Straight from the new-rencontre form: the links go out by email by themselves, a few seconds later, unless « Annuler » is tapped.
 function AutoSend({ ids, send }: { ids: string[]; send: (ids: string[]) => Promise<unknown> }) {
   const t = useT()
@@ -446,9 +458,7 @@ export function EncounterDetail() {
             </section>
           )}
           {/* Everything that is not the plan or the families: one fold, so the page is the rencontre and who is coming. */}
-          <details className="fold">
-            <summary><span><Icon name="more" />{t.encounters.morePage}</span></summary>
-            <div className="stack">
+          <PlusFold messages={messages} seenKey={`h-${id}`}>
               <details className="fold">
                 <summary><span><Icon name="bag" />{t.bring.title}{bring.length > 0 ? ` (${bringLine})` : ''}</span></summary>
                 <div>
@@ -525,8 +535,7 @@ export function EncounterDetail() {
                   </div>
                 </details>
               )}
-            </div>
-          </details>
+          </PlusFold>
         </div>
       </div>
 

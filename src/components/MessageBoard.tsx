@@ -54,6 +54,13 @@ const writeSeen = (key: string, sec: number) => {
   }
 }
 
+// How many messages are new on THIS device since the board was last open (the same rule the board marks them by): for a fold that
+// holds the board to say so on its own line, and open itself.
+export const boardNewCount = (messages: BoardMessage[], seenKey: string, isHost: boolean): number => {
+  const seenAt = readSeen(seenKey)
+  return seenAt === null ? 0 : messages.filter((m) => m.created_at > seenAt && !m.mine && !(isHost && m.author_kind === 'host')).length
+}
+
 export function MessageBoard({
   messages,
   canPost,

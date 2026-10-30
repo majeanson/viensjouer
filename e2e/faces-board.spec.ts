@@ -182,6 +182,16 @@ async function guest(page: Page, data: unknown) {
   return posts
 }
 
+test('a new guest message opens the Plus fold of the host page by itself and says so on its line', async ({ page }) => {
+  await page.addInitScript((t) => localStorage.setItem('vj-board-h-e1', String(t)), now - 5000)
+  await host(page, { 'GET encounters': (_c, url) => (url.searchParams.get('id') ? { json: detail([msg('m1', 'guest', 'Julie', 'On arrive plus tôt', 60)]) } : { json: { encounters: [], invitations: [] } }) })
+  await page.goto('/rencontres/e1')
+  await expect(page.locator('summary', { hasText: /^Plus : / })).toContainText('1 nouveau')
+  const board = page.getByLabel('Les messages', { exact: true })
+  await expect(board.locator('.bmsg--new')).toContainText('On arrive plus tôt') // no tap needed
+  // once seen, the same fold stays quiet next time
+})
+
 test('an invited family sees the host faces, reads the board, marks what is new, writes and removes its own', async ({ page }) => {
   await page.addInitScript((t) => localStorage.setItem('vj-board-lune-miel', String(t)), now - 5000)
   const posts = await guest(page, card({ messages: [msg('m1', 'host', 'Marc', 'On se retrouve à la fontaine', 7200), msg('m2', 'guest', 'Paul', 'Je viens avec Max', 600), msg('m3', 'guest', 'Julie', 'Super !', 300, { mine: true })] }))

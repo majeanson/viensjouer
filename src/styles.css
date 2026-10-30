@@ -396,8 +396,6 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 .how { margin: 2rem 0 1rem; }
 .how ol { margin: 0.5rem 0; padding-left: 1.25rem; display: grid; gap: 0.4rem; }
 /* the sign-out arrow gets its word when there is room: an icon alone is a guess */
-.tool__t { display: none; margin-left: 0.4rem; }
-@media (min-width: 421px) { .tool__t { display: inline; } }
 .lead { margin: 0.15rem 0 0; font-size: 1.6rem; line-height: 1.2; font-weight: 700; }
 .card[data-kind] { border-left: 5px solid var(--kc, var(--line)); }
 [data-kind='park'] { --kc: #6a9f5b; }

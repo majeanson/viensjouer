@@ -78,7 +78,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
   // The list: everything not older than two weeks, soonest first. A hub later paginates.
   const since = nowSec() - 14 * 86_400
   const { results: encounters } = await ctx.env.DB.prepare(
-    'SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status, series_id FROM encounters WHERE household_id = ? AND deleted_at IS NULL AND starts_at > ? ORDER BY starts_at',
+    'SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status, series_id, cover_key FROM encounters WHERE household_id = ? AND deleted_at IS NULL AND starts_at > ? ORDER BY starts_at',
   )
     .bind(actor.householdId, since)
     .all<EncounterRow>()
@@ -89,7 +89,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
   )
     .bind(actor.householdId, since)
     .all<{ encounter_id: string; id: string; reply: Reply | null; parent_name: string; child_first_name: string }>()
-  return ok({ encounters, invitations })
+  return ok({ encounters: encounters.map(({ cover_key, ...e }) => ({ ...e, cover: coverId(cover_key) })), invitations })
 })
 
 type Body = {

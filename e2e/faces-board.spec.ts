@@ -95,7 +95,7 @@ test('my profile: a face and the first name shown on invitations', async ({ page
   expect(calls.find((c) => c.path === 'profile')!.body).toEqual({ displayName: 'Marc-Antoine' })
   // the header shows the face only: the name is the button's label for a screen reader and its tooltip, never printed
   await expect(page.locator('.head .tool__name')).toHaveCount(0)
-  await expect(page.getByRole('link', { name: 'Mon compte (Marc-Antoine)' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Mon compte (Marc-Antoine)' })).toBeVisible()
   await page.locator('input[type=file]').setInputFiles({ name: 'me.png', mimeType: 'image/png', buffer: PNG })
   await expect.poll(() => calls.filter((c) => c.full === 'avatar?kind=parent').length).toBe(1)
 })

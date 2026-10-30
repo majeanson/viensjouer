@@ -43,16 +43,15 @@ export function Encounters() {
   // A recurring rencontre is ONE card: its next date, and « encore N dates » for the rest (they stay reachable from its page).
   const Mine = ({ e, more = 0 }: { e: Encounter; more?: number }) => (
     <Link to={`/rencontres/${e.id}`} className="card card--tap" data-kind={e.kind}>
+      {e.cover && <img className="cover" style={{ height: '7rem' }} src={`/api/cover/${e.id}?v=${e.cover}`} alt="" loading="lazy" onError={(ev) => { ev.currentTarget.style.display = 'none' }} />}
       <div className="row">
         <strong><Icon name={kindIcon(e.kind)} />{e.title}</strong>
-        <span className="cluster">
-          {more > 0 && <span className="chip">{t.encounters.seriesMore(more)}</span>}
-          {e.status !== 'proposed' && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
-        </span>
+        {(e.status === 'postponed' || e.status === 'cancelled') && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
       </div>
       <p className="meta--row muted small">
         <span><Icon name="clock" />{isOver(e) ? whenShort(e.starts_at, lang) : <>{humanWhen(e.starts_at, lang)} · {timeOnly(e.starts_at, lang)}</>}</span>
         {e.place && e.place !== t.encounters.kind[e.kind] && <span><Icon name="pin" />{e.place}</span>}
+        {more > 0 && <span>{t.encounters.seriesMore(more)}</span>}
       </p>
       {!isOver(e) && (byEnc.get(e.id) ?? []).length > 0 && (
         <p className="muted small" style={{ margin: '0.35rem 0 0' }}>

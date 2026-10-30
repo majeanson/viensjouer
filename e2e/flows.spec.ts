@@ -439,6 +439,7 @@ test('English is its own chunk: a French visitor never downloads it, an English-
       await expect(page.getByRole('link', { name: 'Ajouter un ami' })).toBeVisible()
       expect(seen.fr, 'a French visitor must not download the English chunk').toHaveLength(0)
       // switching later keeps the page and swaps the words once the chunk is in
+      await page.getByRole('button', { name: /^Mon compte/ }).click()
       await page.getByRole('button', { name: 'EN (English)' }).click()
       await expect(page.getByRole('link', { name: 'Add a friend' })).toBeVisible()
     }
@@ -508,6 +509,7 @@ test('the page language attribute follows the device, and the toggle', async ({ 
   await host(page)
   await page.goto('/rencontres')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await page.getByRole('button', { name: /^My account/ }).click()
   await page.getByRole('button', { name: 'FR (français)' }).click()
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
   await ctx.close()

@@ -126,8 +126,10 @@ export function MessageBoard({
     requestAnimationFrame(() => focusIfFinePointer(area.current))
   }
 
-  const Row = ({ m }: { m: BoardMessage }) => (
-    <li className={`bmsg ${m.author_kind === 'host' ? 'bmsg--host' : ''} ${isNew(m) ? 'bmsg--new' : ''}`}>
+  // A render function, not a component: a component declared here is a new type on every keystroke,
+  // which remounts every row and replays its entrance animation (the messages « jumped » per letter).
+  const row = (m: BoardMessage) => (
+    <li key={m.id} className={`bmsg ${m.author_kind === 'host' ? 'bmsg--host' : ''} ${isNew(m) ? 'bmsg--new' : ''}`}>
       <Face name={m.author_label} colour={m.author_kind === 'host' ? 'var(--host)' : colourOf(m.author_label)} size="sm" />
       <div className="bmsg__body">
         <div className="bmsg__head">
@@ -166,13 +168,13 @@ export function MessageBoard({
 
       {pinned.length > 0 && (
         <ul className="blist blist--pinned" aria-label={t.board.pinned}>
-          {pinned.map((m) => <Row key={m.id} m={m} />)}
+          {pinned.map(row)}
         </ul>
       )}
       {messages.length === 0 ? (
         <p className="board__empty muted">{canPost ? t.board.empty : t.board.closedEmpty}</p>
       ) : (
-        <ul className="blist">{rest.map((m) => <Row key={m.id} m={m} />)}</ul>
+        <ul className="blist">{rest.map(row)}</ul>
       )}
 
       {canPost ? (

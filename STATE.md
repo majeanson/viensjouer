@@ -51,7 +51,7 @@
 
 ### Declutter pass — 2026-10-29
 
-Amis and groups are CLOSED rows (face, name, one grey line, chevron); tags, contact, Modifier / Retirer, history and the circle invite open on a tap. Rencontres list: the answers are one grey line (« Oui 2 · Peut-être 1 »), upcoming only. Host page: counts and « Il manque » are ONE line; « Refaire pareil » sits under Plus d'options. Reply page: no « un seul toucher » hint, no « [host] voit ta réponse » (the saved notice says it), no calendar buttons before an answer, the other dates of a series are one folded row. Not done yet (audit candidates): per-family rows on the host page, the new-rencontre form's « how to send » block, Notifications / Calendar link / child nap+colour folds, one banner at a time on Rencontres.
+Amis and groups are CLOSED rows (face, name, one grey line, chevron); tags, contact, Modifier / Retirer, history and the circle invite open on a tap. Rencontres list: the answers are one grey line (« Oui 2 · Peut-être 1 »), upcoming only. Host page: counts and « Il manque » are ONE line; « Refaire pareil » sits under Plus d'options. Reply page: no « un seul toucher » hint, no « [host] voit ta réponse » (the saved notice says it), no calendar buttons before an answer, the other dates of a series are one folded row. Host page: each invited family is a CLOSED row too (face, child, parent, the answer chip; the send / resend / text buttons, the link, who it is for, noting an answer and Retirer open on a tap). Not done yet (audit candidates): the new-rencontre form's « how to send » block, Notifications / Calendar link / child nap+colour folds, one banner at a time on Rencontres.
 
 ### Friends and groups as rows, the bell, recurring as one card — 2026-10-29
 

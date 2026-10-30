@@ -321,6 +321,7 @@ test('with a single family left to nudge there is no second « Renvoyer » butto
     'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: DETAIL({}, [INV('i1', 'Max', null, { email: 'p@example.com', sent_at: 5 })]) } : { json: { encounters: [], invitations: [] } }),
   })
   await page.goto('/rencontres/e1')
+  await page.locator('.linkrow.friend > summary').first().click()
   await expect(page.getByRole('button', { name: 'Renvoyer', exact: true })).toHaveCount(1)
   await expect(page.getByRole('button', { name: /^Renvoyer aux/ })).toHaveCount(0)
 })

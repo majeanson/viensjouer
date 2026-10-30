@@ -676,6 +676,7 @@ test('once they were emailed, the silent ones can be nudged in one tap, and a fa
   await page.getByRole('button', { name: 'Renvoyer aux 2 familles sans réponse' }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'invitations').map((c) => c.body?.id)).toEqual(['i2', 'i3'])
   // Eli stopped the emails and Noa's address bounced: for both the one button is the text message, never the email.
+  for (const s of await page.locator('.linkrow.friend > summary').all()) await s.click()
   await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toHaveCount(2)
 })
 
@@ -684,6 +685,9 @@ test('an answered family is one calm line: no send buttons until it is needed', 
     'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes'), inv('i2', 'f2', 'Max', 'Paul', null)]) } : { json: { encounters: [enc()], invitations: [] } }),
   })
   await page.goto('/rencontres/e1')
+  await expect(page.locator('.linkrow.friend')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toHaveCount(0) // the rows are closed
+  for (const s of await page.locator('.linkrow.friend > summary').all()) await s.click()
   await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toHaveCount(1) // only Max, who has not answered (no email: the text message is his one button)
   await expect(page.getByText('Plus d’options', { exact: true })).toHaveCount(3) // one per family, one for the card
 })

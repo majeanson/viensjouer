@@ -19,6 +19,8 @@ import { Icon, kindIcon } from '../components/Icon'
 import { MessageBoard } from '../components/MessageBoard'
 import { Loading } from '../components/Loading'
 import { Rel } from '../components/Rel'
+import { Face } from '../components/Face'
+import { colourOf } from '../lib/palette'
 import { QueryError } from '../components/QueryError'
 
 interface Detail {
@@ -291,77 +293,85 @@ export function EncounterDetail() {
             )}
             {unsentMail.length > 0 && <p style={{ margin: '0 0 0.75rem' }}><button className="btn btn--primary" disabled={resendAll.isPending} onClick={() => resendAll.mutate(unsentMail.map((i) => i.id))}><Icon name="mail" />{t.encounters.sendAll(unsentMail.length)}</button></p>}
             {invitations.map((i) => (
-              <div key={i.id} className="linkrow">
-                <div className="row">
-                  <span className="cluster"><span><strong>{i.child_first_name}</strong> <span className="muted small">· {i.parent_name}</span></span>{i.email_bounced_at && <span className="chip chip--cancelled">{t.families.bounced}</span>}{i.mail_stopped_at && <span className="chip">{t.families.stopped}</span>}{i.sent_at && !i.reply && <span className="chip">{t.encounters.sentChip}</span>}</span>
+              <details key={i.id} className="linkrow friend">
+                <summary>
+                  <Face name={i.child_first_name} colour={colourOf(i.child_first_name)} size="md" />
+                  <span className="friend__who" style={{ flex: 1 }}>
+                    <strong>{i.child_first_name}{i.email_bounced_at && <span className="chip chip--cancelled" style={{ marginLeft: '0.5rem' }}>{t.families.bounced}</span>}{i.mail_stopped_at && <span className="chip" style={{ marginLeft: '0.5rem' }}>{t.families.stopped}</span>}</strong>
+                    <span className="muted small">{[i.parent_name, i.sent_at && !i.reply ? t.encounters.sentChip : null].filter(Boolean).join(' · ')}</span>
+                  </span>
                   <span className={`chip ${i.reply ? `chip--${i.reply}` : ''}`}>{i.reply ? t.encounters.reply[i.reply] : t.encounters.reply.none}</span>
-                </div>
-                {i.reply_note && <p className="small" style={{ margin: 0 }}>« {i.reply_note} »</p>}
-                {i.allergies && <p className="small" style={{ margin: 0 }}>{t.families.allergies} : {i.allergies}</p>}
-                {i.reply === 'yes' && <p className="small muted" style={{ margin: 0 }}>{t.kinds.birthday.theyCome(kidsComing(i.scope, i.kids), i.adults ?? 0)}</p>}
-                <div className="cluster">
-                  {!i.reply && (canMail(i)
-                    ? <button className={`btn btn--small ${i.sent_at ? '' : 'btn--primary'}`} disabled={send.isPending} onClick={() => send.mutate(i.id)}><Icon name="mail" />{i.sent_at ? t.encounters.resend : t.encounters.send}</button>
-                    : <button className="btn btn--small btn--primary" onClick={() => void shareMessage(i)}><Icon name="share" />{copied === 's' + i.id ? t.encounters.copied : t.encounters.byText}</button>)}
-                  <details className="more">
-                    <summary>{t.form.more}</summary>
-                    <div className="stack">
-                      {canMail(i) && !i.reply && <div><button className="btn btn--small" onClick={() => void shareMessage(i)}><Icon name="share" />{copied === 's' + i.id ? t.encounters.copied : t.encounters.byText}</button></div>}
-                      <div>
-                        <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.share.preview}</p>
-                        <blockquote className="msgpreview">{messageFor(i)}</blockquote>
-                      </div>
-                      <div>
-                        <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.encounters.theLink}</p>
-                        <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
+                </summary>
+                <div className="stack" style={{ marginTop: '0.6rem' }}>
+                  {(i.reply_note || i.allergies || i.reply === 'yes') && (
+                    <p className="small" style={{ margin: 0 }}>
+                      {[i.reply_note && `« ${i.reply_note} »`, i.allergies && `${t.families.allergies} : ${i.allergies}`, i.reply === 'yes' && t.kinds.birthday.theyCome(kidsComing(i.scope, i.kids), i.adults ?? 0)].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
+                  <div className="cluster">
+                    {!i.reply && (canMail(i)
+                      ? <button className={`btn btn--small ${i.sent_at ? '' : 'btn--primary'}`} disabled={send.isPending} onClick={() => send.mutate(i.id)}><Icon name="mail" />{i.sent_at ? t.encounters.resend : t.encounters.send}</button>
+                      : <button className="btn btn--small btn--primary" onClick={() => void shareMessage(i)}><Icon name="share" />{copied === 's' + i.id ? t.encounters.copied : t.encounters.byText}</button>)}
+                    <details className="more">
+                      <summary>{t.form.more}</summary>
+                      <div className="stack">
+                        {canMail(i) && !i.reply && <div><button className="btn btn--small" onClick={() => void shareMessage(i)}><Icon name="share" />{copied === 's' + i.id ? t.encounters.copied : t.encounters.byText}</button></div>}
+                        <div>
+                          <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.share.preview}</p>
+                          <blockquote className="msgpreview">{messageFor(i)}</blockquote>
+                        </div>
+                        <div>
+                          <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.encounters.theLink}</p>
+                          <div className="paper" title={t.encounters.paperHint}>{linkLabel(i.token)}</div>
+                          <div className="cluster">
+                            <button className="btn btn--small" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
+                            {!i.reply && !i.sent_at && <button className="btn btn--small" disabled={reshuffle.isPending} onClick={() => reshuffle.mutate(i.id)}>{t.encounters.reshuffle}</button>}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.scope.label}</p>
+                          <div className="seg" role="group" aria-label={t.scope.label}>
+                            {(['family', 'friend'] as const).map((s) => (
+                              <button key={s} type="button" className={`btn btn--small ${i.scope === s ? 'btn--on' : ''}`} aria-pressed={i.scope === s} onClick={() => i.scope !== s && setScope.mutate({ id: i.id, scope: s })}>{s === 'friend' ? t.scope.chipFriend(i.child_first_name) : t.scope.chipFamily}</button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.record.label}</p>
+                          <div className="seg" role="group" aria-label={t.record.label}>
+                            {(['yes', 'maybe', 'no'] as const).map((r) => (
+                              <button key={r} type="button" className={`btn btn--small ${i.reply === r ? 'btn--on' : ''}`} aria-pressed={i.reply === r} disabled={record.isPending} onClick={() => record.mutate({ id: i.id, reply: r })}>{t.encounters.reply[r]}</button>
+                            ))}
+                          </div>
+                        </div>
                         <div className="cluster">
-                          <button className="btn btn--small" onClick={() => void copy(i.token)}>{copied === i.token ? t.encounters.copied : t.encounters.copy}</button>
-                          {!i.reply && !i.sent_at && <button className="btn btn--small" disabled={reshuffle.isPending} onClick={() => reshuffle.mutate(i.id)}>{t.encounters.reshuffle}</button>}
+                          {e.kind === 'home' && <button className="btn btn--small" onClick={() => setRelaisFor(relaisFor === i.id ? null : i.id)}>{relaisOf(i.id) ? t.kinds.relais.edit : t.kinds.relais.write}</button>}
+                          <button
+                            className="btn btn--small btn--danger"
+                            onClick={() => inviteRm.remove(i.id, t.undo.removed, async () => { await api('invitations', { method: 'DELETE', body: { id: i.id } }); refresh() })}
+                          >
+                            {t.encounters.withdraw}
+                          </button>
                         </div>
                       </div>
-                      <div>
-                        <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.scope.label}</p>
-                        <div className="seg" role="group" aria-label={t.scope.label}>
-                          {(['family', 'friend'] as const).map((s) => (
-                            <button key={s} type="button" className={`btn btn--small ${i.scope === s ? 'btn--on' : ''}`} aria-pressed={i.scope === s} onClick={() => i.scope !== s && setScope.mutate({ id: i.id, scope: s })}>{s === 'friend' ? t.scope.chipFriend(i.child_first_name) : t.scope.chipFamily}</button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="muted small" style={{ margin: '0 0 0.25rem' }}>{t.record.label}</p>
-                        <div className="seg" role="group" aria-label={t.record.label}>
-                          {(['yes', 'maybe', 'no'] as const).map((r) => (
-                            <button key={r} type="button" className={`btn btn--small ${i.reply === r ? 'btn--on' : ''}`} aria-pressed={i.reply === r} disabled={record.isPending} onClick={() => record.mutate({ id: i.id, reply: r })}>{t.encounters.reply[r]}</button>
-                          ))}
-                        </div>
-                      </div>
+                    </details>
+                  </div>
+                  {relaisFor === i.id && (
+                    <form className="card" onSubmit={(ev) => submitRelais(ev, i.id)}>
+                      <p className="muted small">{t.kinds.relais.hint}</p>
+                      <Why k="relais" />
+                      <label className="field"><span><Icon name="moon" />{t.kinds.relais.nap}</span><input className="input" name="nap" maxLength={120} defaultValue={relaisOf(i.id)?.nap ?? ''} placeholder={t.kinds.relais.napPlaceholder} /></label>
+                      <label className="field"><span><Icon name="bag" />{t.kinds.relais.ate}</span><input className="input" name="ate" maxLength={160} defaultValue={relaisOf(i.id)?.ate ?? ''} placeholder={t.kinds.relais.atePlaceholder} /></label>
+                      <label className="field"><span><Icon name="smile" />{t.kinds.relais.mood}</span><input className="input" name="mood" maxLength={60} defaultValue={relaisOf(i.id)?.mood ?? ''} placeholder={t.kinds.relais.moodPlaceholder} /></label>
+                      <label className="field"><span><Icon name="note" />{t.kinds.relais.note}</span><input className="input" name="note" maxLength={400} defaultValue={relaisOf(i.id)?.note ?? ''} /></label>
                       <div className="cluster">
-                        {e.kind === 'home' && <button className="btn btn--small" onClick={() => setRelaisFor(relaisFor === i.id ? null : i.id)}>{relaisOf(i.id) ? t.kinds.relais.edit : t.kinds.relais.write}</button>}
-                        <button
-                          className="btn btn--small btn--danger"
-                          onClick={() => inviteRm.remove(i.id, t.undo.removed, async () => { await api('invitations', { method: 'DELETE', body: { id: i.id } }); refresh() })}
-                        >
-                          {t.encounters.withdraw}
-                        </button>
+                        <button className="btn btn--primary" disabled={relaisSave.isPending}>{t.kinds.relais.send}</button>
+                        {relaisOf(i.id) && <button type="button" className="btn btn--danger" onClick={() => relaisDel.mutate(i.id)}>{t.kinds.relais.remove}</button>}
                       </div>
-                    </div>
-                  </details>
+                    </form>
+                  )}
                 </div>
-                {relaisFor === i.id && (
-                  <form className="card" onSubmit={(ev) => submitRelais(ev, i.id)}>
-                    <p className="muted small">{t.kinds.relais.hint}</p>
-                    <Why k="relais" />
-                    <label className="field"><span><Icon name="moon" />{t.kinds.relais.nap}</span><input className="input" name="nap" maxLength={120} defaultValue={relaisOf(i.id)?.nap ?? ''} placeholder={t.kinds.relais.napPlaceholder} /></label>
-                    <label className="field"><span><Icon name="bag" />{t.kinds.relais.ate}</span><input className="input" name="ate" maxLength={160} defaultValue={relaisOf(i.id)?.ate ?? ''} placeholder={t.kinds.relais.atePlaceholder} /></label>
-                    <label className="field"><span><Icon name="smile" />{t.kinds.relais.mood}</span><input className="input" name="mood" maxLength={60} defaultValue={relaisOf(i.id)?.mood ?? ''} placeholder={t.kinds.relais.moodPlaceholder} /></label>
-                    <label className="field"><span><Icon name="note" />{t.kinds.relais.note}</span><input className="input" name="note" maxLength={400} defaultValue={relaisOf(i.id)?.note ?? ''} /></label>
-                    <div className="cluster">
-                      <button className="btn btn--primary" disabled={relaisSave.isPending}>{t.kinds.relais.send}</button>
-                      {relaisOf(i.id) && <button type="button" className="btn btn--danger" onClick={() => relaisDel.mutate(i.id)}>{t.kinds.relais.remove}</button>}
-                    </div>
-                  </form>
-                )}
-              </div>
+              </details>
             ))}
             {silentWithMail.length > 1 && <p style={{ margin: '0.75rem 0 0' }}><button className="btn" disabled={resendAll.isPending} onClick={() => resendAll.mutate(silentWithMail.map((i) => i.id))}><Icon name="mail" />{t.encounters.resendAll(silentWithMail.length)}</button></p>}
             {invitations.length > 0 && silent.length > 0 && (

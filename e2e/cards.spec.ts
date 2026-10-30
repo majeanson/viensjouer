@@ -55,6 +55,7 @@ test('the host notes an answer given on paper or in person', async ({ page }) =>
   await page.goto('/rencontres/e1')
   await expect(page.getByRole('link', { name: 'Cartes à imprimer' })).toBeVisible()
   const row = page.locator('.linkrow').filter({ hasText: 'Léa' })
+  await row.locator('summary').first().click()
   await row.getByText('Plus d’options').click()
   await row.getByRole('group', { name: 'Noter sa réponse' }).getByRole('button', { name: 'Oui' }).click()
   await expect.poll(() => patches.length).toBe(1)
@@ -66,6 +67,8 @@ test('two words that read badly can be drawn again, only while nothing depends o
   await page.goto('/rencontres/e1')
   const lea = page.locator('.linkrow').filter({ hasText: 'Léa' })
   const zoe = page.locator('.linkrow').filter({ hasText: 'Zoé' })
+  await lea.locator('summary').first().click()
+  await zoe.locator('summary').first().click()
   await lea.getByText('Plus d’options').click()
   await zoe.getByText('Plus d’options').click()
   // Zoé already said yes: her words are fixed

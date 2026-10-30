@@ -49,6 +49,10 @@
 
 ## 3. What just shipped
 
+### Friends and groups as rows, the bell, recurring as one card — 2026-10-29
+
+No new field. **Amis**: one row per friend like Ma famille (face, child, parent and age, group / « Sur Viens jouer » tags, Modifier and Retirer); email, phone, allergies, notes, « Déjà ensemble », the circle invite and « Couper le lien » sit under a « Détails » fold. Groups use the same row with the members' faces. **The bell** (`NotificationBell`, lazy so the first download is unchanged) replaces the « Nouveau » card: a dot, never a number; unread first, then what was read in the last 30 days (`GET /api/notifications?all=1`). **Tabs**: the chosen `.btn--on` is filled with the accent; tabs are pills. **Rencontres**: a recurring rencontre is one card (its next non-cancelled date, « Récurrente · encore N dates »). **Photos**: decoded through an `<img>` onto white before upload (Safari's `createImageBitmap` could leave the top blank; unconfirmed on the user's phone, re-add the photo to check); a cover that fails to load shows nothing. Also: typing in Les messages no longer remounts every message (rows were an inner component). Gates and `e2e:ci` green; the stylesheet stayed under its 6 KB cap by reusing `.linkrow`.
+
 ### Presentation pass: say it the way a parent says it — 2026-10-29
 
 No new feature, no new field. The reply page opens with ONE big line (`humanWhen`: « Samedi matin », « Demain après-midi ») over title, hours and place; the labelled rows sit under « Tous les détails » (open when something was edited since the last visit; the plan B stays outside the fold, it matters when it rains), and « Comment ça marche » is a fold. The agenda uses the same words (hour beside, exact date only in the past). Agenda cards carry a coloured left edge by kind (`data-kind`: park green, home accent, birthday yellow). On the host page the tally keeps yes / maybe / no and the « Pas de réponse » chip is replaced by « Il manque : Camille, Jo » (or « Tout le monde a répondu »). The sticky answer bar already existed. Gates and `e2e:ci` green.

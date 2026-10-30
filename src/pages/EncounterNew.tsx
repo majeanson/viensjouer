@@ -16,6 +16,7 @@ import { WhenInput } from '../components/WhenInput'
 import { Icon, kindIcon } from '../components/Icon'
 import { Face } from '../components/Face'
 import { useAuth } from '../lib/auth'
+import { parseQuick } from '../lib/quick'
 
 type Scope = 'friend' | 'family'
 // A birthday starts as « the friend only », everything else as « the whole family ».
@@ -57,6 +58,11 @@ export function EncounterNew() {
   const [scopeTouched, setScopeTouched] = useState(false)
   const [start, setStart] = useState(() => toLocalInput(nextSaturdayTen()))
   const [err, setErr] = useState<string | null>(null)
+  // « Dis-le en une phrase »: the sentence fills the form below, which stays the place to correct it.
+  const [say, setSay] = useState('')
+  const [sayMiss, setSayMiss] = useState(false)
+  const [quickPlace, setQuickPlace] = useState('')
+  const [quickN, setQuickN] = useState(0)
   const chooseKind = (k: Kind) => {
     setKind(k)
     if (!scopeTouched) setScope(defaultScope(k))
@@ -97,6 +103,14 @@ export function EncounterNew() {
   })
 
   const children = kids.data?.children ?? []
+  function fill() {
+    const q = parseQuick(say, fams.data?.families ?? [])
+    setSayMiss(!q.kind && !q.startsAt && !q.place && q.familyIds.length === 0)
+    if (q.kind) chooseKind(q.kind)
+    if (q.startsAt) setStart(toLocalInput(q.startsAt))
+    if (q.place) { setQuickPlace(q.place); setQuickN((n) => n + 1) }
+    if (q.familyIds.length) setPicked((p) => new Set([...p, ...q.familyIds]))
+  }
   const chosen = childId ?? children[0]?.id ?? null
   // « Les mêmes familles que la dernière fois »: not offered when this form is already « Refaire pareil » (it has its own).
   const last = useQuery({ queryKey: K.lastGuests(chosen ?? ''), queryFn: () => api<{ familyIds: string[] }>(`last-guests?child=${chosen}`), enabled: !!chosen && !from })
@@ -169,6 +183,16 @@ export function EncounterNew() {
         <button type="button" role="tab" aria-selected={mode === 'plan'} className={`btn ${mode === 'plan' ? 'btn--on' : ''}`} onClick={() => setMode('plan')}>{t.form.plan}</button>
         <button type="button" role="tab" aria-selected={mode === 'free'} className={`btn ${mode === 'free' ? 'btn--on' : ''}`} onClick={() => setMode('free')}>{t.form.free}</button>
       </div>
+      {mode === 'plan' && (
+        <div className="card">
+          <label className="field">
+            <span><Icon name="sparkle" />{t.form.say}</span>
+            <input className="input" value={say} maxLength={200} placeholder={t.form.sayExample} onChange={(e) => { setSay(e.target.value); setSayMiss(false) }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); fill() } }} />
+          </label>
+          <button type="button" className="btn btn--small" disabled={!say.trim()} onClick={fill}>{t.form.sayGo}</button>
+          {sayMiss && <p className="muted small" role="status" style={{ margin: '0.5rem 0 0' }}>{t.form.sayMiss}</p>}
+        </div>
+      )}
       {mode === 'free' ? (
         <Windows embedded />
       ) : (
@@ -218,7 +242,7 @@ export function EncounterNew() {
             </details>
           </div>
 
-          <div className="card" key={prev?.id ?? 'fresh'}>
+          <div className="card" key={`${prev?.id ?? 'fresh'}-${quickN}`}>
             <div className="field">
               <span><Icon name="calendar" />{t.encounters.when}</span>
               <div className="quick">
@@ -237,7 +261,7 @@ export function EncounterNew() {
               maxLength={120}
               list="past-places"
               autoComplete="off"
-              defaultValue={prev?.place ?? ''}
+              defaultValue={prev?.place ?? quickPlace}
               placeholder={t.encounters.placePlaceholder[kind]}
               onChange={(ev) => {
                 // A place used before brings its map link (and, away from the park, its address) back.

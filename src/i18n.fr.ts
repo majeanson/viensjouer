@@ -49,7 +49,7 @@ export const FR = {
     newPassword: 'Nouveau mot de passe',
     resetSend: 'Enregistrer et entrer',
   },
-  nav: { home: 'Rencontres', friends: 'Amis', circle: 'Le cercle', calendar: 'Calendrier', windows: 'Fenêtres', children: 'Ma famille', families: 'Familles amies' },
+  nav: { new: 'Nouvelle', home: 'Rencontres', friends: 'Amis', circle: 'Le cercle', calendar: 'Calendrier', windows: 'Fenêtres', children: 'Ma famille', families: 'Familles amies' },
   circle: {
     title: 'Le cercle',
     hint: 'Les amis de tes enfants dont la famille est aussi ici. Chacun voit seulement ce qui le concerne.',
@@ -507,6 +507,10 @@ export const FR = {
   install: { title: 'Sur l’écran d’accueil', hint: 'Ouvre Viens jouer comme une appli, sans passer par le navigateur. Rien à télécharger d’un magasin.', button: 'Installer l’appli', offer: 'Tu reviens souvent : garde Viens jouer sur ton écran d’accueil.', later: 'Plus tard', ios: 'Sur iPhone et iPad : touche le bouton Partager de Safari, puis « Sur l’écran d’accueil ». Viens jouer s’ouvre ensuite comme une appli.' },
   cover: { add: 'Ajouter une image', change: 'Changer l’image', remove: 'Retirer l’image', field: 'Image (facultatif)' },
   form: {
+    say: 'Dis-le en une phrase',
+    sayExample: 'Parc samedi 10 h avec Léa',
+    sayGo: 'Remplir',
+    sayMiss: 'Rien compris, remplis à la main ci-dessous.',
     day: 'Jour',
     hour: 'Heure',
     again: 'Refaire pareil',

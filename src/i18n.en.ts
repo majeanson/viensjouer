@@ -51,7 +51,7 @@ export const EN: Dict = {
     newPassword: 'New password',
     resetSend: 'Save and sign in',
   },
-  nav: { home: 'Get-togethers', friends: 'Friends', circle: 'The circle', calendar: 'Calendar', windows: 'Open windows', children: 'My family', families: 'Friend families' },
+  nav: { new: 'New', home: 'Get-togethers', friends: 'Friends', circle: 'The circle', calendar: 'Calendar', windows: 'Open windows', children: 'My family', families: 'Friend families' },
   circle: {
     title: 'The circle',
     hint: 'Your children’s friends whose family is also here. Each side sees only what concerns them.',
@@ -509,6 +509,10 @@ export const EN: Dict = {
   install: { title: 'On your home screen', hint: 'Open Viens jouer like an app, without the browser. Nothing to download from a store.', button: 'Install the app', offer: 'You come back often: keep Viens jouer on your home screen.', later: 'Later', ios: 'On iPhone and iPad: tap Safari’s Share button, then “Add to Home Screen”. Viens jouer then opens like an app.' },
   cover: { add: 'Add a picture', change: 'Change the picture', remove: 'Remove the picture', field: 'Picture (optional)' },
   form: {
+    say: 'Say it in one sentence',
+    sayExample: 'Park Saturday 10am with Léa',
+    sayGo: 'Fill in',
+    sayMiss: 'Nothing understood, fill it in below.',
     day: 'Day',
     hour: 'Time',
     again: 'Do it again',

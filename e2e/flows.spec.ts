@@ -40,11 +40,11 @@ async function host(page: Page, handlers: Record<string, Handler> = {}): Promise
 
 const detail = (invitations: unknown[] = [], over: Record<string, unknown> = {}) => ({ encounter: enc(over), invitations, messages: [], relais: [], souvenirs: [], changes: [] })
 
-test('three tabs only, and a brand-new host is told the next step each time', async ({ page }) => {
+test('three tabs and a plus, and a brand-new host is told the next step each time', async ({ page }) => {
   await host(page, { 'GET children': () => ({ json: { children: [] } }) })
   await page.goto('/rencontres')
   const nav = page.getByRole('navigation', { name: 'Navigation' })
-  await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Amis', 'Ma famille'])
+  await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Nouvelle', 'Amis', 'Ma famille'])
   await expect(page.getByText('Ajoute ton enfant.')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Ajouter mon enfant' })).toBeVisible()
   // three steps, the first is the one to do
@@ -191,6 +191,20 @@ test('the short form writes the title itself, and refuses an end time that is no
   expect(String(body.title)).toMatch(/^Au parc, dimanche 10 h$/)
   expect((body.endsAt as number) - (body.startsAt as number)).toBe(2 * 3600)
   expect(body.invite).toEqual(['f1'])
+})
+
+test('one sentence fills the form: kind, day, hour, place and the friend', async ({ page }) => {
+  const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'] } }) })
+  await page.goto('/rencontres/nouvelle')
+  await page.getByLabel('Dis-le en une phrase').fill('Chez nous dimanche 14h avec Léa')
+  await page.getByLabel('Dis-le en une phrase').press('Enter')
+  await expect(page.locator('input[name=startsAt]')).toHaveValue(/T14:00$/)
+  await expect(page.getByRole('checkbox', { name: /Léa/ })).toBeChecked()
+  await expect(page.locator('input[name=place]')).toHaveValue('Chez nous')
+  await page.getByLabel('Dis-le en une phrase').fill('blabla')
+  await page.getByRole('button', { name: 'Remplir' }).click()
+  await expect(page.getByText('Rien compris')).toBeVisible()
+  expect(stub.calls.filter((c) => c.method === 'POST')).toHaveLength(0)
 })
 
 test('« Refaire pareil » opens the form with the same kind, place, families and scope, a week on', async ({ page }) => {

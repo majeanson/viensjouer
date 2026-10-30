@@ -253,6 +253,7 @@ h2 .ico, h3 .ico, summary .ico { color: var(--accent); }
   .nav a { flex: 1 1 0; flex-direction: column; gap: 0.2rem; padding: 0.4rem 0.2rem; font-size: 0.78rem; border: 0; margin: 0; border-radius: 0; min-height: var(--nav-h); }
   .nav a .ico { width: 1.4rem; height: 1.4rem; display: block; box-sizing: content-box; padding: 0.2rem 0.9rem; border-radius: 999px; }
   .nav a.active { color: var(--ink); }
+  .nav .nav__new .ico { background: var(--accent); color: var(--accent-ink); }
   .nav a.active .ico { color: var(--ink); background: color-mix(in srgb, var(--accent) 24%, transparent); }
   .shell:has(.nav) { padding-bottom: calc(var(--nav-h) + 2.75rem + env(safe-area-inset-bottom)); }
   .toasts { bottom: calc(var(--nav-h) + 1.15rem + env(safe-area-inset-bottom)); }

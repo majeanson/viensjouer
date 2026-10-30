@@ -544,7 +544,6 @@ export const EN: Dict = {
     othersTitle: 'Also on Viens jouer',
     othersHint: 'Families who added you on their side.',
     groupsFold: 'Groups',
-    details: 'Details',
     noDetails: 'No email, phone or note yet.',
     together: 'Already together',
     printCard: 'Printable card for the next get-together',

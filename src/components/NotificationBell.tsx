@@ -7,6 +7,7 @@ import { useLang, useT } from '../i18n'
 import { ago } from '../lib/format'
 import { Icon } from './Icon'
 
+const plain = { color: 'inherit', textDecoration: 'none' } as const
 const listStyle = { listStyle: 'none', margin: '0.5rem 0 0', padding: 0 } as const
 
 interface Note {
@@ -61,7 +62,7 @@ export function NotificationBell() {
     )
     return (
       <li key={n.id} className={`linkrow ${n.read_at ? '' : 'bell--new'}`}>
-        {n.url ? <Link to={n.url} onClick={() => { setOpen(false); if (!n.read_at) read.mutate({ id: n.id }) }}>{head}</Link> : <span>{head}</span>}
+        {n.url ? <Link to={n.url} style={plain} onClick={() => { setOpen(false); if (!n.read_at) read.mutate({ id: n.id }) }}>{head}</Link> : <span>{head}</span>}
         {n.body && <p className="muted small" style={{ margin: 0 }}>{n.body}</p>}
       </li>
     )

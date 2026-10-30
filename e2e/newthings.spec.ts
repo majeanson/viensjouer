@@ -433,7 +433,7 @@ test('« Inviter dans mon cercle »: a code with no rencontre, the two words for
     'DELETE circle-invite': () => ((invites = []), { json: { ok: true } }),
   })
   await page.goto('/amis')
-  await page.getByText('Détails', { exact: true }).first().click()
+  await page.locator('.friend > summary').first().click()
   // only a family that is not linked yet can be invited into the circle
   await expect(page.getByText('Inviter dans mon cercle', { exact: true })).toHaveCount(1)
   await page.getByText('Inviter dans mon cercle', { exact: true }).click()
@@ -456,7 +456,7 @@ test('a family with no email gets « Envoyer par texto » and the paper words, n
     'GET circle-invite': () => ({ json: { invites: [{ id: 'ci1', familyId: 'f1', token: 'banquet-liseron' }] } }),
   })
   await page.goto('/amis')
-  await page.getByText('Détails', { exact: true }).first().click()
+  await page.locator('.friend > summary').first().click()
   await page.getByText('Inviter dans mon cercle', { exact: true }).click()
   await expect(page.locator('.paper', { hasText: 'banquet-liseron' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toBeVisible()

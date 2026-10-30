@@ -542,7 +542,6 @@ export const FR = {
     othersTitle: 'Aussi sur Viens jouer',
     othersHint: 'Des familles qui t’ont ajouté de leur côté.',
     groupsFold: 'Groupes',
-    details: 'Détails',
     noDetails: 'Pas encore de courriel, de téléphone ni de note.',
     together: 'Déjà ensemble',
     printCard: 'Carte à imprimer pour la prochaine rencontre',

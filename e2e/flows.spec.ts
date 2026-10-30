@@ -159,6 +159,7 @@ test('removing a friend is undoable too: no browser dialog anywhere', async ({ p
   })
   const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }) })
   await page.goto('/amis')
+  await page.locator('.friend > summary').click()
   await page.getByRole('button', { name: 'Retirer', exact: true }).click()
   await expect(page.getByText('Léa')).toHaveCount(0)
   await page.locator('.toast').getByRole('button', { name: 'Annuler' }).click()
@@ -227,8 +228,10 @@ test('the friends list is one list: groups as tags, the app badge, and the circl
   })
   await page.goto('/amis')
   const lea = page.locator('.card', { hasText: 'Léa' }).first()
+  await lea.locator('summary').first().click()
   await expect(lea.getByText('La garderie')).toBeVisible()
   await expect(lea.getByText('Sur Viens jouer')).toBeVisible()
+  await page.locator('.card', { hasText: 'Max' }).locator('summary').first().click()
   await expect(page.locator('.card', { hasText: 'Max' }).getByText('Sur Viens jouer')).toHaveCount(0)
   // old addresses still land here
   await page.goto('/cercle')
@@ -812,6 +815,7 @@ test('a family whose email bounced is marked on the card and in the friends list
   await expect(page.getByText('Courriel non reçu')).toBeVisible()
   await page.goto('/amis')
   await expect(page.getByText('Courriel non reçu')).toBeVisible()
+  await page.locator('.friend > summary').click()
   await expect(page.getByText('Vérifie l’adresse, ou envoie-lui le lien par texto.')).toBeVisible()
 });
 

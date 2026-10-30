@@ -53,18 +53,16 @@ export function Groups({ families }: { families: Family[] }) {
         {groups.map((g) => {
           const members = g.families.map((id) => families.find((f) => f.id === id)).filter((f): f is Family => !!f)
           return (
-            <div key={g.id} className="card friend">
-              <div className="row">
-                <span className="cluster">
-                  <span className="faces" aria-hidden="true">{members.slice(0, 4).map((f) => <Face key={f.id} name={f.child_first_name} colour={colourOf(f.child_first_name)} size="md" />)}</span>
-                  <span className="friend__who"><strong>{g.name}</strong><span className="muted small">{members.map((f) => f.child_first_name).join(', ') || '—'}</span></span>
-                </span>
-                <span className="cluster">
-                  <button className="btn btn--small" onClick={() => open(g)}>{t.encounters.edit}</button>
-                  <button className="btn btn--small btn--danger" onClick={() => rm.remove(g.id, t.undo.removed, async () => { await api('groups', { method: 'DELETE', body: { id: g.id } }); void refresh() })}>{t.families.remove}</button>
-                </span>
+            <details key={g.id} className="card friend">
+              <summary>
+                <span className="faces" aria-hidden="true">{members.slice(0, 3).map((f) => <Face key={f.id} name={f.child_first_name} colour={colourOf(f.child_first_name)} size="md" />)}</span>
+                <span className="friend__who"><strong>{g.name}</strong><span className="muted small">{members.map((f) => f.child_first_name).join(', ') || '—'}</span></span>
+              </summary>
+              <div className="cluster" style={{ marginTop: '0.75rem' }}>
+                <button className="btn btn--small" onClick={() => open(g)}>{t.encounters.edit}</button>
+                <button className="btn btn--small btn--danger" onClick={() => rm.remove(g.id, t.undo.removed, async () => { await api('groups', { method: 'DELETE', body: { id: g.id } }); void refresh() })}>{t.families.remove}</button>
               </div>
-            </div>
+            </details>
           )
         })}
       </div>

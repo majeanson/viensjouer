@@ -301,7 +301,7 @@ test('« Déjà ensemble »: a friend opens the past get-togethers and starts th
   })
   await page.goto('/amis')
   expect(calls.filter((c) => c.path === 'family-history')).toHaveLength(0) // nothing is fetched until it is opened
-  await page.getByText('Détails', { exact: true }).click()
+  await page.locator('.friend > summary').click()
   await page.getByText('Déjà ensemble').click()
   await expect(page.getByText(/Au parc · Parc Lafontaine/)).toBeVisible()
   await page.getByRole('link', { name: 'Refaire pareil' }).click()

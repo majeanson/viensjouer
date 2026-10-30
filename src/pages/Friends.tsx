@@ -170,38 +170,36 @@ export function Friends() {
           ]
           const age = ageLabel(f.child_birthdate, lang)
           return (
-            <div key={f.id} className="card friend">
-              <div className="row">
-                <span className="cluster">
-                  <Face name={f.child_first_name} colour={colourOf(f.child_first_name)} size="lg" />
-                  <span className="friend__who"><strong>{f.child_first_name}</strong><span className="muted small">{[f.parent_name, age].filter(Boolean).join(' · ')}</span></span>
+            <details key={f.id} className="card friend">
+              <summary>
+                <Face name={f.child_first_name} colour={colourOf(f.child_first_name)} size="lg" />
+                <span className="friend__who">
+                  <strong>{f.child_first_name}{f.email_bounced_at && <span className="chip chip--cancelled" style={{ marginLeft: '0.5rem' }}>{t.families.bounced}</span>}</strong>
+                  <span className="muted small">{[f.parent_name, age].filter(Boolean).join(' · ')}</span>
                 </span>
-                <span className="cluster">
+              </summary>
+              <div className="stack" style={{ marginTop: '0.75rem' }}>
+                {(tags.length > 0 || l || f.mail_stopped_at) && (
+                  <div className="cluster">
+                    {tags.map((g) => <span key={g.id} className="chip chip--kind">{g.name}</span>)}
+                    {l && <span className="chip chip--yes">{t.friends.onApp}</span>}
+                    {f.mail_stopped_at && <span className="chip">{t.families.stopped}</span>}
+                  </div>
+                )}
+                {f.email_bounced_at && <p className="small" style={{ margin: 0 }}>{t.families.bouncedHint}</p>}
+                <ul className="meta">
+                  {info.filter(([, v]) => v).map(([icon, v]) => <li key={icon}><Icon name={icon} />{v}</li>)}
+                  {info.every(([, v]) => !v) && <li className="muted small">{t.friends.noDetails}</li>}
+                </ul>
+                <div className="cluster">
                   <button className="btn btn--small" onClick={() => setEditing(f)}>{t.encounters.edit}</button>
                   <button className="btn btn--small btn--danger" onClick={() => rm.remove(f.id, t.undo.removed, async () => { await api('families', { method: 'DELETE', body: { id: f.id } }); void invalidate() })}>{t.families.remove}</button>
-                </span>
+                  {l && <button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button>}
+                </div>
+                <Together familyId={f.id} />
+                {!f.linked_household_id && <CircleInvite family={f} />}
               </div>
-              {(tags.length > 0 || l || f.mail_stopped_at) && (
-                <div className="cluster" style={{ marginTop: '0.45rem' }}>
-                  {tags.map((g) => <span key={g.id} className="chip chip--kind">{g.name}</span>)}
-                  {l && <span className="chip chip--yes">{t.friends.onApp}</span>}
-                  {f.mail_stopped_at && <span className="chip">{t.families.stopped}</span>}
-                </div>
-              )}
-              {f.email_bounced_at && <p className="small" style={{ margin: '0.45rem 0 0' }}><span className="chip chip--cancelled">{t.families.bounced}</span> {t.families.bouncedHint}</p>}
-              <details className="fold friend__more">
-                <summary><span>{t.friends.details}</span></summary>
-                <div>
-                  <ul className="meta">
-                    {info.filter(([, v]) => v).map(([icon, v]) => <li key={icon}><Icon name={icon} />{v}</li>)}
-                    {info.every(([, v]) => !v) && <li className="muted small">{t.friends.noDetails}</li>}
-                  </ul>
-                  <Together familyId={f.id} />
-                  {!f.linked_household_id && <CircleInvite family={f} />}
-                  {l && <div className="cluster" style={{ marginTop: '0.5rem' }}><button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button></div>}
-                </div>
-              </details>
-            </div>
+            </details>
           )
         })}
       </div>

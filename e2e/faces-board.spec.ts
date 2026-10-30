@@ -90,7 +90,8 @@ test('my profile: a face and the first name shown on invitations', async ({ page
   await expect(page.locator('input[name=displayName]')).toBeVisible()
   await expect(page.locator('.avatarpick .face img')).toHaveAttribute('src', '/api/avatar/parent/me?v=me1')
   await page.getByLabel('Mon prénom').fill('Marc-Antoine')
-  await page.locator('form', { has: page.getByLabel('Mon prénom') }).getByRole('button').click()
+  // no Enregistrer: the name saves itself a moment after the last keystroke
+  await expect(page.getByText('Enregistré.')).toBeVisible()
   await expect.poll(() => calls.filter((c) => c.method === 'PATCH' && c.path === 'profile').length).toBe(1)
   expect(calls.find((c) => c.path === 'profile')!.body).toEqual({ displayName: 'Marc-Antoine' })
   // the header shows the face only: the name is the button's label for a screen reader and its tooltip, never printed

@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Icon, type IconName } from '../components/Icon'
 import { NotificationsCard } from '../components/NotificationsCard'
 import { Credit } from '../components/Credit'
+import { useAutosave } from '../lib/autosave'
 
 // « Mon compte » — one tab at a time, kept in the address (?tab=) so a link or a refresh lands on it:
 // who I am, my household, my calendar and the app, my security, my data (what is kept, a download, « tout effacer »).
@@ -43,9 +44,21 @@ export function Account() {
   const [err, setErr] = useState<string | null>(null)
   // The row that is open lives in the address, so a link or a refresh lands on it (the profile is the default).
   const pick = (id: Tab, on: boolean) => { if (on && id !== tab) { setErr(null); setParams(id === 'profile' ? {} : { tab: id }, { replace: true }) } }
+  // The first name saves itself a moment after you stop typing.
+  const nameAuto = useAutosave('profile-form', async (f) => {
+    const displayName = String(new FormData(f).get('displayName') ?? '').trim()
+    if (!displayName) return
+    setErr(null)
+    try {
+      await api('profile', { method: 'PATCH', body: { displayName } })
+      await refresh()
+    } catch (ex) {
+      setErr(ex instanceof Error ? ex.message : t.common.error)
+      throw ex
+    }
+  })
   const install = useInstall()
   const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
-  const [saved, setSaved] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testSent, setTestSent] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -71,7 +84,7 @@ export function Account() {
       <div className="stack">
         <Sec id="profile" icon="user" open={tab === 'profile'} onOpen={pick}>
           <div>
-            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
             <AvatarPicker
               stacked
               name={me.displayName ?? ''}
@@ -83,24 +96,9 @@ export function Account() {
               onRemove={async () => { await api('avatar', { method: 'DELETE', body: { kind: 'parent' } }); await refresh() }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
-            <form
-              onSubmit={async (ev) => {
-                ev.preventDefault()
-                const displayName = String(new FormData(ev.currentTarget).get('displayName') ?? '').trim()
-                if (!displayName) return
-                setErr(null)
-                try {
-                  await api('profile', { method: 'PATCH', body: { displayName } })
-                  await refresh()
-                  setSaved(true)
-                  setTimeout(() => setSaved(false), 2500)
-                } catch (ex) {
-                  setErr(ex instanceof Error ? ex.message : t.common.error)
-                }
-              }}
-            >
+            <form id="profile-form" onSubmit={(ev) => { ev.preventDefault(); void nameAuto.flush() }} onChange={nameAuto.poke}>
               <label className="field"><span><Icon name="user" />{t.profile.name}</span><input className="input" name="displayName" required maxLength={60} defaultValue={me.displayName ?? ''} autoComplete="given-name" /></label>
-              <button className="btn btn--primary btn--small" style={{ marginTop: '0.5rem' }}>{saved ? t.profile.saved : t.profile.save}</button>
+              <p className="muted small" role="status" style={{ margin: '0.25rem 0 0', minHeight: '1.2em' }}>{nameAuto.state === 'saved' ? <><Icon name="check" />{t.profile.saved}</> : nameAuto.state === 'saving' ? '…' : ''}</p>
             </form>
             <p className="muted small" style={{ margin: '0.75rem 0 0', overflowWrap: 'anywhere' }}><Icon name="mail" />{me.email}</p>
             </div>
@@ -133,7 +131,7 @@ export function Account() {
                   </label>
                 ))}
                 <div style={{ marginTop: '1rem' }}>
-                  <p className="muted small" style={{ margin: '0 0 0.4rem' }}>{t.profile.testMailHint}</p>
+                  <p className="muted small" style={{ margin: '0 0 0.5rem' }}>{t.profile.testMailHint}</p>
                   <button
                     className="btn"
                     disabled={testing}
@@ -152,7 +150,7 @@ export function Account() {
                   >
                     <Icon name="mail" />{t.profile.testMail}
                   </button>
-                  {testSent && <p className="small" role="status" style={{ margin: '0.4rem 0 0' }}>{testSent}</p>}
+                  {testSent && <p className="small" role="status" style={{ margin: '0.5rem 0 0' }}>{testSent}</p>}
                 </div>
                 </div>
               </details>
@@ -202,7 +200,7 @@ export function Account() {
               <label className="field"><span>{t.account.security.next}</span><input className="input" name="next" type="password" required minLength={8} autoComplete="new-password" /></label>
               <button className="btn">{t.account.security.change}</button>
             </form>
-            <p className="muted small" style={{ margin: '0.8rem 0 0.4rem' }}>{t.account.security.everywhereHint}</p>
+            <p className="muted small" style={{ margin: '0.75rem 0 0.5rem' }}>{t.account.security.everywhereHint}</p>
             <button
               className="btn"
               onClick={async () => {

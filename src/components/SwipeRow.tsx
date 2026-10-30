@@ -5,6 +5,8 @@ import { Icon } from './Icon'
 // (remove), the accent colour with a pencil to the right (edit). It only counts if you let go past the mark; let go before it and the
 // row slides back and nothing happens, so it is always on purpose. The icon buttons stay in the row for anyone who does not slide.
 const MARK_PX = 110
+// Nothing slides back by animation for someone who asked their device for less motion.
+const calm = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 const INTERACTIVE = 'button, a, input, textarea, select, label, summary > *:not(span):not(strong)'
 
 export function SwipeRow({ onLeft, onRight, leftLabel, rightLabel, children }: { onLeft?: () => void; onRight?: () => void; leftLabel: string; rightLabel: string; children: ReactNode }) {
@@ -61,7 +63,7 @@ export function SwipeRow({ onLeft, onRight, leftLabel, rightLabel, children }: {
     alignItems: 'center',
     justifyContent: left ? 'flex-end' : 'flex-start',
     gap: '0.5rem',
-    padding: '0 1.25rem',
+    padding: '0 1rem',
     fontWeight: 700,
     color: left ? '#fff' : 'var(--accent-ink)',
     background: left ? 'var(--bad)' : 'var(--accent)',
@@ -80,7 +82,7 @@ export function SwipeRow({ onLeft, onRight, leftLabel, rightLabel, children }: {
       <div aria-hidden="true" style={under}>
         {left ? <>{reach >= 1 ? leftLabel : ''}<Icon name="trash" /></> : <><Icon name="edit" />{reach >= 1 ? rightLabel : ''}</>}
       </div>
-      <div style={{ position: 'relative', transform: `translateX(${dx}px)`, transition: drag ? 'none' : 'transform 0.2s ease' }}>{children}</div>
+      <div style={{ position: 'relative', transform: `translateX(${dx}px)`, transition: drag || calm ? 'none' : 'transform 0.2s ease' }}>{children}</div>
     </div>
   )
 }

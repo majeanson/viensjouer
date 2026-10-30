@@ -6,7 +6,9 @@ import { useT } from '../i18n'
 import { FamilyPicker } from './FamilyPicker'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
+import { useAutosave } from '../lib/autosave'
 import { SwipeRow } from './SwipeRow'
+import { EmptyState } from './EmptyState'
 import { Sheet } from './Sheet'
 import { Icon } from './Icon'
 import { Face } from './Face'
@@ -40,18 +42,23 @@ export function Groups({ families }: { families: Family[] }) {
     setPicked(new Set(g === 'new' ? [] : g.families))
   }
   const removeGroup = (g: Group) => rm.remove(g.id, t.undo.removed, async () => { await api('groups', { method: 'DELETE', body: { id: g.id } }); void refresh() })
+  const bodyOf = (f: HTMLFormElement): Record<string, unknown> => ({ name: new FormData(f).get('name'), families: [...picked], ...(cur ? { id: cur.id } : {}) })
+  // A new group is saved with the button; an existing one saves itself as it is edited (its name, or a family ticked or not).
+  const auto = useAutosave('group-form', async (f) => {
+    await api('groups', { method: 'PATCH', body: bodyOf(f) })
+    void refresh()
+  })
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const body: Record<string, unknown> = { name: new FormData(e.currentTarget).get('name'), families: [...picked] }
-    if (cur) body.id = cur.id
-    save.mutate(body)
+    if (cur) return void auto.flush()
+    save.mutate(bodyOf(e.currentTarget))
   }
 
   return (
     <section>
       <p className="muted small">{t.groups.hint}</p>
       {err && <div className="notice notice--err">{err}</div>}
-      {q.data && groups.length === 0 && !editing && <p className="muted">{t.groups.empty}</p>}
+      {q.data && groups.length === 0 && !editing && <EmptyState>{t.groups.empty}</EmptyState>}
       <div className="stack">
         {groups.map((g) => {
           const members = g.families.map((id) => families.find((f) => f.id === id)).filter((f): f is Family => !!f)
@@ -72,10 +79,10 @@ export function Groups({ families }: { families: Family[] }) {
         })}
       </div>
       {editing ? (
-        <Sheet title={cur ? cur.name : t.groups.add} onBack={() => setEditing(null)} formId="group-form" saving={save.isPending} saveLabel={t.families.save}>
-        <form id="group-form" onSubmit={submit} key={cur?.id ?? 'new'}>
+        <Sheet title={cur ? cur.name : t.groups.add} onBack={async () => { await auto.flush(); setEditing(null) }} formId={cur ? undefined : 'group-form'} saving={save.isPending} saveLabel={t.families.save} autosave={cur ? auto.state : undefined}>
+        <form id="group-form" onSubmit={submit} onChange={cur ? auto.poke : undefined} key={cur?.id ?? 'new'}>
           <label className="field"><span><Icon name="tag" />{t.groups.name}</span><input className="input" name="name" required maxLength={60} defaultValue={cur?.name} placeholder={t.groups.namePlaceholder} /></label>
-          <FamilyPicker families={families} groups={[]} selected={picked} onChange={setPicked} />
+          <FamilyPicker families={families} groups={[]} selected={picked} onChange={(p) => { setPicked(p); if (cur) auto.poke() }} />
         </form>
         </Sheet>
       ) : (

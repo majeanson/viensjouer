@@ -84,7 +84,7 @@ export function NotificationBell() {
           {fresh.length > 0 && <ul className="list" style={listStyle} aria-label={t.notif.newTitle}>{fresh.map(row)}</ul>}
           {before.length > 0 && (
             <>
-              <h3 className="muted small" style={{ margin: '0.9rem 0 0' }}>{t.notif.earlier}</h3>
+              <h3 className="muted small" style={{ margin: '1rem 0 0' }}>{t.notif.earlier}</h3>
               <ul className="list" style={listStyle}>{before.map(row)}</ul>
             </>
           )}

@@ -4,7 +4,8 @@ import { join } from 'node:path'
 
 // Opening a section or tapping a button must never pop the phone keyboard: people look first, then tap to type.
 // No `autoFocus`, and `.focus()` only on the page container (skip link, route change) or through focusIfFinePointer.
-const ALLOWED_FOCUS = ['src/components/Header.tsx', 'src/components/CardCode.tsx', 'src/lib/pageTitle.ts', 'src/lib/focus.ts']
+// Sheet.tsx focuses the sheet's own box (a div: no keyboard) when it opens and gives the focus back to what opened it, never a field.
+const ALLOWED_FOCUS = ['src/components/Sheet.tsx', 'src/components/Header.tsx', 'src/components/CardCode.tsx', 'src/lib/pageTitle.ts', 'src/lib/focus.ts']
 const walk = (d: string): string[] => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : /\.tsx?$/.test(f) ? [join(d, f).replaceAll('\\', '/')] : []))
 
 describe('no keyboard pops by itself', () => {

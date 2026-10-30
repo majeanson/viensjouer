@@ -559,7 +559,7 @@ export const FR = {
   },
   agenda: { birthday: (n: string, y: number) => `Anniversaire de ${n} · ${y} an${y > 1 ? 's' : ''}`, free: 'Je suis libre', invited: (h: string) => `Invité par ${h}` },
   avatar: { add: 'Ajouter une photo', change: 'Changer la photo', remove: 'Retirer la photo' },
-  profile: { name: 'Mon prénom', save: 'Enregistrer', saved: 'Enregistré.', testMail: 'M’envoyer un courriel d’essai', testMailHint: 'Reçois un exemple du courriel que les familles recevront quand tu modifies une rencontre. Il part à ton adresse seulement.', testMailSent: (to: string) => `Courriel envoyé à ${to}.`, notifyAnswers: 'Me prévenir quand une famille répond',
+  profile: { name: 'Mon prénom', saved: 'Enregistré.', testMail: 'M’envoyer un courriel d’essai', testMailHint: 'Reçois un exemple du courriel que les familles recevront quand tu modifies une rencontre. Il part à ton adresse seulement.', testMailSent: (to: string) => `Courriel envoyé à ${to}.`, notifyAnswers: 'Me prévenir quand une famille répond',
     notifyAnswersHint: 'Un courriel quand une famille dit oui, peut-être ou non, au plus un toutes les dix minutes par famille. Rien d’autre, et tu peux le couper quand tu veux.',
     emails: 'Courriels et rappels',
     weeklyDigest: 'Mon programme du lundi',

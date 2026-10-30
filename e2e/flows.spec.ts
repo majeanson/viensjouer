@@ -219,7 +219,7 @@ test('first steps: the child, then a friend, then one sentence, each right on th
   await expect(page.getByRole('checkbox', { name: /Léa/ })).toBeChecked()
 })
 
-test('editing a friend opens a full-screen sheet with Retour and Enregistrer in its bar', async ({ page }) => {
+test('editing a friend opens a full-screen sheet with Retour in its bar, and saves itself as you type', async ({ page }) => {
   const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'PATCH families': () => ({ json: { ok: true } }) })
   await page.goto('/amis')
   await page.locator('details.friend > summary').first().click()
@@ -232,8 +232,12 @@ test('editing a friend opens a full-screen sheet with Retour and Enregistrer in 
   await expect(sheet).toHaveCount(0)
   await page.locator('details.friend').getByRole('button', { name: 'Modifier', exact: true }).click()
   await page.getByRole('dialog').locator('input[name=parentName]').fill('Julie T')
-  await page.getByRole('dialog').getByRole('button', { name: 'Enregistrer' }).click()
+  // no Enregistrer for an existing family: it saves itself, says so in the bar, and Retour closes
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Enregistrer' })).toHaveCount(0)
   await expect.poll(() => stub.calls.filter((c) => c.method === 'PATCH' && c.path === 'families').length).toBe(1)
+  expect(stub.calls.find((c) => c.method === 'PATCH' && c.path === 'families')!.body).toMatchObject({ id: 'f1', parentName: 'Julie T' })
+  await expect(page.getByRole('dialog').getByRole('status')).toContainText('Enregistré')
+  await page.getByRole('dialog').getByRole('button', { name: /Retour/ }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
@@ -304,6 +308,56 @@ test('on a wide screen the Rencontres are a list on the left and the open one on
   // the list stays, and the open one is marked
   await expect(page.getByRole('link', { name: /Parc du samedi/ })).toBeVisible()
   await expect(page.getByRole('link', { name: /Chez nous/ })).toHaveAttribute('aria-current', 'page')
+})
+
+test('Retour saves what is waiting before it closes, and an invalid form is not saved', async ({ page }) => {
+  const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'PATCH families': () => ({ json: { ok: true } }) })
+  await page.goto('/amis')
+  await page.locator('details.friend > summary').first().click()
+  await page.locator('details.friend').getByRole('button', { name: 'Modifier', exact: true }).click()
+  const dlg = page.getByRole('dialog')
+  // emptied required name: nothing is sent
+  await dlg.locator('input[name=parentName]').fill('')
+  await page.waitForTimeout(1200)
+  expect(stub.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0)
+  // a change and an immediate Retour: the change goes before the sheet closes
+  await dlg.locator('input[name=parentName]').fill('Julie Roy')
+  await dlg.getByRole('button', { name: /Retour/ }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  expect(stub.calls.filter((c) => c.method === 'PATCH' && c.path === 'families')).toHaveLength(1)
+  expect(stub.calls.find((c) => c.method === 'PATCH')!.body).toMatchObject({ parentName: 'Julie Roy' })
+})
+
+test('an open sheet takes the focus, shuts the page behind it, gives the focus back, and has no serious accessibility violation (both themes)', async ({ page }) => {
+  const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'GET groups': () => ({ json: { groups: [] } }) })
+  void stub
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme })
+    await page.goto('/amis')
+    const open = page.getByRole('button', { name: 'Groupes' })
+    await open.click()
+    const dlg = page.getByRole('dialog', { name: 'Groupes' })
+    await expect(dlg).toBeFocused()
+    expect(await page.locator('#root').getAttribute('inert')).not.toBeNull()
+    const { violations } = await new AxeBuilder({ page }).analyze()
+    expect(violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id), scheme).toEqual([])
+    await page.keyboard.press('Escape')
+    await expect(dlg).toHaveCount(0)
+    expect(await page.locator('#root').getAttribute('inert')).toBeNull()
+    await expect(open).toBeFocused()
+  }
+})
+
+test('the two-pane layout has no serious accessibility violation, in light and dark', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await host(page, { 'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes')], { id: 'e1', starts_at: now + 3 * 86_400 }) } : { json: { encounters: [enc({ id: 'e1', starts_at: now + 3 * 86_400 })], invitations: [] } }) })
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme })
+    await page.goto('/rencontres/e1')
+    await expect(page.locator('h1').first()).toBeVisible()
+    const { violations } = await new AxeBuilder({ page }).analyze()
+    expect(violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id), scheme).toEqual([])
+  }
 })
 
 test('one sentence fills the form: kind, day, hour, place and the friend', async ({ page }) => {
@@ -781,8 +835,7 @@ test('the child form saves a nap and clears it with empty times', async ({ page 
   await expect(page.locator('input[name=napStart]')).toHaveValue('13:00')
   await page.locator('input[name=napStart]').fill('')
   await page.locator('input[name=napEnd]').fill('15:15')
-  await page.getByRole('button', { name: 'Enregistrer' }).click()
-  await expect.poll(() => stub.calls.filter((c) => c.method === 'PATCH' && c.path === 'children').length).toBe(1)
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'PATCH' && c.path === 'children').length).toBe(1) // it saves itself
   expect(stub.calls.find((c) => c.method === 'PATCH')!.body).toMatchObject({ napStart: null, napEnd: '15:15' })
 })
 

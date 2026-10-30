@@ -11,8 +11,10 @@ import { useDeferredRemove } from '../lib/toast'
 import type { Child } from '../lib/types'
 import { Loading } from '../components/Loading'
 import { QueryError } from '../components/QueryError'
+import { useAutosave } from '../lib/autosave'
 import { SwipeRow } from '../components/SwipeRow'
 import { Sheet } from '../components/Sheet'
+import { EmptyState } from '../components/EmptyState'
 import { Icon } from '../components/Icon'
 import { PageHead } from '../components/PageHead'
 import { PALETTE } from '../lib/palette'
@@ -49,9 +51,8 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
 
   const cur = editing && editing !== 'new' ? editing : null
 
-  function submit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const f = new FormData(e.currentTarget)
+  const bodyOf = (form: HTMLFormElement) => {
+    const f = new FormData(form)
     const birthdate = String(f.get('birthdate') ?? '')
     const body: Record<string, unknown> = { firstName: String(f.get('firstName') ?? ''), colour: String(f.get('colour') ?? COLOURS[0]), napStart: String(f.get('napStart') ?? '') || null, napEnd: String(f.get('napEnd') ?? '') || null }
     if (cur) {
@@ -59,7 +60,17 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
       // An emptied date clears it; the endpoint reads `null` as "clear", absent as "keep".
       body.birthdate = birthdate || null
     } else if (birthdate) body.birthdate = birthdate
-    save.mutate(body)
+    return body
+  }
+  // A new child is saved with the button; an existing one saves itself as it is edited.
+  const auto = useAutosave('child-form', async (f) => {
+    await api('children', { method: 'PATCH', body: bodyOf(f) })
+    void invalidate()
+  })
+  function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (cur) return void auto.flush()
+    save.mutate(bodyOf(e.currentTarget))
   }
 
   const removeKid = (c: Child) => rm.remove(c.id, t.undo.removed, async () => { await api('children', { method: 'DELETE', body: { id: c.id } }); void invalidate() })
@@ -67,7 +78,7 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
   return (
     <>
       {embedded ? (
-        <div className="row" style={{ margin: '1rem 0 0.6rem' }}>
+        <div className="row" style={{ margin: '1rem 0 0.5rem' }}>
           <h2 style={{ margin: 0 }}><Icon name="smile" />{t.children.title}</h2>
           <button type="button" className="btn btn--small btn--icon" aria-label={t.children.add} title={t.children.add} onClick={() => { setPending(null); setEditing('new') }}><Icon name="plus" /></button>
         </div>
@@ -75,7 +86,7 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
       {err && <div className="notice notice--err">{err}</div>}
       {q.isLoading && <Loading />}
       {q.isError && !q.data && <QueryError error={q.error} onRetry={() => void q.refetch()} />}
-      {q.data && kids.length === 0 && !editing && <p className="muted">{t.children.empty}</p>}
+      {q.data && kids.length === 0 && !editing && <EmptyState>{t.children.empty}</EmptyState>}
       <div className="stack">
         {kids.map((c) => (
           <SwipeRow key={c.id} onLeft={() => removeKid(c)} onRight={() => { setPending(null); setEditing(c) }} leftLabel={t.children.remove} rightLabel={t.children.edit}>
@@ -90,8 +101,8 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
         ))}
       </div>
       {editing ? (
-        <Sheet title={cur ? cur.first_name : t.children.add} onBack={() => setEditing(null)} formId="child-form" saving={save.isPending} saveLabel={t.children.save}>
-        <form id="child-form" onSubmit={submit} key={cur?.id ?? 'new'}>
+        <Sheet title={cur ? cur.first_name : t.children.add} onBack={async () => { await auto.flush(); setPending(null); setEditing(null) }} formId={cur ? undefined : 'child-form'} saving={save.isPending} saveLabel={t.children.save} autosave={cur ? auto.state : undefined}>
+        <form id="child-form" onSubmit={submit} onChange={cur ? auto.poke : undefined} key={cur?.id ?? 'new'}>
           <AvatarPicker
             name={cur?.first_name ?? ''}
             colour={cur?.colour}

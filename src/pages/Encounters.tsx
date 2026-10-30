@@ -8,6 +8,7 @@ import { humanWhen, timeOnly, whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
 import type { Child, Encounter, Family, InvitationSummary, OpenWindow } from '../lib/types'
 import { Icon, kindIcon } from '../components/Icon'
+import { EmptyState } from '../components/EmptyState'
 import { PageHead } from '../components/PageHead'
 import { WindowRow } from '../components/WindowRow'
 import { FirstSteps } from '../components/FirstSteps'
@@ -58,7 +59,7 @@ export function Encounters({ compact = false }: { compact?: boolean }) {
         {more > 0 && <span>{t.encounters.seriesMore(more)}</span>}
       </p>
       {!isOver(e) && (byEnc.get(e.id) ?? []).length > 0 && (
-        <p className="muted small" style={{ margin: '0.35rem 0 0' }}>
+        <p className="muted small" style={{ margin: '0.25rem 0 0' }}>
           {(['yes', 'maybe', 'no', 'none'] as const).map((k) => ({ k, n: (byEnc.get(e.id) ?? []).filter((i) => (i.reply ?? 'none') === k).length })).filter((x) => x.n > 0).map((x) => `${t.encounters.reply[x.k]} ${x.n}`).join(' · ')}
         </p>
       )}
@@ -123,7 +124,7 @@ export function Encounters({ compact = false }: { compact?: boolean }) {
       <InstallOffer hold={nudgeDue(past.length > 0, me)} />
       {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && <FirstSteps noChild={noChild} noFriend={noFriend} />}
-      {ready && !nothing && ahead.length === 0 && <p className="muted">{t.encounters.empty}</p>}
+      {ready && !nothing && ahead.length === 0 && <EmptyState>{t.encounters.empty}</EmptyState>}
       {ahead.length > 0 && <h2 className="muted small" style={{ marginTop: '1rem' }}>{t.encounters.upcoming}</h2>}
       {ahead.map((x, i) => <div key={x.key}>{i === 0 && x.big ? x.big : x.node}</div>)}
       {past.length > 0 && <h2 className="muted small" style={{ marginTop: '1rem' }}>{t.encounters.past}</h2>}

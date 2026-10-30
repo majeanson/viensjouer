@@ -6,6 +6,7 @@ import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { ageLabel, whenShort } from '../lib/format'
 import { colourOf } from '../lib/palette'
+import { useAutosave } from '../lib/autosave'
 import { SwipeRow } from '../components/SwipeRow'
 import { Children } from './Children'
 import { Sheet } from '../components/Sheet'
@@ -19,6 +20,7 @@ import { Groups } from '../components/Groups'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
 import { Icon, type IconName } from '../components/Icon'
+import { EmptyState } from '../components/EmptyState'
 import { PageHead } from '../components/PageHead'
 
 interface Linked {
@@ -48,7 +50,7 @@ function Together({ familyId }: { familyId: string }) {
   const [open, setOpen] = useState(false)
   const q = useQuery({ queryKey: ['family-history', familyId], queryFn: () => api<{ past: Past[]; next: { id: string; startsAt: number } | null }>(`family-history?id=${familyId}`), enabled: open })
   return (
-    <details className="fold" onToggle={(e) => setOpen(e.currentTarget.open)} style={{ marginTop: '0.35rem' }}>
+    <details className="fold" onToggle={(e) => setOpen(e.currentTarget.open)} style={{ marginTop: '0.25rem' }}>
       <summary><span><Icon name="calendar" />{t.friends.together}</span></summary>
       <div>
         {q.data?.next && <p className="small" style={{ margin: '0.25rem 0' }}>{whenShort(q.data.next.startsAt, lang)} <Link to={`/rencontres/${q.data.next.id}/cartes?family=${familyId}`} className="btn btn--small"><Icon name="note" />{t.friends.printCard}</Link></p>}
@@ -93,12 +95,21 @@ export function Friends() {
     onError: (e) => setErr(e.message),
   })
 
+  const bodyOf = (f: HTMLFormElement) => {
+    const body = Object.fromEntries(new FormData(f).entries()) as Record<string, string | null>
+    if (body.childBirthdate === '') body.childBirthdate = null
+    return body
+  }
+  // A new family is saved with the button; an existing one saves itself as it is edited.
+  const auto = useAutosave('friend-form', async (f) => {
+    if (!cur) return
+    await api('families', { method: 'PATCH', body: { ...bodyOf(f), id: cur.id } })
+    void invalidate()
+  })
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const body = Object.fromEntries(new FormData(e.currentTarget).entries()) as Record<string, string | null>
-    if (body.childBirthdate === '') body.childBirthdate = null
-    if (editing && editing !== 'new') body.id = editing.id
-    save.mutate(body)
+    if (cur) return void auto.flush()
+    save.mutate(bodyOf(e.currentTarget))
   }
 
   const fams = rm.visible(q.data?.families ?? [])
@@ -123,7 +134,7 @@ export function Friends() {
     <>
       <PageHead title={t.friends.title} action={!editing && !importing && <button type="button" className="btn btn--primary btn--small" onClick={() => setEditing('new')}><Icon name="plus" />{t.families.add}</button>} />
       <Children />
-      <div className="row" style={{ margin: '1.5rem 0 0.6rem' }}>
+      <div className="row" style={{ margin: '1.5rem 0 0.5rem' }}>
         <h2 style={{ margin: 0 }}><Icon name="users" />{t.friends.mine}</h2>
         <button type="button" className="btn btn--small btn--icon" aria-label={`${t.friends.groupsFold}${groups.length > 0 ? ` (${groups.length})` : ''}`} title={t.friends.groupsFold} onClick={() => setGroupsOpen(true)}><Icon name="tag" /></button>
       </div>
@@ -131,7 +142,7 @@ export function Friends() {
       {err && <div className="notice notice--err">{err}</div>}
 
       {(editing || importing) && (
-        <Sheet title={cur ? cur.child_first_name : t.families.add} onBack={() => { setEditing(null); setImporting(false) }} formId={editing ? 'friend-form' : undefined} saving={save.isPending} saveLabel={t.families.save}>
+        <Sheet title={cur ? cur.child_first_name : t.families.add} onBack={async () => { await auto.flush(); setEditing(null); setImporting(false) }} formId={editing && !cur ? 'friend-form' : undefined} saving={save.isPending} saveLabel={t.families.save} autosave={cur ? auto.state : undefined}>
           {!cur && (
             <div className="seg" role="tablist" style={{ marginBottom: '1rem' }}>
               <button type="button" role="tab" aria-selected={!importing} className={`btn ${!importing ? 'btn--on' : ''}`} onClick={() => { setImporting(false); setEditing('new') }}>{t.families.add}</button>
@@ -140,7 +151,7 @@ export function Friends() {
           )}
           {importing && <ImportFriends onClose={() => setImporting(false)} />}
           {editing && (
-          <form id="friend-form" onSubmit={submit} key={cur?.id ?? 'new'}>
+          <form id="friend-form" onSubmit={submit} onChange={cur ? auto.poke : undefined} key={cur?.id ?? 'new'}>
             <label className="field"><span><Icon name="smile" />{t.families.childFirstName}</span><input className="input" name="childFirstName" required maxLength={40} defaultValue={cur?.child_first_name} /></label>
             <label className="field"><span><Icon name="user" />{t.families.parentName}</span><input className="input" name="parentName" required maxLength={60} defaultValue={cur?.parent_name} /></label>
             <label className="field"><span><Icon name="mail" />{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /></label>
@@ -171,7 +182,7 @@ export function Friends() {
       )}
 
       {!editing && !importing && <InvitedBy />}
-      {q.data && fams.length === 0 && !editing && <p className="muted">{t.families.empty}</p>}
+      {q.data && fams.length === 0 && !editing && <EmptyState>{t.families.empty}</EmptyState>}
       <div className="stack">
         {fams.map((f) => {
           const l = f.linked_household_id ? byHh.get(f.linked_household_id) : undefined
@@ -222,7 +233,7 @@ export function Friends() {
       </div>
 
       {others.length > 0 && (
-        <section style={{ marginTop: '1.25rem' }}>
+        <section style={{ marginTop: '1rem' }}>
           <h2><Icon name="users" />{t.friends.othersTitle}</h2>
           <p className="muted small">{t.friends.othersHint}</p>
           {others.map((l) => (

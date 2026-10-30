@@ -31,6 +31,7 @@
 | `InstallOffer` | One card, after three different days of use: keep it on the home screen | Native prompt where the browser has one, the iPhone steps otherwise; « Plus tard » is final. |
 | `Turnstile` | The Cloudflare bot check on signup and forgot-password | Mounted only when /api/health reports a site key; hands its token to the form in a hidden `turnstile` field. |
 | `NotificationBell` | The bell in the header: what happened (invited, changed, answered, reminder), unread first then what you already read | A dot, never a number. Needs no permission; the same list the phone notification is made from. |
+| `EmptyState` | Nothing here yet: one quiet centred sentence, and the action that fills it when there is one | Same on every list. |
 | `BackLink` | « ← Retour » at the top of a page: always the same words, size and place | Apart from PageHead on purpose: PageHead imports nothing from the router, so the pages that open with it do not pull the router into a shared chunk (that pushed a chunk over its cap). |
 | `PageHead` | How every page opens: the title with the ONE main action beside it | Replaces the big orange tile. The action wraps under the title on a narrow screen. |
 | `SwipeRow` | A row that slides with a finger: red with a bin to the left (remove), accent with a pencil to the right (edit) | Only counts past the mark, otherwise it slides back; a mouse never slides. The row keeps its icon buttons. |

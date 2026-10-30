@@ -76,7 +76,7 @@ export function NotificationsCard() {
         <summary>{t.notif.what}</summary>
         <div>
           <p>{t.notif.intro}</p>
-          <ul className="small" style={{ margin: '0.25rem 0 0.75rem', paddingLeft: '1.1rem' }}>
+          <ul className="small" style={{ margin: '0.25rem 0 0.75rem', paddingLeft: '1rem' }}>
             {t.notif.events.map((x) => <li key={x}>{x}</li>)}
           </ul>
           <p className="muted small">{t.notif.inApp}</p>

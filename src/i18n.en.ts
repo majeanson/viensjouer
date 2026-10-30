@@ -561,7 +561,7 @@ export const EN: Dict = {
   },
   agenda: { birthday: (n: string, y: number) => `${n}’s birthday · ${y} year${y > 1 ? 's' : ''}`, free: 'I am free', invited: (h: string) => `Invited by ${h}` },
   avatar: { add: 'Add a photo', change: 'Change the photo', remove: 'Remove the photo' },
-  profile: { name: 'My first name', save: 'Save', saved: 'Saved.', testMail: 'Email me a test', testMailHint: 'Get a sample of the email the families receive when you edit a get-together. It goes to your own address only.', testMailSent: (to: string) => `Email sent to ${to}.`, notifyAnswers: 'Tell me when a family answers',
+  profile: { name: 'My first name', saved: 'Saved.', testMail: 'Email me a test', testMailHint: 'Get a sample of the email the families receive when you edit a get-together. It goes to your own address only.', testMailSent: (to: string) => `Email sent to ${to}.`, notifyAnswers: 'Tell me when a family answers',
     notifyAnswersHint: 'One email when a family says yes, maybe or no, at most one every ten minutes per family. Nothing else, and you can turn it off any time.',
     emails: 'Emails and reminders',
     weeklyDigest: 'My Monday plan',

@@ -316,7 +316,7 @@ export function EncounterDetail() {
           {(invitations.length === 0 || invitations.some((i) => i.reply)) && <details className="fold" aria-label={t.roster.title}>
             <summary><span><Icon name="users" />{t.roster.title}</span></summary>
             <div>
-            <p className="muted small" style={{ margin: '0 0 0.4rem' }}>{e.show_guests === false ? null : t.roster.public}</p>
+            <p className="muted small" style={{ margin: '0 0 0.5rem' }}>{e.show_guests === false ? null : t.roster.public}</p>
             {invitations.length === 0 && <p className="muted small" style={{ margin: 0 }}>{t.roster.empty}</p>}
             {groups.filter(([, list]) => list.length > 0).map(([label, list, kind]) => (
               <div key={kind} className="roster__row" data-roster={kind}>
@@ -349,7 +349,7 @@ export function EncounterDetail() {
                   </span>
                   <span className={`chip ${i.reply ? `chip--${i.reply}` : ''}`}>{i.reply ? t.encounters.reply[i.reply] : t.encounters.reply.none}</span>
                 </summary>
-                <div className="stack" style={{ marginTop: '0.6rem' }}>
+                <div className="stack" style={{ marginTop: '0.5rem' }}>
                   {(i.reply_note || i.allergies || i.reply === 'yes') && (
                     <p className="small" style={{ margin: 0 }}>
                       {[i.reply_note && `« ${i.reply_note} »`, i.allergies && `${t.families.allergies} : ${i.allergies}`, i.reply === 'yes' && t.kinds.birthday.theyCome(kidsComing(i.scope, i.kids), i.adults ?? 0)].filter(Boolean).join(' · ')}
@@ -424,7 +424,7 @@ export function EncounterDetail() {
             {invitations.length > 0 && silent.length > 0 && (
               <details className="more" open={!anyEmail} style={{ marginTop: '0.75rem' }}>
                 <summary>{t.encounters.howTitle}</summary>
-                <ul className="small" style={{ margin: '0.5rem 0', paddingLeft: '1.1rem' }}>
+                <ul className="small" style={{ margin: '0.5rem 0', paddingLeft: '1rem' }}>
                   <li>{t.encounters.howMail}</li>
                   <li>{t.encounters.howText}</li>
                   <li>{t.encounters.howPaper}</li>

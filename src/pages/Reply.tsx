@@ -209,7 +209,7 @@ function ReplyInner() {
           {changes.length > 0 && (
             <details className="why" style={{ marginTop: '0.75rem' }}>
               <summary>{t.edit.history}</summary>
-              <ul className="small" style={{ margin: '0.4rem 0 0' }}>
+              <ul className="small" style={{ margin: '0.5rem 0 0' }}>
                 {changes.map((c, n) => (
                   <li key={n}>
                     <span className="muted">{whenShort(c.created_at, lang)} · {t.edit.fields[c.field]} :</span>{' '}
@@ -262,7 +262,7 @@ function ReplyInner() {
         {e.details?.planB && <p style={{ marginTop: 0 }}><Icon name="umbrella" /><strong>{t.encounters.planB} :</strong> {e.details.planB}{mark(freshOf('planB'))}</p>}
         <details className="why" key={String(fresh.length > 0)} open={fresh.length > 0}>
           <summary>{t.reply.allDetails}</summary>
-        <dl className="facts" style={{ marginTop: '0.6rem' }}>
+        <dl className="facts" style={{ marginTop: '0.5rem' }}>
           <div><dt><Icon name="tag" />{t.reply.what}</dt><dd>{e.title}{mark(freshOf('title'))}</dd></div>
           <div><dt><Icon name="calendar" />{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at && <><span aria-hidden="true"> → </span><span className="sr-only"> {t.reply.untilWord} </span>{timeOnly(e.ends_at, lang)}</>}<Rel at={e.starts_at} />{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
           {e.place && <div><dt><Icon name="pin" />{t.reply.where}</dt><dd>{e.place}{mark(freshOf('place'))}</dd></div>}

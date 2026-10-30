@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { PALETTE } from '../lib/palette'
+import { colourOf } from '../lib/palette'
 import { useLang, useT } from '../i18n'
-import { whenShort } from '../lib/format'
+import { ago, whenShort } from '../lib/format'
 import { Face } from './Face'
 import { Icon } from './Icon'
-import type { Lang } from '../i18n'
 import { focusIfFinePointer } from '../lib/focus'
 
 // « Le tableau » — the rencontre's message board, for everyone who is invited: where to meet, what to
@@ -22,20 +21,6 @@ export interface BoardMessage {
   mine?: boolean
 }
 
-const colourOf = (name: string) => PALETTE[[...name].reduce((n, c) => n + c.charCodeAt(0), 0) % PALETTE.length]
-
-const rtf = new Map<Lang, Intl.RelativeTimeFormat>()
-export function ago(sec: number, lang: Lang, now = Math.floor(Date.now() / 1000)): string {
-  const diff = sec - now
-  const abs = Math.abs(diff)
-  if (abs >= 7 * 86_400) return whenShort(sec, lang)
-  let f = rtf.get(lang)
-  if (!f) rtf.set(lang, (f = new Intl.RelativeTimeFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', { numeric: 'auto' })))
-  if (abs < 60) return f.format(0, 'second')
-  if (abs < 3600) return f.format(Math.round(diff / 60), 'minute')
-  if (abs < 86_400) return f.format(Math.round(diff / 3600), 'hour')
-  return f.format(Math.round(diff / 86_400), 'day')
-}
 
 // Plain text with http(s) links made clickable — built as React nodes, never as HTML.
 export function linkify(text: string): ReactNode[] {

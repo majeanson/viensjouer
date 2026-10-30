@@ -8,7 +8,7 @@ import { disablePush, enablePush, isSubscribed, pushPermission, pushSupported } 
 import { Icon } from './Icon'
 
 // Compte, « Notifications »: what you are told and where, in plain words, with the one switch for THIS device. The in-app list
-// (« Nouveau » on Rencontres) needs no permission and is always there; the phone notification is the optional extra.
+// (the bell in the header) needs no permission and is always there; the phone notification is the optional extra.
 export function NotificationsCard() {
   const t = useT()
   const qc = useQueryClient()

@@ -70,6 +70,7 @@ describe('GET and POST /api/notifications', () => {
     expect(await titles()).toEqual(['Tn2'])
     await call(notifications, 'Post', s.env, marc, 'notifications', { readAll: true })
     expect(await titles()).toEqual([])
+    expect(await titles('notifications?all=1')).toEqual(['Tn2', 'Tn1']) // the bell still lists what was read
   })
   it('refuses a request with no session', async () => {
     const s = seed()

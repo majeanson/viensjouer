@@ -7,6 +7,8 @@ import { FamilyPicker } from './FamilyPicker'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
 import { Icon } from './Icon'
+import { Face } from './Face'
+import { colourOf } from '../lib/palette'
 
 // Groups — the host's private shortcuts (« La garderie »). Lives under the friend-families
 // list: a group is just a named set of those families.
@@ -41,7 +43,6 @@ export function Groups({ families }: { families: Family[] }) {
     if (cur) body.id = cur.id
     save.mutate(body)
   }
-  const nameOf = (id: string) => families.find((f) => f.id === id)?.child_first_name
 
   return (
     <section>
@@ -49,15 +50,23 @@ export function Groups({ families }: { families: Family[] }) {
       {err && <div className="notice notice--err">{err}</div>}
       {q.data && groups.length === 0 && !editing && <p className="muted">{t.groups.empty}</p>}
       <div className="stack">
-        {groups.map((g) => (
-          <div key={g.id} className="card row">
-            <span><strong>{g.name}</strong><br /><span className="muted small">{g.families.map(nameOf).filter(Boolean).join(', ') || '—'}</span></span>
-            <span className="cluster">
-              <button className="btn" onClick={() => open(g)}>{t.encounters.edit}</button>
-              <button className="btn btn--danger" onClick={() => rm.remove(g.id, t.undo.removed, async () => { await api('groups', { method: 'DELETE', body: { id: g.id } }); void refresh() })}>{t.families.remove}</button>
-            </span>
-          </div>
-        ))}
+        {groups.map((g) => {
+          const members = g.families.map((id) => families.find((f) => f.id === id)).filter((f): f is Family => !!f)
+          return (
+            <div key={g.id} className="card friend">
+              <div className="row">
+                <span className="cluster">
+                  <span className="faces" aria-hidden="true">{members.slice(0, 4).map((f) => <Face key={f.id} name={f.child_first_name} colour={colourOf(f.child_first_name)} size="md" />)}</span>
+                  <span className="friend__who"><strong>{g.name}</strong><span className="muted small">{members.map((f) => f.child_first_name).join(', ') || '—'}</span></span>
+                </span>
+                <span className="cluster">
+                  <button className="btn btn--small" onClick={() => open(g)}>{t.encounters.edit}</button>
+                  <button className="btn btn--small btn--danger" onClick={() => rm.remove(g.id, t.undo.removed, async () => { await api('groups', { method: 'DELETE', body: { id: g.id } }); void refresh() })}>{t.families.remove}</button>
+                </span>
+              </div>
+            </div>
+          )
+        })}
       </div>
       {editing ? (
         <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>

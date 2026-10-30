@@ -10,7 +10,6 @@ import type { Child, Encounter, Family, InvitationSummary } from '../lib/types'
 import { Icon, BigAction, kindIcon } from '../components/Icon'
 import { PartnerNudge } from '../components/PartnerNudge'
 import { InstallOffer } from '../components/InstallOffer'
-import { NewForYou } from '../components/NewForYou'
 
 type Reply = 'yes' | 'no' | 'maybe' | null
 type CalItem =
@@ -39,11 +38,15 @@ export function Encounters() {
   const byEnc = new Map<string, InvitationSummary[]>()
   for (const i of q.data?.invitations ?? []) byEnc.set(i.encounter_id, [...(byEnc.get(i.encounter_id) ?? []), i])
 
-  const Mine = ({ e }: { e: Encounter }) => (
+  // A recurring rencontre is ONE card: its next date, and « encore N dates » for the rest (they stay reachable from its page).
+  const Mine = ({ e, more = 0 }: { e: Encounter; more?: number }) => (
     <Link to={`/rencontres/${e.id}`} className="card card--tap" data-kind={e.kind}>
       <div className="row">
         <strong><Icon name={kindIcon(e.kind)} />{e.title}</strong>
-        {e.status !== 'proposed' && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
+        <span className="cluster">
+          {more > 0 && <span className="chip">{t.encounters.seriesMore(more)}</span>}
+          {e.status !== 'proposed' && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
+        </span>
       </div>
       <p className="meta--row muted small">
         <span><Icon name="clock" />{isOver(e) ? whenShort(e.starts_at, lang) : <>{humanWhen(e.starts_at, lang)} · {timeOnly(e.starts_at, lang)}</>}</span>
@@ -60,7 +63,15 @@ export function Encounters() {
   // Everything ahead, one list, by date.
   type Entry = { at: number; key: string; node: ReactNode }
   const ahead: Entry[] = []
-  for (const e of all.filter((x) => !isOver(x))) ahead.push({ at: e.starts_at, key: `m-${e.id}`, node: <Mine e={e} /> })
+  const coming = all.filter((x) => !isOver(x))
+  const inSeries = (id: string | null | undefined) => (id ? coming.filter((x) => x.series_id === id) : [])
+  for (const e of coming) {
+    const mates = inSeries(e.series_id)
+    // The card of a series is its first date that is not cancelled (the first one when all are).
+    const head = mates.find((x) => x.status !== 'cancelled') ?? mates[0]
+    if (mates.length > 1 && head.id !== e.id) continue
+    ahead.push({ at: e.starts_at, key: `m-${e.id}`, node: <Mine e={e} more={mates.length > 1 ? mates.length - 1 : 0} /> })
+  }
   for (const it of cal.data?.items ?? []) {
     if (it.type === 'invited') {
       ahead.push({
@@ -114,7 +125,6 @@ export function Encounters() {
   return (
     <>
       <h1>{t.encounters.title}</h1>
-      <NewForYou />
       <PartnerNudge ready={past.length > 0} />
       <InstallOffer />
       {!nothing && <BigAction icon="calendar" href="/rencontres/nouvelle" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}

@@ -4,7 +4,9 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
-import { whenShort } from '../lib/format'
+import { ageLabel, whenShort } from '../lib/format'
+import { colourOf } from '../lib/palette'
+import { Face } from '../components/Face'
 import { WhyMany } from '../components/WhyMany'
 import { Why } from '../components/Why'
 import { ImportFriends } from '../components/ImportFriends'
@@ -13,7 +15,7 @@ import { CircleInvite } from '../components/CircleInvite'
 import { Groups } from '../components/Groups'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
-import { Icon, BigAction } from '../components/Icon'
+import { Icon, BigAction, type IconName } from '../components/Icon'
 
 interface Linked {
   linkId: string
@@ -159,30 +161,44 @@ export function Friends() {
         {fams.map((f) => {
           const l = f.linked_household_id ? byHh.get(f.linked_household_id) : undefined
           const tags = tagsOf(f.id)
+          const info: [IconName, string | null][] = [
+            ['mail', f.email],
+            ['phone', f.phone],
+            ['alert', f.allergies ? `${t.families.allergies} : ${f.allergies}` : null],
+            ['note', f.notes],
+            ['calendar', l ? dates(l) : null],
+          ]
+          const age = ageLabel(f.child_birthdate, lang)
           return (
-            <div key={f.id} className="card">
+            <div key={f.id} className="card friend">
               <div className="row">
-                <span><strong>{f.child_first_name}</strong> <span className="muted small">· {f.parent_name}</span></span>
+                <span className="cluster">
+                  <Face name={f.child_first_name} colour={colourOf(f.child_first_name)} size="lg" />
+                  <span className="friend__who"><strong>{f.child_first_name}</strong><span className="muted small">{[f.parent_name, age].filter(Boolean).join(' · ')}</span></span>
+                </span>
                 <span className="cluster">
                   <button className="btn btn--small" onClick={() => setEditing(f)}>{t.encounters.edit}</button>
+                  <button className="btn btn--small btn--danger" onClick={() => rm.remove(f.id, t.undo.removed, async () => { await api('families', { method: 'DELETE', body: { id: f.id } }); void invalidate() })}>{t.families.remove}</button>
                 </span>
               </div>
-              {(tags.length > 0 || l) && (
-                <div className="cluster" style={{ marginTop: '0.35rem' }}>
+              {(tags.length > 0 || l || f.mail_stopped_at) && (
+                <div className="cluster" style={{ marginTop: '0.45rem' }}>
                   {tags.map((g) => <span key={g.id} className="chip chip--kind">{g.name}</span>)}
                   {l && <span className="chip chip--yes">{t.friends.onApp}</span>}
+                  {f.mail_stopped_at && <span className="chip">{t.families.stopped}</span>}
                 </div>
               )}
-              {f.mail_stopped_at && <p className="small" style={{ margin: '0.35rem 0 0' }}><span className="chip">{t.families.stopped}</span></p>}
-              {f.email_bounced_at && <p className="small" style={{ margin: '0.35rem 0 0' }}><span className="chip chip--cancelled">{t.families.bounced}</span> {t.families.bouncedHint}</p>}
-              <p className="small muted" style={{ margin: '0.35rem 0 0' }}>{[f.email, f.phone, l ? dates(l) : null, f.allergies && `${t.families.allergies} : ${f.allergies}`, f.notes].filter(Boolean).join(' · ')}</p>
-              <Together familyId={f.id} />
-              {!f.linked_household_id && <CircleInvite family={f} />}
-              <details className="more" style={{ marginTop: '0.35rem' }}>
-                <summary>{t.encounters.moreOptions}</summary>
-                <div className="cluster">
-                  <button className="btn btn--small btn--danger" onClick={() => rm.remove(f.id, t.undo.removed, async () => { await api('families', { method: 'DELETE', body: { id: f.id } }); void invalidate() })}>{t.families.remove}</button>
-                  {l && <button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button>}
+              {f.email_bounced_at && <p className="small" style={{ margin: '0.45rem 0 0' }}><span className="chip chip--cancelled">{t.families.bounced}</span> {t.families.bouncedHint}</p>}
+              <details className="fold friend__more">
+                <summary><span>{t.friends.details}</span></summary>
+                <div>
+                  <ul className="meta">
+                    {info.filter(([, v]) => v).map(([icon, v]) => <li key={icon}><Icon name={icon} />{v}</li>)}
+                    {info.every(([, v]) => !v) && <li className="muted small">{t.friends.noDetails}</li>}
+                  </ul>
+                  <Together familyId={f.id} />
+                  {!f.linked_household_id && <CircleInvite family={f} />}
+                  {l && <div className="cluster" style={{ marginTop: '0.5rem' }}><button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button></div>}
                 </div>
               </details>
             </div>

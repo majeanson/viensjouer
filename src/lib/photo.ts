@@ -8,16 +8,32 @@ export function fitSize(w: number, h: number, max = MAX_SIDE): { w: number; h: n
   return { w: Math.max(1, Math.round(w * scale)), h: Math.max(1, Math.round(h * scale)) }
 }
 
+// The file is decoded by an <img>, not createImageBitmap: every current browser turns a phone photo upright by itself that way, while
+// Safari's createImageBitmap(..., { imageOrientation }) can hand back a bitmap whose size and pixels disagree (the top of the picture blank).
+async function decode(file: File): Promise<HTMLImageElement> {
+  const url = URL.createObjectURL(file)
+  try {
+    const img = new Image()
+    img.src = url
+    await img.decode()
+    return img
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 export async function resizeToJpeg(file: File): Promise<Blob> {
-  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' })
-  const { w, h } = fitSize(bmp.width, bmp.height)
+  const img = await decode(file)
+  const { w, h } = fitSize(img.naturalWidth, img.naturalHeight)
   const canvas = document.createElement('canvas')
   canvas.width = w
   canvas.height = h
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('canvas')
-  ctx.drawImage(bmp, 0, 0, w, h)
-  bmp.close()
+  // JPEG has no transparency: a see-through PNG would turn black, so it goes onto white.
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, w, h)
+  ctx.drawImage(img, 0, 0, w, h)
   const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.85))
   if (!blob) throw new Error('encode')
   return blob

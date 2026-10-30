@@ -212,33 +212,44 @@ test('without ticking it, nothing is asked to be sent', async ({ page }) => {
 
 // ---- notifications --------------------------------------------------------------------------------------------------
 
-test('« Nouveau » on Rencontres lists what happened, opens it and marks it read, or marks everything read', async ({ page }) => {
-  let list = [
-    { id: 'n1', kind: 'invited', title: 'Marc t’invite', body: 'Au parc, samedi', url: '/lune-miel' },
-    { id: 'n2', kind: 'answered', title: 'Léa : oui', body: 'Julie · Au parc', url: '/rencontres/e1#i1' },
+test('the bell in the header lists what happened, opens it and marks it read, or marks everything read, and keeps what was read', async ({ page }) => {
+  const now = Math.floor(Date.now() / 1000)
+  let list: { id: string; kind: string; title: string; body: string | null; url: string | null; created_at: number; read_at: number | null }[] = [
+    { id: 'n1', kind: 'invited', title: 'Marc t’invite', body: 'Au parc, samedi', url: '/lune-miel', created_at: now - 60, read_at: null },
+    { id: 'n2', kind: 'answered', title: 'Léa : oui', body: 'Julie · Au parc', url: '/rencontres/e1#i1', created_at: now - 120, read_at: null },
+    { id: 'n0', kind: 'reminder', title: 'Demain, le parc', body: null, url: null, created_at: now - 90_000, read_at: now - 80_000 },
   ]
   const stub = await host(page, {
     'GET notifications': () => ({ json: { notifications: list } }),
-    'POST notifications': (b) => ((list = b?.readAll ? [] : list.filter((n) => n.id !== b?.id)), { json: { ok: true } }),
+    'POST notifications': (b) => ((list = list.map((n) => (b?.readAll || n.id === b?.id ? { ...n, read_at: n.read_at ?? now } : n))), { json: { ok: true } }),
   })
   await page.goto('/rencontres')
-  const card = page.getByRole('region', { name: 'Nouveau' })
-  await expect(card).toContainText('Marc t’invite')
-  await expect(card).toContainText('Au parc, samedi')
-  await expect(card.getByRole('link', { name: 'Marc t’invite' })).toHaveAttribute('href', '/lune-miel')
-  await card.getByRole('link', { name: 'Léa : oui' }).click()
+  const bell = page.getByRole('button', { name: /Notifications · du nouveau/ })
+  await bell.click()
+  const panel = page.getByRole('region', { name: 'Notifications' })
+  await expect(panel).toContainText('Marc t’invite')
+  await expect(panel).toContainText('Au parc, samedi')
+  await expect(panel.getByRole('link', { name: /Marc t’invite/ })).toHaveAttribute('href', '/lune-miel')
+  await expect(panel).toContainText('Déjà lu')
+  await expect(panel).toContainText('Demain, le parc')
+  await panel.getByRole('link', { name: /Léa : oui/ }).click()
   await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'notifications')?.body).toEqual({ id: 'n2' })
   await page.goto('/rencontres')
-  await card.getByRole('button', { name: 'Tout marquer comme lu' }).click()
+  await page.getByRole('button', { name: /Notifications/ }).click()
+  await page.getByRole('region', { name: 'Notifications' }).getByRole('button', { name: 'Tout marquer comme lu' }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'notifications').at(-1)?.body).toEqual({ readAll: true })
-  await expect(page.getByRole('region', { name: 'Nouveau' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Notifications', exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Notifications' })).toContainText('Marc t’invite')
 })
 
-test('no « Nouveau » card when there is nothing new', async ({ page }) => {
+test('the bell has no dot and says so when there is nothing new', async ({ page }) => {
   await host(page, { 'GET notifications': () => ({ json: { notifications: [] } }) })
   await page.goto('/rencontres')
   await expect(page.getByRole('heading', { name: 'Rencontres', level: 1 })).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Nouveau' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Notifications', exact: true }).click()
+  await expect(page.getByRole('region', { name: 'Notifications' })).toContainText('Rien de nouveau')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('region', { name: 'Notifications' })).toHaveCount(0)
 })
 
 test('Compte, Notifications says in plain words what you are told and where, and sends a test', async ({ page }) => {
@@ -246,17 +257,17 @@ test('Compte, Notifications says in plain words what you are told and where, and
   await page.goto('/compte?tab=notifications')
   await expect(page.getByRole('heading', { name: 'Notifications', level: 2 })).toBeVisible()
   for (const line of ['une famille t’invite à une rencontre', 'une rencontre où tu es invité change, est reportée ou annulée', 'une famille répond à ta rencontre', 'une rencontre approche (le rappel de la veille)']) await expect(page.getByText(line)).toBeVisible()
-  await expect(page.getByText(/dans « Nouveau », sans permission/)).toBeVisible()
+  await expect(page.getByText(/dans la cloche, en haut de la page, sans permission/)).toBeVisible()
   await expect(page.getByText(/Rien de lisible ne passe par Apple ou Google/)).toBeVisible()
   await page.getByRole('button', { name: 'M’envoyer une notification d’essai' }).click()
   await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'push')?.body).toEqual({ test: true })
-  await expect(page.getByText(/Envoyée : regarde « Nouveau »/)).toBeVisible()
+  await expect(page.getByText(/Envoyée : regarde la cloche/)).toBeVisible()
 })
 
 test('Compte, Notifications: with phone push not switched on yet, it says so and the app list still works', async ({ page }) => {
   await host(page, { 'GET health': () => ({ json: { ok: true, mail: false, photos: false, invite: false, push: null } }) })
   await page.goto('/compte?tab=notifications')
-  await expect(page.getByText('Pas encore branchées sur téléphone. Tout reste dans « Nouveau ».')).toBeVisible()
+  await expect(page.getByText('Pas encore branchées sur téléphone. Tout reste dans la cloche, en haut.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Activer sur cet appareil' })).toHaveCount(0)
 })
 
@@ -422,6 +433,7 @@ test('« Inviter dans mon cercle »: a code with no rencontre, the two words for
     'DELETE circle-invite': () => ((invites = []), { json: { ok: true } }),
   })
   await page.goto('/amis')
+  await page.getByText('Détails', { exact: true }).first().click()
   // only a family that is not linked yet can be invited into the circle
   await expect(page.getByText('Inviter dans mon cercle', { exact: true })).toHaveCount(1)
   await page.getByText('Inviter dans mon cercle', { exact: true }).click()
@@ -444,6 +456,7 @@ test('a family with no email gets « Envoyer par texto » and the paper words, n
     'GET circle-invite': () => ({ json: { invites: [{ id: 'ci1', familyId: 'f1', token: 'banquet-liseron' }] } }),
   })
   await page.goto('/amis')
+  await page.getByText('Détails', { exact: true }).first().click()
   await page.getByText('Inviter dans mon cercle', { exact: true }).click()
   await expect(page.locator('.paper', { hasText: 'banquet-liseron' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toBeVisible()

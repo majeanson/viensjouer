@@ -2,6 +2,9 @@
 // theme tokens; what adapts is the INK drawn on them: `inkOn` picks near-black or white, whichever reads better.
 export const PALETTE = ['#f2a03d', '#5b9a8b', '#c76b6b', '#7c83c9', '#b98b3a', '#4f8fbf'] as const
 
+/** A stable colour for someone with no colour of their own (a board author, a friend's child): the same name always gets the same one. */
+export const colourOf = (name: string): string => PALETTE[[...name].reduce((n, c) => n + c.charCodeAt(0), 0) % PALETTE.length]
+
 const DARK = '#1b1814'
 const LIGHT = '#ffffff'
 

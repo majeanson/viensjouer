@@ -4,6 +4,7 @@ import { nowSec } from '../_lib/ids'
 
 // « Nouveau »: what the signed-in parent has been told and has not read yet. Same list for the page and for the phone.
 //   GET  /api/notifications            → { notifications: [...], unread }    (unread, last 30 days, newest first, 20 at most)
+//   GET  /api/notifications?all=1      → the same, read ones included (the bell in the header: unread first, then what you already read), 30 at most
 //   GET  /api/notifications?push=1     → the ones not yet shown as a phone notification (the service worker calls this when
 //                                        a push wakes it), and stamps them shown so they never show twice
 //   POST /api/notifications { id }     → mark one read;  { readAll: true } → mark all read
@@ -11,11 +12,15 @@ const DAY = 86_400
 
 export const onRequestGet = authed(async (ctx, actor) => {
   const now = nowSec()
-  const push = new URL(ctx.request.url).searchParams.get('push') === '1'
+  const params = new URL(ctx.request.url).searchParams
+  const push = params.get('push') === '1'
+  const all = params.get('all') === '1'
   const { results } = await ctx.env.DB.prepare(
     push
       ? 'SELECT id, kind, title, body, url, created_at FROM notifications WHERE email = ? AND read_at IS NULL AND pushed_at IS NULL AND created_at > ? ORDER BY created_at DESC LIMIT 5'
-      : 'SELECT id, kind, title, body, url, created_at FROM notifications WHERE email = ? AND read_at IS NULL AND created_at > ? ORDER BY created_at DESC LIMIT 20',
+      : all
+        ? 'SELECT id, kind, title, body, url, created_at, read_at FROM notifications WHERE email = ? AND created_at > ? ORDER BY created_at DESC LIMIT 30'
+        : 'SELECT id, kind, title, body, url, created_at FROM notifications WHERE email = ? AND read_at IS NULL AND created_at > ? ORDER BY created_at DESC LIMIT 20',
   )
     .bind(actor.email, now - (push ? 3600 : 30 * DAY))
     .all<{ id: string }>()

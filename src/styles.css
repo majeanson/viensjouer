@@ -85,7 +85,8 @@ li { margin-bottom: 0.4rem; }
 .btn--danger { color: var(--bad); }
 .btn--big { width: 100%; padding: 0.8rem 1rem; font-size: 1rem; }
 .btn--yes { background: var(--ok); color: var(--ok-ink); border-color: transparent; }
-.btn--on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.btn--on, .btn--on:hover:not(:disabled) { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 700; box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent); }
+.seg [role='tab'] { border-radius: var(--r-pill); padding-inline: 0.9rem; }
 .linkbtn { appearance: none; background: none; border: 0; padding: 0.25rem 0; min-height: 36px; display: inline-flex; align-items: center; color: var(--ink); text-decoration: underline; cursor: pointer; font-size: 0.9rem; }
 .linkbtn--danger { color: var(--bad); }
 
@@ -402,3 +403,13 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 [data-kind='park'] { --kc: #6a9f5b; }
 [data-kind='home'] { --kc: var(--accent); }
 [data-kind='birthday'] { --kc: #d9b23c; }
+
+/* the bell: a dot (never a number) and a panel under the header */
+.bell__btn { position: relative; }
+.bell__dot { position: absolute; top: 0.4rem; right: 0.4rem; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--paper); }
+.bell__panel { position: absolute; right: 0; top: 100%; width: min(24rem, calc(100vw - 2rem)); max-height: min(30rem, 75vh); overflow: auto; margin-top: 0.35rem; padding: 0.9rem 1rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: 0 8px 24px rgb(0 0 0 / 0.15); }
+.bell__panel a { color: inherit; text-decoration: none; }
+.linkrow.bell--new { border-left: 3px solid var(--accent); padding-left: 0.6rem; }
+/* a friend or a group: one row, the rest under « Détails » */
+.friend__who { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.friend__more { margin: 0.6rem 0 0; }

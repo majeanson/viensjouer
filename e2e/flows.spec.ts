@@ -65,6 +65,15 @@ test('three tabs only, and a brand-new host is told the next step each time', as
   await expect(page.locator('.steps li.now')).toHaveText(/Tout est prêt/)
 })
 
+test('a recurring rencontre is one card: its next date, and how many more', async ({ page }) => {
+  const week = (n: number, over: Record<string, unknown> = {}) => enc({ id: `s${n}`, title: 'Parc du mardi', series_id: 'ser1', starts_at: now + n * 7 * 86_400, ...over })
+  await host(page, { 'GET encounters': () => ({ json: { encounters: [week(1, { status: 'cancelled' }), week(2), week(3), week(4)], invitations: [] } }) })
+  await page.goto('/rencontres')
+  await expect(page.getByRole('link', { name: /Parc du mardi/ })).toHaveCount(1)
+  await expect(page.getByRole('link', { name: /Parc du mardi/ })).toHaveAttribute('href', '/rencontres/s2')
+  await expect(page.getByText('Récurrente · encore 3 dates')).toBeVisible()
+})
+
 test('the agenda mixes my rencontres, invitations, free moments and birthdays by date', async ({ page }) => {
   await host(page, {
     'GET encounters': () => ({ json: { encounters: [enc({ id: 'm1', title: 'Parc du samedi', starts_at: now + 3 * 86_400 })], invitations: [] } }),
@@ -150,7 +159,6 @@ test('removing a friend is undoable too: no browser dialog anywhere', async ({ p
   })
   const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }) })
   await page.goto('/amis')
-  await page.getByText('Plus d’options', { exact: true }).click()
   await page.getByRole('button', { name: 'Retirer', exact: true }).click()
   await expect(page.getByText('Léa')).toHaveCount(0)
   await page.locator('.toast').getByRole('button', { name: 'Annuler' }).click()

@@ -145,3 +145,17 @@ export function clockLabel(hhmm: string, lang: Lang): string {
   if (lang === 'fr') return m === '00' ? `${h} h` : `${h} h ${m}`
   return `${h % 12 || 12}:${m} ${h < 12 ? 'am' : 'pm'}`
 }
+
+// « il y a 5 minutes »: relative for a week, then the short date. Lives here (not in MessageBoard) so the header bell stays light.
+const rtf = new Map<Lang, Intl.RelativeTimeFormat>()
+export function ago(sec: number, lang: Lang, now = Math.floor(Date.now() / 1000)): string {
+  const diff = sec - now
+  const abs = Math.abs(diff)
+  if (abs >= 7 * 86_400) return whenShort(sec, lang)
+  let f = rtf.get(lang)
+  if (!f) rtf.set(lang, (f = new Intl.RelativeTimeFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', { numeric: 'auto' })))
+  if (abs < 60) return f.format(0, 'second')
+  if (abs < 3600) return f.format(Math.round(diff / 60), 'minute')
+  if (abs < 86_400) return f.format(Math.round(diff / 3600), 'hour')
+  return f.format(Math.round(diff / 86_400), 'day')
+}

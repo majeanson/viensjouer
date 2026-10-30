@@ -15,6 +15,7 @@ export function CoverPicture({ encounterId, cover, enabled, onChanged, mode }: {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [hidden, setHidden] = useState(false)
+  const [broken, setBroken] = useState(false)
 
   async function pick(files: FileList | null) {
     const f = files?.[0]
@@ -24,6 +25,7 @@ export function CoverPicture({ encounterId, cover, enabled, onChanged, mode }: {
     try {
       await api(`cover?encounter=${encounterId}`, { method: 'POST', body: await resizeToJpeg(f) })
       setHidden(false)
+      setBroken(false)
       onChanged()
     } catch (e) {
       setErr(e instanceof Error && e.message && !['canvas', 'encode'].includes(e.message) && !/decode|source/i.test(e.message) ? e.message : t.souvenirs.failed)
@@ -45,13 +47,13 @@ export function CoverPicture({ encounterId, cover, enabled, onChanged, mode }: {
     )
   }
 
-  const shown = cover && !hidden
+  const shown = cover && !hidden && !broken
   const showPicture = mode !== 'controls' && !!shown
   const showControls = mode !== 'show' && enabled
   if (!showPicture && !showControls) return null
   return (
     <div className="coverbox">
-      {showPicture && <img className="cover" src={`/api/cover/${encounterId}?v=${cover}`} alt="" />}
+      {showPicture && <img className="cover" src={`/api/cover/${encounterId}?v=${cover}`} alt="" onError={() => setBroken(true)} />}
       {showControls && (
         <div className="cluster">
           <input ref={input} type="file" accept="image/*" hidden onChange={(e) => void pick(e.target.files)} />

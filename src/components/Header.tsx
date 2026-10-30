@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useLang, useT } from '../i18n'
 import { OS_DARK, applyChoice, nextChoice, readChoice, resolveTheme, type ThemeChoice } from '../lib/theme'
 import { Face } from './Face'
 import { Icon } from './Icon'
+
+// The bell loads after the first paint (it is not what a parent opening a link came for).
+const NotificationBell = lazy(() => import('./NotificationBell').then((m) => ({ default: m.NotificationBell })))
 
 // One header for EVERY page, signed in or not, so the language switch is always in the
 // same corner. Brand on the left; on the right the language, the theme and — when signed in — your face and name
@@ -44,6 +47,7 @@ export function Header() {
         <button className="tool tool--icon" aria-label={t.common.themeNow[choice]} title={t.common.themeNow[choice]} onClick={flip}><Icon name={choice === 'auto' ? 'monitor' : resolveTheme(choice) === 'dark' ? 'moon' : 'sun'} /></button>
         {me.signedIn && (
           <>
+            <Suspense fallback={null}><NotificationBell /></Suspense>
             <Link to="/compte" className="tool" aria-label={`${t.account.title}${me.displayName ? ` (${me.displayName})` : ''}`} title={me.displayName ?? t.account.title}><Face name={me.displayName ?? '·'} colour="var(--host)" src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null} size="sm" /></Link>
             <button className="tool tool--icon" aria-label={t.auth.logout} title={t.auth.logout} onClick={() => void signOut()}><Icon name="logout" /><span className="tool__t">{t.auth.logout}</span></button>
           </>

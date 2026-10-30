@@ -18,5 +18,6 @@ export const K = {
   encounter: (id: string) => ['encounter', id] as const,
   lastGuests: (child: string) => ['last-guests', child] as const,
   notifications: ['notifications'] as const,
+  notificationsAll: ['notifications', 'all'] as const,
   reply: (token: string) => ['reply', token] as const,
 }

@@ -205,13 +205,17 @@ export function EncounterNew() {
             ) : (
               <p className="muted small" style={{ margin: '0.75rem 0 0' }}><Icon name="note" />{t.encounters.sendNowNone}</p>
             ))}
-            <h3 style={{ marginTop: '1rem' }}><Icon name="users" />{t.scope.label}</h3>
-            <div className="seg" role="radiogroup" aria-label={t.scope.label}>
-              {(['friend', 'family'] as Scope[]).map((x) => (
-                <button type="button" key={x} role="radio" aria-checked={scope === x} className={`btn ${scope === x ? 'btn--on' : ''}`} onClick={() => { setScope(x); setScopeTouched(true) }}>{t.scope[x]}</button>
-              ))}
-            </div>
-            <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{scope === 'friend' ? t.scope.friendHint : t.scope.familyHint}</p>
+            <details className="more" style={{ marginTop: '1rem' }}>
+              <summary><Icon name="users" />{t.scope.label} : {t.scope[scope]}</summary>
+              <div>
+                <div className="seg" role="radiogroup" aria-label={t.scope.label}>
+                  {(['friend', 'family'] as Scope[]).map((x) => (
+                    <button type="button" key={x} role="radio" aria-checked={scope === x} className={`btn ${scope === x ? 'btn--on' : ''}`} onClick={() => { setScope(x); setScopeTouched(true) }}>{t.scope[x]}</button>
+                  ))}
+                </div>
+                <p className="muted small" style={{ margin: 0 }}>{scope === 'friend' ? t.scope.friendHint : t.scope.familyHint}</p>
+              </div>
+            </details>
           </div>
 
           <div className="card" key={prev?.id ?? 'fresh'}>
@@ -252,7 +256,7 @@ export function EncounterNew() {
               <summary>{t.form.more}</summary>
               <div style={{ marginTop: '0.75rem' }}>
                 <label className="field"><span><Icon name="edit" />{t.encounters.titleField}</span><input className="input" name="title" maxLength={120} defaultValue={prev?.title ?? ''} placeholder={`${t.form.autoTitle[kind]}, ${dayHour(fromLocalInput(start) ?? nextSaturdayTen(), lang)}`} /></label>
-                <label className="field"><span><Icon name="clock" />{t.encounters.until}</span><input className="input" name="endsAt" type="time" defaultValue={prevEnd} /><span className="small muted" style={{ fontWeight: 400 }}>{t.encounters.untilHint}</span></label>
+                <label className="field"><span><Icon name="clock" />{t.encounters.until}</span><input className="input" name="endsAt" type="time" defaultValue={prevEnd} /></label>
                 <label className="field">
                   <span><Icon name="repeat" />{t.encounters.repeat}</span>
                   <select className="input" name="freq" value={freq} onChange={(e) => setFreq(e.target.value as Frequency)}>

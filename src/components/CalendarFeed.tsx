@@ -39,7 +39,7 @@ export function CalendarFeed() {
   return (
     <div className="card">
       <h2><Icon name="calendar" />{t.calfeed.title}</h2>
-      <p className="muted small">{t.calfeed.hint}</p>
+      {!token && <p className="muted small">{t.calfeed.hint}</p>}
       {err && <div className="notice notice--err">{err}</div>}
       {!token ? (
         <button className="btn" disabled={make.isPending} onClick={() => make.mutate()}>{t.calfeed.make}</button>
@@ -50,18 +50,21 @@ export function CalendarFeed() {
             <a className="btn btn--primary" href={webcal}>{t.calfeed.open}</a>
             <button className="btn" onClick={() => void copy()}>{copied ? t.calfeed.copied : t.calfeed.copy}</button>
           </div>
-          {asking ? (
-            <div className="cluster" style={{ marginTop: '0.75rem' }}>
-              <span className="small">{t.calfeed.rotateWarn}</span>
-              <button className="btn btn--small" disabled={make.isPending} onClick={() => make.mutate()}>{t.calfeed.confirm}</button>
-              <button className="btn btn--small" onClick={() => setAsking(false)}>{t.calfeed.cancel}</button>
-            </div>
-          ) : (
-            <div className="cluster" style={{ marginTop: '0.5rem' }}>
-              <button className="btn btn--small" onClick={() => setAsking(true)}>{t.calfeed.rotate}</button>
-              <button className="btn btn--small btn--danger" disabled={off.isPending} onClick={() => off.mutate()}>{t.calfeed.off}</button>
-            </div>
-          )}
+          <details className="more" style={{ marginTop: '0.75rem' }}>
+            <summary>{t.calfeed.manage}</summary>
+            {asking ? (
+              <div className="cluster">
+                <span className="small">{t.calfeed.rotateWarn}</span>
+                <button className="btn btn--small" disabled={make.isPending} onClick={() => make.mutate()}>{t.calfeed.confirm}</button>
+                <button className="btn btn--small" onClick={() => setAsking(false)}>{t.calfeed.cancel}</button>
+              </div>
+            ) : (
+              <div className="cluster">
+                <button className="btn btn--small" onClick={() => setAsking(true)}>{t.calfeed.rotate}</button>
+                <button className="btn btn--small btn--danger" disabled={off.isPending} onClick={() => off.mutate()}>{t.calfeed.off}</button>
+              </div>
+            )}
+          </details>
         </>
       )}
     </div>

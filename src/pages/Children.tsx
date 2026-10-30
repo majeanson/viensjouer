@@ -93,24 +93,29 @@ export function Children() {
           />
           <label className="field"><span><Icon name="smile" />{t.children.firstName}</span><input className="input" name="firstName" required maxLength={40} defaultValue={cur?.first_name} /></label>
           <label className="field"><span><Icon name="cake" />{t.children.birthdate}</span><input className="input" name="birthdate" type="date" defaultValue={cur?.birthdate ?? ''} /><Why k="childBirthdate" /></label>
-          <div className="field">
-            <span><Icon name="clock" />{t.children.nap}</span>
-            <div className="when when--even">
-              <label className="field"><span>{t.children.napFrom}</span><input className="input" name="napStart" type="time" step={900} defaultValue={cur?.nap_start ?? ''} /></label>
-              <label className="field"><span>{t.children.napTo}</span><input className="input" name="napEnd" type="time" step={900} defaultValue={cur?.nap_end ?? ''} /></label>
+          <details className="more" open={!!cur?.nap_start || !!cur?.nap_end} style={{ marginBottom: '0.75rem' }}>
+            <summary>{t.encounters.moreOptions}</summary>
+            <div>
+              <div className="field">
+                <span><Icon name="clock" />{t.children.nap}</span>
+                <div className="when when--even">
+                  <label className="field"><span>{t.children.napFrom}</span><input className="input" name="napStart" type="time" step={900} defaultValue={cur?.nap_start ?? ''} /></label>
+                  <label className="field"><span>{t.children.napTo}</span><input className="input" name="napEnd" type="time" step={900} defaultValue={cur?.nap_end ?? ''} /></label>
+                </div>
+                <Why k="nap" />
+              </div>
+              <div className="field">
+                <span><Icon name="palette" />{t.children.colour}</span>
+                <div className="cluster" role="radiogroup" aria-label={t.children.colour}>
+                  {COLOURS.map((col, i) => (
+                    <label key={col} className="swatch" style={{ background: col }}>
+                      <input type="radio" name="colour" value={col} defaultChecked={cur ? cur.colour === col : i === kids.length % COLOURS.length} />
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
-            <Why k="nap" />
-          </div>
-          <div className="field">
-            <span><Icon name="palette" />{t.children.colour}</span>
-            <div className="cluster" role="radiogroup" aria-label={t.children.colour}>
-              {COLOURS.map((col, i) => (
-                <label key={col} className="swatch" style={{ background: col }}>
-                  <input type="radio" name="colour" value={col} defaultChecked={cur ? cur.colour === col : i === kids.length % COLOURS.length} />
-                </label>
-              ))}
-            </div>
-          </div>
+          </details>
           <div className="cluster">
             <button className="btn btn--primary" disabled={save.isPending}>{t.children.save}</button>
             <button type="button" className="btn" onClick={() => setEditing(null)}>{t.encounters.back}</button>

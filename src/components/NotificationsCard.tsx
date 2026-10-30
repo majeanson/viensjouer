@@ -65,11 +65,6 @@ export function NotificationsCard() {
   return (
     <div className="card">
       <h2><Icon name="bell" />{t.notif.title}</h2>
-      <p>{t.notif.intro}</p>
-      <ul className="small" style={{ margin: '0.25rem 0 0.75rem', paddingLeft: '1.1rem' }}>
-        {t.notif.events.map((x) => <li key={x}>{x}</li>)}
-      </ul>
-      <p className="muted small">{t.notif.inApp}</p>
       <h3>{t.notif.deviceTitle}</h3>
       {device}
       {err && <div className="notice notice--err" role="alert" style={{ marginTop: '0.5rem' }}>{err}</div>}
@@ -77,7 +72,17 @@ export function NotificationsCard() {
         <button type="button" className="btn btn--small" disabled={test.isPending} onClick={() => { setTested(false); test.mutate() }}>{t.notif.test}</button>
         {tested && <span className="small" role="status" style={{ marginLeft: '0.5rem' }}>{t.notif.tested}</span>}
       </div>
-      <p className="muted small" style={{ marginTop: '1rem' }}>{t.notif.privacy}</p>
+      <details className="more" style={{ marginTop: '1rem' }}>
+        <summary>{t.notif.what}</summary>
+        <div>
+          <p>{t.notif.intro}</p>
+          <ul className="small" style={{ margin: '0.25rem 0 0.75rem', paddingLeft: '1.1rem' }}>
+            {t.notif.events.map((x) => <li key={x}>{x}</li>)}
+          </ul>
+          <p className="muted small">{t.notif.inApp}</p>
+          <p className="muted small" style={{ margin: 0 }}>{t.notif.privacy}</p>
+        </div>
+      </details>
     </div>
   )
 }

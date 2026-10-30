@@ -15,6 +15,9 @@ const read = () => {
 
 // One account is one forgotten password away from losing the book of friends. After the first rencontre has happened,
 // ONE calm line suggests inviting the other parent; « Plus tard » hides it on this device for good.
+// Whether the nudge is due: the install offer waits while it is (one banner at a time).
+export const nudgeDue = (ready: boolean, me: { soloHost?: boolean; demo?: boolean }): boolean => ready && !!me.soloHost && !me.demo && !read()
+
 export function PartnerNudge({ ready }: { ready: boolean }) {
   const t = useT()
   const { me } = useAuth()

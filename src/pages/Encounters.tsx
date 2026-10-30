@@ -8,7 +8,8 @@ import { humanWhen, timeOnly, whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
 import type { Child, Encounter, Family, InvitationSummary } from '../lib/types'
 import { Icon, BigAction, kindIcon } from '../components/Icon'
-import { PartnerNudge } from '../components/PartnerNudge'
+import { PartnerNudge, nudgeDue } from '../components/PartnerNudge'
+import { useAuth } from '../lib/auth'
 import { InstallOffer } from '../components/InstallOffer'
 
 type Reply = 'yes' | 'no' | 'maybe' | null
@@ -25,6 +26,7 @@ interface Cal {
 // « je suis libre » moments and the birthdays, in date order. The last two weeks sit below.
 export function Encounters() {
   const nav = useNavigate()
+  const { me } = useAuth()
   const t = useT()
   const { lang } = useLang()
   const q = useQuery({ queryKey: K.encounters, queryFn: () => api<{ encounters: Encounter[]; invitations: InvitationSummary[] }>('encounters') })
@@ -126,7 +128,7 @@ export function Encounters() {
     <>
       <h1>{t.encounters.title}</h1>
       <PartnerNudge ready={past.length > 0} />
-      <InstallOffer />
+      <InstallOffer hold={nudgeDue(past.length > 0, me)} />
       {!nothing && <BigAction icon="calendar" href="/rencontres/nouvelle" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}
       {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && (

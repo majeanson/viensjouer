@@ -256,6 +256,7 @@ test('Compte, Notifications says in plain words what you are told and where, and
   const stub = await host(page, { 'GET health': () => ({ json: { ok: true, mail: false, photos: false, invite: false, push: 'BKEY' } }), 'POST push': () => ({ json: { ok: true } }) })
   await page.goto('/compte?tab=notifications')
   await expect(page.getByRole('heading', { name: 'Notifications', level: 2 })).toBeVisible()
+  await page.getByText('Ce qu’on te dit').click()
   for (const line of ['une famille t’invite à une rencontre', 'une rencontre où tu es invité change, est reportée ou annulée', 'une famille répond à ta rencontre', 'une rencontre approche (le rappel de la veille)']) await expect(page.getByText(line)).toBeVisible()
   await expect(page.getByText(/dans la cloche, en haut de la page, sans permission/)).toBeVisible()
   await expect(page.getByText(/Rien de lisible ne passe par Apple ou Google/)).toBeVisible()
@@ -267,6 +268,7 @@ test('Compte, Notifications says in plain words what you are told and where, and
 test('Compte, Notifications: with phone push not switched on yet, it says so and the app list still works', async ({ page }) => {
   await host(page, { 'GET health': () => ({ json: { ok: true, mail: false, photos: false, invite: false, push: null } }) })
   await page.goto('/compte?tab=notifications')
+  await page.getByText('Ce qu’on te dit').click()
   await expect(page.getByText('Pas encore branchées sur téléphone. Tout reste dans la cloche, en haut.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Activer sur cet appareil' })).toHaveCount(0)
 })

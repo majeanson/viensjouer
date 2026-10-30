@@ -207,6 +207,8 @@ test('« Refaire pareil » opens the form with the same kind, place, families an
   await expect(page.getByRole('checkbox', { name: /Max/ })).not.toBeChecked()
   await expect(page.getByLabel('Où')).toHaveValue('Chez nous')
   await expect(page.getByLabel('Titre')).toHaveValue('Après la sieste')
+  await expect(page.locator('details.more > summary', { hasText: 'Qui est invité' })).toContainText(/seulement/i)
+  await page.locator('details.more > summary', { hasText: 'Qui est invité' }).click()
   await expect(page.getByRole('radio', { name: /seulement/i }).first()).toHaveAttribute('aria-checked', 'true')
   const when = await page.locator('input[name=startsAt]').inputValue()
   expect(new Date(when).getTime()).toBeGreaterThan(Date.now())
@@ -371,7 +373,8 @@ test('« Mon calendrier »: get a secret link, copy it, rotate it only after a s
   await expect(page.getByRole('link', { name: 'Ouvrir dans mon calendrier' })).toHaveAttribute('href', new RegExp(`^webcal://.+/api/feed/${'A'.repeat(24)}$`))
   await page.getByRole('button', { name: 'Copier le lien' }).click()
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`/api/feed/${'A'.repeat(24)}$`))
-  // rotating asks first, inline, with no browser dialog
+  // rotating asks first, inline, with no browser dialog (under « Gérer ce lien »)
+  await page.getByText('Gérer ce lien').click()
   await page.getByRole('button', { name: 'Nouveau lien' }).click()
   await expect(page.getByText('L’ancien lien cessera de marcher.')).toBeVisible()
   expect(stub.calls.filter((c) => c.method === 'POST' && c.path === 'cal-link')).toHaveLength(1)

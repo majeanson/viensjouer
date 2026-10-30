@@ -7,7 +7,7 @@ import { Icon } from './Icon'
 // One calm card for a host who has opened the app on three different days: keep it on the home screen. Android and desktop
 // Chrome hand us a prompt to fire (lib/install.ts, the same one the account page uses); iPhone has none, so it says where
 // the button is. « Plus tard » is final. Nothing useful to offer (an installed app, a browser with neither): nothing shown.
-export function InstallOffer() {
+export function InstallOffer({ hold = false }: { hold?: boolean }) {
   const t = useT()
   const inst = useInstall()
   const [show, setShow] = useState(false)
@@ -17,7 +17,7 @@ export function InstallOffer() {
     setShow(shouldOffer(v, isDismissed(), inst.installed))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  if (!show || (!inst.canPrompt && !inst.ios)) return null
+  if (hold || !show || (!inst.canPrompt && !inst.ios)) return null
   const later = () => {
     dismiss()
     setShow(false)

@@ -638,7 +638,7 @@ test('the host sees where the answers stand, emails every family not yet told in
   await page.goto('/rencontres/e1')
   const tally = page.getByRole('group', { name: 'Les réponses reçues' })
   await expect(tally).toContainText('Oui · 1')
-  await expect(tally).toContainText('Pas de réponse · 3')
+  await expect(page.getByText('Il manque :')).toBeVisible()
   // Nobody has been told yet: ONE primary button emails the two who have an address (Eli has none: text or card).
   await page.getByRole('button', { name: 'Envoyer à 2 familles par courriel' }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'invitations').map((c) => c.body?.id)).toEqual(['i2', 'i3'])

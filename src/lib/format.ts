@@ -30,7 +30,25 @@ export function relativeDay(sec: number, lang: Lang, nowMs = Date.now()): string
   return new Intl.RelativeTimeFormat(lang === 'fr' ? 'fr-CA' : 'en-CA', { numeric: 'auto' }).format(diff, 'day')
 }
 
-export const timeOnly = (sec: number, lang: Lang) => f(lang, { hour: 'numeric', minute: '2-digit' }, 'time').format(new Date(sec * 1000))
+// « Demain matin », « Samedi après-midi », « Samedi 14 novembre, soir »: how a parent says it. The day is today, tomorrow or the
+// weekday within the coming week, else weekday and date; the part of the day is morning (before noon), afternoon (before 5 pm) or evening.
+export function humanWhen(sec: number, lang: Lang, nowMs = Date.now()): string {
+  const d = new Date(sec * 1000)
+  const h = d.getHours()
+  const part = lang === 'fr' ? (h < 12 ? 'matin' : h < 17 ? 'après-midi' : 'soir') : h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening'
+  const day = (x: Date) => Date.UTC(x.getFullYear(), x.getMonth(), x.getDate()) / 86_400_000
+  const diff = day(d) - day(new Date(nowMs))
+  const tag = lang === 'fr' ? 'fr-CA' : 'en-CA'
+  const label =
+    diff === 0 || diff === 1
+      ? new Intl.RelativeTimeFormat(tag, { numeric: 'auto' }).format(diff, 'day')
+      : diff > 1 && diff <= 6
+        ? f(lang, { weekday: 'long' }, 'wd').format(d)
+        : whenDay(sec, lang)
+  return `${label.charAt(0).toUpperCase()}${label.slice(1)}${diff > 6 || diff < 0 ? ',' : ''} ${part}`
+}
+
+export const timeOnly =(sec: number, lang: Lang) => f(lang, { hour: 'numeric', minute: '2-digit' }, 'time').format(new Date(sec * 1000))
 
 // <input type="datetime-local"> ↔ unix seconds, in the browser's zone.
 export function toLocalInput(sec: number): string {

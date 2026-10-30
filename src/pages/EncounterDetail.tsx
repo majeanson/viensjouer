@@ -285,8 +285,10 @@ export function EncounterDetail() {
             {invitations.length > 0 && (
               <div className="cluster" style={{ marginBottom: '0.75rem' }} role="group" aria-label={t.encounters.tally}>
                 {(['yes', 'maybe', 'no'] as const).map((k) => ({ k, n: invitations.filter((i) => i.reply === k).length })).filter((x) => x.n > 0).map((x) => <span key={x.k} className={`chip chip--${x.k}`}>{t.encounters.reply[x.k]} · {x.n}</span>)}
-                {silent.length > 0 && <span className="chip">{t.encounters.reply.none} · {silent.length}</span>}
               </div>
+            )}
+            {invitations.length > 0 && (
+              <p className="muted small" style={{ margin: '0 0 0.75rem' }}>{silent.length > 0 ? t.encounters.missing(silent.map((i) => i.child_first_name).join(', ')) : t.encounters.allAnswered}</p>
             )}
             {unsentMail.length > 0 && <p style={{ margin: '0 0 0.75rem' }}><button className="btn btn--primary" disabled={resendAll.isPending} onClick={() => resendAll.mutate(unsentMail.map((i) => i.id))}><Icon name="mail" />{t.encounters.sendAll(unsentMail.length)}</button></p>}
             {invitations.map((i) => (

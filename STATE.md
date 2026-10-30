@@ -49,6 +49,10 @@
 
 ## 3. What just shipped
 
+### Presentation pass: say it the way a parent says it — 2026-10-29
+
+No new feature, no new field. The reply page opens with ONE big line (`humanWhen`: « Samedi matin », « Demain après-midi ») over title, hours and place; the labelled rows sit under « Tous les détails » (open when something was edited since the last visit; the plan B stays outside the fold, it matters when it rains), and « Comment ça marche » is a fold. The agenda uses the same words (hour beside, exact date only in the past). Agenda cards carry a coloured left edge by kind (`data-kind`: park green, home accent, birthday yellow). On the host page the tally keeps yes / maybe / no and the « Pas de réponse » chip is replaced by « Il manque : Camille, Jo » (or « Tout le monde a répondu »). The sticky answer bar already existed. Gates and `e2e:ci` green.
+
 ### Household time zone — 2026-10-29
 
 `households.tz` is now written: signup sends the browser's zone (`cleanTz` refuses anything the runtime does not know, default Toronto), and `PATCH /api/profile { tz }` can change it (household-wide), but there is deliberately NO select on the account page: a local playdate app assumes host and guests share a zone. Households created before this stay on Toronto.

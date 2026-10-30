@@ -78,8 +78,8 @@ test('a birthday asks how many come, only once the answer is yes', async ({ page
 test('a plan B shows beside the date and place, before the answer', async ({ page }) => {
   await stub(page, card({ encounter: { ...card().encounter, details: { planB: 'S’il pleut : chez nous' } } }))
   await page.goto(`/${CODE}`)
-  const first = page.locator('.facts').first()
-  await expect(first.getByText('Plan B')).toBeVisible()
+  const first = page.locator('main .card').first()
+  await expect(first.getByText('Plan B', { exact: false })).toBeVisible()
   await expect(first.getByText('S’il pleut : chez nous')).toBeVisible()
 })
 
@@ -182,11 +182,12 @@ test('the shared page says what it is, the facts, who it is for and what happens
   await page.goto(`/${CODE}`)
   await expect(page.getByText(/^Invitation · /)).toBeVisible()
   await expect(page.getByText('Organisé par Marc, le parent de Noé.')).toBeVisible()
-  // the facts as labelled rows
+  // the facts as labelled rows, folded under « Tous les détails »
+  await page.getByText('Tous les détails').click()
   for (const label of ['Quoi', 'Quand', 'Où', 'Adresse', 'À savoir']) await expect(page.getByText(label, { exact: true }).first()).toBeVisible()
   await expect(page.getByText('Sieste à 13 h')).toBeVisible()
   // the three steps, the first one being "now"
-  await expect(page.getByRole('heading', { name: 'Comment ça marche' })).toBeVisible()
+  await page.getByText('Comment ça marche').click()
   await expect(page.locator('.steps li')).toHaveCount(3)
   await expect(page.locator('.steps li.now')).toHaveCount(1)
   await expect(page.getByText('Pas de compte à créer.').first()).toBeVisible()

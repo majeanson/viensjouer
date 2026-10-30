@@ -4,8 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
-import { whenShort } from '../lib/format'
-import { Rel } from '../components/Rel'
+import { humanWhen, timeOnly, whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
 import type { Child, Encounter, Family, InvitationSummary } from '../lib/types'
 import { Icon, BigAction, kindIcon } from '../components/Icon'
@@ -41,13 +40,13 @@ export function Encounters() {
   for (const i of q.data?.invitations ?? []) byEnc.set(i.encounter_id, [...(byEnc.get(i.encounter_id) ?? []), i])
 
   const Mine = ({ e }: { e: Encounter }) => (
-    <Link to={`/rencontres/${e.id}`} className="card card--tap">
+    <Link to={`/rencontres/${e.id}`} className="card card--tap" data-kind={e.kind}>
       <div className="row">
         <strong><Icon name={kindIcon(e.kind)} />{e.title}</strong>
         {e.status !== 'proposed' && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
       </div>
       <p className="meta--row muted small">
-        <span><Icon name="clock" />{whenShort(e.starts_at, lang)}<Rel at={e.starts_at} /></span>
+        <span><Icon name="clock" />{isOver(e) ? whenShort(e.starts_at, lang) : <>{humanWhen(e.starts_at, lang)} · {timeOnly(e.starts_at, lang)}</>}</span>
         {e.place && e.place !== t.encounters.kind[e.kind] && <span><Icon name="pin" />{e.place}</span>}
       </p>
       {(byEnc.get(e.id) ?? []).length > 0 && (
@@ -68,10 +67,10 @@ export function Encounters() {
         at: it.at,
         key: `i-${it.id}`,
         node: (
-          <Link to={`/${paperCode(it.token)}`} className="card card--tap">
+          <Link to={`/${paperCode(it.token)}`} className="card card--tap" data-kind={it.kind}>
             <div className="row"><strong><Icon name={kindIcon(it.kind)} />{it.title}</strong><span className="chip chip--kind">{t.agenda.invited(it.host ?? '')}</span></div>
             <p className="meta--row muted small">
-              <span><Icon name="clock" />{whenShort(it.at, lang)}<Rel at={it.at} /></span>
+              <span><Icon name="clock" />{humanWhen(it.at, lang)} · {timeOnly(it.at, lang)}</span>
               {it.place && it.place !== t.encounters.kind[it.kind] && <span><Icon name="pin" />{it.place}</span>}
               <span className={`chip ${it.reply ? `chip--${it.reply}` : ''}`}>{it.reply ? t.encounters.reply[it.reply] : t.encounters.reply.none}</span>
             </p>

@@ -5,7 +5,7 @@ import { ApiError, api, isStatus } from '../lib/api'
 import { clearPending, readPending, writePending } from '../lib/pendingAnswer'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
-import { timeOnly, whenDay, whenShort } from '../lib/format'
+import { humanWhen, timeOnly, whenDay, whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
 import { fromRow, isPrivate, readSeen, seenKey, showValue, writeSeen, type ChangeField, type ChangeRow } from '../lib/changes'
 import { useAuth } from '../lib/auth'
@@ -252,12 +252,20 @@ function ReplyInner() {
         <h1 style={{ marginTop: '0.25rem' }}>{t.reply.invites(host.child_first_name, you.child_first_name)}</h1>
         <p className="muted">{t.reply.organizer(host.parent_name || host.household_name, host.child_first_name)}</p>
         <p><strong>{you.scope === 'friend' ? t.scope.youFriend(you.child_first_name) : t.scope.youFamily}</strong></p>
-        <dl className="facts">
+        <p className="lead">{humanWhen(e.starts_at, lang)}</p>
+        <p className="muted" style={{ marginTop: 0 }}>
+          {e.title} · {timeOnly(e.starts_at, lang)}{e.ends_at && <><span aria-hidden="true"> → </span><span className="sr-only"> {t.reply.untilWord} </span>{timeOnly(e.ends_at, lang)}</>}
+          {e.place && e.place !== e.title && <> · {e.place}</>}
+        </p>
+        {e.details?.planB && <p style={{ marginTop: 0 }}><Icon name="umbrella" /><strong>{t.encounters.planB} :</strong> {e.details.planB}{mark(freshOf('planB'))}</p>}
+        <details className="why" key={String(fresh.length > 0)} open={fresh.length > 0}>
+          <summary>{t.reply.allDetails}</summary>
+        <dl className="facts" style={{ marginTop: '0.6rem' }}>
           <div><dt><Icon name="tag" />{t.reply.what}</dt><dd>{e.title}{mark(freshOf('title'))}</dd></div>
           <div><dt><Icon name="calendar" />{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at && <><span aria-hidden="true"> → </span><span className="sr-only"> {t.reply.untilWord} </span>{timeOnly(e.ends_at, lang)}</>}<Rel at={e.starts_at} />{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
           {e.place && <div><dt><Icon name="pin" />{t.reply.where}</dt><dd>{e.place}{mark(freshOf('place'))}</dd></div>}
-          {e.details?.planB && <div><dt><Icon name="umbrella" />{t.encounters.planB}</dt><dd>{e.details.planB}{mark(freshOf('planB'))}</dd></div>}
         </dl>
+        </details>
         {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
         {e.status === 'postponed' && alive && <div className="notice" role="status">{t.reply.postponed}</div>}
@@ -427,14 +435,18 @@ function ReplyInner() {
         </div>
       )}
 
-      {!answered && <section className="card">
-        <h2><Icon name="info" />{t.reply.stepsTitle}</h2>
-        <ol className="steps">
-          <li className={answered ? 'done' : 'now'}>{t.reply.step1}</li>
-          <li className={answered ? 'done' : ''}>{t.reply.step2(host.parent_name || host.household_name)}</li>
-          <li className={answered && you.reply === 'yes' ? 'now' : ''}>{t.reply.step3}</li>
-        </ol>
-      </section>}
+      {!answered && (
+        <details className="fold" aria-label={t.reply.stepsTitle}>
+          <summary><span><Icon name="info" />{t.reply.stepsTitle}</span></summary>
+          <div>
+            <ol className="steps">
+              <li className="now">{t.reply.step1}</li>
+              <li>{t.reply.step2(host.parent_name || host.household_name)}</li>
+              <li>{t.reply.step3}</li>
+            </ol>
+          </div>
+        </details>
+      )}
 
       <MessageBoard
         messages={messages}

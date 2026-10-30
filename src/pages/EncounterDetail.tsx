@@ -230,6 +230,13 @@ export function EncounterDetail() {
       {e.note && <p>{e.note}</p>}
       {e.details.planB && <p className="muted"><Icon name="umbrella" />{t.encounters.planB} : {e.details.planB}</p>}
       {e.details.gift && <p className="muted">{t.kinds.birthday.giftIs} : {e.details.gift}</p>}
+      {/* Where this rencontre stands, in one line: the next thing to do, never a list of everything. */}
+      {!editing && e.status !== 'cancelled' && e.starts_at > nowSecs && (
+        <p className="muted" role="status" style={{ margin: '0 0 0.5rem' }}>
+          <Icon name="check" />
+          {invitations.length === 0 ? t.step.invite : unsentMail.length > 0 ? t.step.send(unsentMail.length) : silent.length > 0 ? t.step.wait(silent.length) : t.step.ready}
+        </p>
+      )}
       {flash && <div className="notice">{flash}</div>}
       {err && <div className="notice notice--err">{err}</div>}
       {editing ? (

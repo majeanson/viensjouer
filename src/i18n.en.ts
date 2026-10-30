@@ -52,7 +52,8 @@ export const EN: Dict = {
     resetSend: 'Save and sign in',
   },
   slots: { title: 'Which times suit you?', hint: 'Tap the ones you can make. The host will choose.', add: 'Offer other times', choose: 'Choose', yes: (n: number) => (n === 0 ? 'Nobody yet' : n === 1 ? '1 family can' : `${n} families can`), title2: 'Times on offer', remove: 'Remove' },
-  nav: { account: 'Account', home: 'Get-togethers', friends: 'Friends', circle: 'The circle', calendar: 'Calendar', windows: 'Open windows', children: 'My family', families: 'Friend families' },
+  step: { invite: 'Next step: invite some families.', send: (n: number) => (n === 1 ? 'Next step: send the link to 1 family.' : `Next step: send the links to ${n} families.`), wait: (n: number) => (n === 1 ? 'Waiting for 1 family to answer.' : `Waiting for ${n} families to answer.`), ready: 'Everyone has answered.' },
+  nav: { account: 'Account', home: 'Get-togethers', friends: 'People', circle: 'The circle', calendar: 'Calendar', windows: 'Open windows', families: 'Friend families' },
   circle: {
     title: 'The circle',
     hint: 'Your children’s friends whose family is also here. Each side sees only what concerns them.',
@@ -540,7 +541,8 @@ export const EN: Dict = {
     go: 'All set.',
   },
   friends: {
-    title: 'Friends',
+    title: 'People',
+    mine: 'My friends',
     hint: 'The families you invite. A first name is enough; an email, if you have it, is used to send the link.',
     onApp: 'On Viens jouer',
     cutLink: 'Cut the Viens jouer link',

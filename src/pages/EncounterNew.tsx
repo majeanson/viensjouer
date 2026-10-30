@@ -104,6 +104,14 @@ export function EncounterNew() {
     onError: (e) => setErr(e.message),
   })
 
+  // Smart default: the place you used last time for this kind, filled in once (never over a sentence, « Refaire pareil » or a choice).
+  const placeSeeded = useRef(false)
+  useEffect(() => {
+    if (placeSeeded.current || !placesQ.data || from || params.get('say')) return
+    placeSeeded.current = true
+    const last = (placesQ.data.places ?? []).find((p) => p.kind === kind)
+    if (last) { setQuickPlace(last.place); setQuickN((n) => n + 1) }
+  }, [placesQ.data, from, params, kind])
   const children = kids.data?.children ?? []
   function fill(text = say) {
     const q = parseQuick(text, fams.data?.families ?? [])
@@ -220,12 +228,14 @@ export function EncounterNew() {
                 </div>
               </>
             )}
-            <h3><Icon name="sparkle" />{t.encounters.whichKind}</h3>
-            <div className="seg">
-              {KINDS.map((k) => (
-                <button type="button" key={k} className={`btn ${kind === k ? 'btn--on' : ''}`} onClick={() => chooseKind(k)}><Icon name={kindIcon(k)} />{t.encounters.kind[k]}</button>
-              ))}
-            </div>
+            <details className="more">
+              <summary><Icon name={kindIcon(kind)} />{t.encounters.whichKind} : {t.encounters.kind[kind]}</summary>
+              <div className="seg">
+                {KINDS.map((k) => (
+                  <button type="button" key={k} className={`btn ${kind === k ? 'btn--on' : ''}`} onClick={() => chooseKind(k)}><Icon name={kindIcon(k)} />{t.encounters.kind[k]}</button>
+                ))}
+              </div>
+            </details>
           </div>
 
           <div className="card">

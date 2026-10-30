@@ -420,7 +420,7 @@ test('with several children, adding a host asks which child first', async ({ pag
 test('nobody invited you: no « Ils t’ont invité » section at all', async ({ page }) => {
   await host(page, { 'GET invited-by': () => ({ json: { hosts: [] } }) })
   await page.goto('/amis')
-  await expect(page.getByRole('heading', { name: 'Amis', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Proches', level: 1 })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Ils t’ont invité' })).toHaveCount(0)
 })
 

@@ -6,6 +6,8 @@ import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { ageLabel, whenShort } from '../lib/format'
 import { colourOf } from '../lib/palette'
+import { swipe } from '../lib/swipe'
+import { Children } from './Children'
 import { Sheet } from '../components/Sheet'
 import { Face } from '../components/Face'
 import { WhyMany } from '../components/WhyMany'
@@ -106,6 +108,7 @@ export function Friends() {
   const tagsOf = (id: string) => groups.filter((g) => g.families.includes(id))
   const cur = editing && editing !== 'new' ? editing : null
 
+  const remove = (f: Family) => rm.remove(f.id, t.undo.removed, async () => { await api('families', { method: 'DELETE', body: { id: f.id } }); void invalidate() })
   const cutLink = (l: Linked) =>
     cutRm.remove(l.linkId, t.undo.cut, async () => {
       await api('circle', { method: 'DELETE', body: { linkId: l.linkId } })
@@ -118,6 +121,8 @@ export function Friends() {
     <>
       <h1>{t.friends.title}</h1>
       {!editing && !importing && <BigAction icon="users" onClick={() => setEditing('new')}>{t.families.add}</BigAction>}
+      <Children embedded />
+      <h2 style={{ marginTop: '1.5rem' }}><Icon name="users" />{t.friends.mine}</h2>
       {q.data && fams.length === 0 && <p className="muted small">{t.friends.hint}</p>}
       {err && <div className="notice notice--err">{err}</div>}
 
@@ -177,7 +182,7 @@ export function Friends() {
           const age = ageLabel(f.child_birthdate, lang)
           return (
             <details key={f.id} className="card friend">
-              <summary>
+              <summary {...swipe(() => remove(f), () => setEditing(f))}>
                 <Face name={f.child_first_name} colour={colourOf(f.child_first_name)} size="lg" />
                 <span className="friend__who">
                   <strong>{f.child_first_name}{f.email_bounced_at && <span className="chip chip--cancelled" style={{ marginLeft: '0.5rem' }}>{t.families.bounced}</span>}</strong>
@@ -198,8 +203,8 @@ export function Friends() {
                   {info.every(([, v]) => !v) && <li className="muted small">{t.friends.noDetails}</li>}
                 </ul>
                 <div className="cluster">
-                  <button className="btn btn--small" onClick={() => setEditing(f)}>{t.encounters.edit}</button>
-                  <button className="btn btn--small btn--danger" onClick={() => rm.remove(f.id, t.undo.removed, async () => { await api('families', { method: 'DELETE', body: { id: f.id } }); void invalidate() })}>{t.families.remove}</button>
+                  <button className="btn btn--small btn--icon" aria-label={t.encounters.edit} title={t.encounters.edit} onClick={() => setEditing(f)}><Icon name="edit" /></button>
+                  <button className="btn btn--small btn--danger btn--icon" aria-label={t.families.remove} title={t.families.remove} onClick={() => remove(f)}><Icon name="trash" /></button>
                   {l && <button className="btn btn--small btn--danger" onClick={() => cutLink(l)}>{t.friends.cutLink}</button>}
                 </div>
                 <Together familyId={f.id} />

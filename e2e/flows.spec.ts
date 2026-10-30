@@ -44,7 +44,7 @@ test('three tabs and the account, and a brand-new host is told the next step eac
   await host(page, { 'GET children': () => ({ json: { children: [] } }) })
   await page.goto('/rencontres')
   const nav = page.getByRole('navigation', { name: 'Navigation' })
-  await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Amis', 'Ma famille', 'Compte'])
+  await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Proches', 'Compte'])
   await expect(page.getByText('Ajoute ton enfant.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Ajouter mon enfant' })).toBeVisible()
   // three steps, the first is the one to do
@@ -161,7 +161,7 @@ test('removing a friend is undoable too: no browser dialog anywhere', async ({ p
   const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }) })
   await page.goto('/amis')
   await page.locator('.friend > summary').click()
-  await page.getByRole('button', { name: 'Retirer', exact: true }).click()
+  await page.locator('details.friend').getByRole('button', { name: 'Retirer', exact: true }).click()
   await expect(page.getByText('Léa')).toHaveCount(0)
   await page.locator('.toast').getByRole('button', { name: 'Annuler' }).click()
   await expect(page.getByText('Léa').first()).toBeVisible()
@@ -223,14 +223,14 @@ test('editing a friend opens a full-screen sheet with Retour and Enregistrer in 
   const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'PATCH families': () => ({ json: { ok: true } }) })
   await page.goto('/amis')
   await page.locator('details.friend > summary').first().click()
-  await page.getByRole('button', { name: 'Modifier', exact: true }).click()
+  await page.locator('details.friend').getByRole('button', { name: 'Modifier', exact: true }).click()
   const sheet = page.getByRole('dialog', { name: 'Léa' })
   await expect(sheet).toBeVisible()
   const box = await sheet.boundingBox()
   expect(box!.width).toBeGreaterThanOrEqual(page.viewportSize()!.width - 1)
   await sheet.getByRole('button', { name: /Retour/ }).click()
   await expect(sheet).toHaveCount(0)
-  await page.getByRole('button', { name: 'Modifier', exact: true }).click()
+  await page.locator('details.friend').getByRole('button', { name: 'Modifier', exact: true }).click()
   await page.getByRole('dialog').locator('input[name=parentName]').fill('Julie T')
   await page.getByRole('dialog').getByRole('button', { name: 'Enregistrer' }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'PATCH' && c.path === 'families').length).toBe(1)
@@ -260,6 +260,13 @@ test('offering other times sends them with the rencontre; the host picks one and
   const body = stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')!.body!
   expect((body.slots as number[]).length).toBe(1)
   expect((body.slots as number[])[0]).toBeGreaterThan(body.startsAt as number)
+})
+
+test('the host page says the next step in one line', async ({ page }) => {
+  const a = now + 4 * 86_400
+  await host(page, { 'GET encounters': () => ({ json: detail([inv('i1', 'f1', 'Léa', 'Julie', null)], { id: 'e1', starts_at: a }) }) })
+  await page.goto('/rencontres/e1')
+  await expect(page.getByRole('status').filter({ hasText: /Prochaine étape|En attente|Tout le monde/ })).toBeVisible()
 })
 
 test('the host sees how many families can make each time and picks one', async ({ page }) => {
@@ -304,6 +311,7 @@ test('« Chez nous » asks the home card the first time, right where it is neede
   await host(page)
   await page.goto('/rencontres/nouvelle')
   await expect(page.getByText('Chez nous : dis-le une fois (facultatif)')).toHaveCount(0)
+  await page.getByText('Quel genre ?').click() // the kind is folded to its current value
   await page.getByRole('button', { name: 'Chez nous', exact: true }).click()
   await expect(page.getByText('Chez nous : dis-le une fois (facultatif)')).toBeVisible()
 })
@@ -547,11 +555,11 @@ test('every screen has its own title, there is a skip link, and focus follows a 
   await page.keyboard.press('Enter')
   await expect(page.locator('main#main')).toBeFocused()
   // a navigation changes the title and moves focus to the new page's region
-  await page.getByRole('navigation', { name: 'Navigation' }).getByRole('link', { name: 'Amis' }).click()
-  await expect(page).toHaveTitle('Amis · Viens jouer')
+  await page.getByRole('navigation', { name: 'Navigation' }).getByRole('link', { name: 'Proches' }).click()
+  await expect(page).toHaveTitle('Proches · Viens jouer')
   await expect(page.locator('main#main')).toBeFocused()
-  await page.getByRole('navigation', { name: 'Navigation' }).getByRole('link', { name: 'Ma famille' }).click()
-  await expect(page).toHaveTitle('Ma famille · Viens jouer')
+  await page.getByRole('navigation', { name: 'Navigation' }).getByRole('link', { name: 'Compte' }).click()
+  await expect(page).toHaveTitle('Mon compte · Viens jouer')
 })
 
 test('the invitation tab is titled with who invites', async ({ page }) => {
@@ -574,7 +582,7 @@ test('a page that crashes shows a calm card, and moving on clears it', async ({ 
   await expect(page.getByRole('button', { name: 'Recharger' })).toBeVisible()
   // one broken page never traps the rest of the app
   await page.goto('/amis')
-  await expect(page.getByRole('heading', { name: 'Amis' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Proches' })).toBeVisible()
 })
 
 test('going offline says so, and coming back clears it', async ({ page }) => {

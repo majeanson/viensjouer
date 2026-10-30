@@ -50,7 +50,8 @@ export const FR = {
     resetSend: 'Enregistrer et entrer',
   },
   slots: { title: 'Quels moments te conviennent ?', hint: 'Touche ceux où vous pouvez venir. L’hôte choisira.', add: 'Proposer d’autres moments', choose: 'Choisir', yes: (n: number) => (n === 0 ? 'Personne encore' : n === 1 ? '1 famille peut' : `${n} familles peuvent`), title2: 'Moments proposés', remove: 'Retirer' },
-  nav: { account: 'Compte', home: 'Rencontres', friends: 'Amis', circle: 'Le cercle', calendar: 'Calendrier', windows: 'Fenêtres', children: 'Ma famille', families: 'Familles amies' },
+  step: { invite: 'Prochaine étape : inviter des familles.', send: (n: number) => (n === 1 ? 'Prochaine étape : envoyer le lien à 1 famille.' : `Prochaine étape : envoyer les liens à ${n} familles.`), wait: (n: number) => (n === 1 ? 'En attente de la réponse d’1 famille.' : `En attente de la réponse de ${n} familles.`), ready: 'Tout le monde a répondu.' },
+  nav: { account: 'Compte', home: 'Rencontres', friends: 'Proches', circle: 'Le cercle', calendar: 'Calendrier', windows: 'Fenêtres', families: 'Familles amies' },
   circle: {
     title: 'Le cercle',
     hint: 'Les amis de tes enfants dont la famille est aussi ici. Chacun voit seulement ce qui le concerne.',
@@ -538,7 +539,8 @@ export const FR = {
     go: 'Tout est prêt.',
   },
   friends: {
-    title: 'Amis',
+    title: 'Proches',
+    mine: 'Mes amis',
     hint: 'Les familles que tu invites. Un prénom suffit ; un courriel, si tu l’as, sert à envoyer le lien.',
     onApp: 'Sur Viens jouer',
     cutLink: 'Couper le lien Viens jouer',

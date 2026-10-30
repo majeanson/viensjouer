@@ -244,7 +244,7 @@ test('inputs, questions and concepts carry an icon, and icons are decorative', a
   await page.goto('/rencontres/nouvelle')
   await page.getByText('Plus d’options').click()
   expect(await page.locator('label.field svg.ico').count()).toBeGreaterThanOrEqual(6)
-  expect(await page.locator('h3 svg.ico').count()).toBeGreaterThanOrEqual(2)
+  expect(await page.locator('h3 svg.ico').count()).toBeGreaterThanOrEqual(1)
   // every icon is hidden from assistive tech: the words carry the meaning
   const loud = await page.locator('svg.ico:not([aria-hidden=true])').count()
   expect(loud).toBe(0)

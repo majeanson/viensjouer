@@ -20,7 +20,7 @@ const COLOURS = PALETTE
 
 // Add · edit (name, birthdate, colour) · remove. One form for add and edit, like the
 // families page: `editing` is 'new', a child, or closed.
-export function Children() {
+export function Children({ embedded = false }: { embedded?: boolean }) {
   const t = useT()
   const { lang } = useLang()
   const qc = useQueryClient()
@@ -63,8 +63,8 @@ export function Children() {
   const kids = rm.visible(q.data?.children ?? [])
   return (
     <>
-      <h1>{t.children.title}</h1>
-      {!editing && <BigAction icon="smile" onClick={() => { setPending(null); setEditing('new') }}>{t.children.add}</BigAction>}
+      {embedded ? <h2><Icon name="smile" />{t.children.title}</h2> : <h1>{t.children.title}</h1>}
+      {!editing && (embedded ? <button type="button" className="btn btn--small" onClick={() => { setPending(null); setEditing('new') }}>{t.children.add}</button> : <BigAction icon="smile" onClick={() => { setPending(null); setEditing('new') }}>{t.children.add}</BigAction>)}
       {err && <div className="notice notice--err">{err}</div>}
       {q.isLoading && <Loading />}
       {q.isError && !q.data && <QueryError error={q.error} onRetry={() => void q.refetch()} />}

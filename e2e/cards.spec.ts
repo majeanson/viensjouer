@@ -144,19 +144,17 @@ test('the host page lists each family once until someone has answered', async ({
   await expect(page.getByLabel('Qui vient')).toHaveCount(0)
 })
 
-test('every list page has one big tile for its main action, right under the title', async ({ page }) => {
+test('every list page has ONE main action, beside its title and always in the same place', async ({ page }) => {
   await hostStub(page)
   await page.route('**/api/encounters', (r) => r.fulfill({ json: { encounters: [enc({})], invitations: [] } }))
   await page.route('**/api/windows', (r) => r.fulfill({ json: { windows: [] } }))
   await page.route('**/api/calendar', (r) => r.fulfill({ json: { busy: [], free: [], windows: [] } }))
   for (const [path, name] of [['/rencontres', 'Proposer une rencontre'], ['/amis', 'Nouvelle famille'], ['/enfants', 'Ajouter un enfant']] as const) {
     await page.goto(path)
-    const tile = page.locator('.bigaction')
-    await expect(tile, path).toHaveCount(1)
-    await expect(tile).toContainText(name)
-    await expect(page.locator('h1 + .bigaction'), path).toHaveCount(1)
-    // a link where it goes to another page (ctrl-click, address on hover), a button where it opens a form here
-    await expect(tile).toHaveJSProperty('tagName', path === '/rencontres' ? 'A' : 'BUTTON')
+    const head = page.locator('h1').first().locator('xpath=..') // the title row
+    const action = head.getByRole(path === '/rencontres' ? 'link' : 'button', { name })
+    await expect(action, path).toHaveCount(1)
+    await expect(action).toHaveClass(/btn--primary/)
   }
 })
 

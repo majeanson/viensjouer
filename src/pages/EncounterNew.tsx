@@ -14,6 +14,7 @@ import { Windows } from './Windows'
 import type { Child, Encounter, Family, Group, Invitation, Kind } from '../lib/types'
 import { WhenInput } from '../components/WhenInput'
 import { Icon, kindIcon } from '../components/Icon'
+import { BackLink } from '../components/PageHead'
 import { Face } from '../components/Face'
 import { useAuth } from '../lib/auth'
 import { parseQuick } from '../lib/quick'
@@ -209,7 +210,7 @@ export function EncounterNew() {
 
   return (
     <>
-      <p className="small"><Link to="/rencontres">← {t.encounters.back}</Link></p>
+      <BackLink to="/rencontres">{t.encounters.back}</BackLink>
       <h1>{t.encounters.new}</h1>
       <div className="seg" role="tablist" style={{ margin: '0.9rem 0 1rem' }}>
         <button type="button" role="tab" aria-selected={mode === 'plan'} className={`btn ${mode === 'plan' ? 'btn--on' : ''}`} onClick={() => setMode('plan')}>{t.form.plan}</button>

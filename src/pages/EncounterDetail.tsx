@@ -16,6 +16,7 @@ import { kidsComing } from '../lib/scope'
 import { useDeferredRemove, useToast } from '../lib/toast'
 import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
 import { Icon, kindIcon } from '../components/Icon'
+import { BackLink } from '../components/PageHead'
 import { MessageBoard, boardNewCount, type BoardMessage } from '../components/MessageBoard'
 import { Loading } from '../components/Loading'
 import { Rel } from '../components/Rel'
@@ -239,7 +240,7 @@ export function EncounterDetail() {
 
   return (
     <>
-      <Link to="/rencontres" className="muted small">← {t.encounters.back}</Link>
+      <BackLink to="/rencontres">{t.encounters.back}</BackLink>
       <div style={{ marginTop: '0.5rem' }}>
         <CoverPicture mode="show" encounterId={e.id} cover={e.cover ?? null} enabled={false} onChanged={refresh} />
       </div>

@@ -13,7 +13,8 @@ import { Loading } from '../components/Loading'
 import { QueryError } from '../components/QueryError'
 import { SwipeRow } from '../components/SwipeRow'
 import { Sheet } from '../components/Sheet'
-import { Icon, BigAction } from '../components/Icon'
+import { Icon } from '../components/Icon'
+import { PageHead } from '../components/PageHead'
 import { PALETTE } from '../lib/palette'
 
 // The same six colours the server hands out in turn (functions/api/children.ts).
@@ -70,8 +71,7 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
           <h2 style={{ margin: 0 }}><Icon name="smile" />{t.children.title}</h2>
           <button type="button" className="btn btn--small btn--icon" aria-label={t.children.add} title={t.children.add} onClick={() => { setPending(null); setEditing('new') }}><Icon name="plus" /></button>
         </div>
-      ) : <h1>{t.children.title}</h1>}
-      {!embedded && !editing && <BigAction icon="smile" onClick={() => { setPending(null); setEditing('new') }}>{t.children.add}</BigAction>}
+      ) : <PageHead title={t.children.title} action={!editing && <button type="button" className="btn btn--primary btn--small" onClick={() => { setPending(null); setEditing('new') }}><Icon name="plus" />{t.children.add}</button>} />}
       {err && <div className="notice notice--err">{err}</div>}
       {q.isLoading && <Loading />}
       {q.isError && !q.data && <QueryError error={q.error} onRetry={() => void q.refetch()} />}

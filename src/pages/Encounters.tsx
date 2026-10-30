@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -7,7 +7,8 @@ import { useLang, useT } from '../i18n'
 import { humanWhen, timeOnly, whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
 import type { Child, Encounter, Family, InvitationSummary, OpenWindow } from '../lib/types'
-import { Icon, BigAction, kindIcon } from '../components/Icon'
+import { Icon, kindIcon } from '../components/Icon'
+import { PageHead } from '../components/PageHead'
 import { WindowRow } from '../components/WindowRow'
 import { FirstSteps } from '../components/FirstSteps'
 import { PartnerNudge, nudgeDue } from '../components/PartnerNudge'
@@ -27,7 +28,6 @@ interface Cal {
 // One agenda. What I host (with the faces invited and their answers), what others invite me to, my
 // « je suis libre » moments and the birthdays, in date order. The last two weeks sit below.
 export function Encounters({ compact = false }: { compact?: boolean }) {
-  const nav = useNavigate()
   const { id: openId } = useParams()
   const { me } = useAuth()
   const t = useT()
@@ -84,7 +84,7 @@ export function Encounters({ compact = false }: { compact?: boolean }) {
         key: `i-${it.id}`,
         node: (
           <Link to={`/${paperCode(it.token)}`} className="card card--tap" data-kind={it.kind}>
-            <div className="row"><strong><Icon name={kindIcon(it.kind)} />{it.title}</strong><span className="chip chip--kind">{t.agenda.invited(it.host ?? '')}</span></div>
+            <div className="row"><strong><Icon name={kindIcon(it.kind)} />{it.title}</strong><span className="chip chip--kind" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>{t.agenda.invited(it.host ?? '')}</span></div>
             <p className="meta--row muted small">
               <span><Icon name="clock" />{humanWhen(it.at, lang)} · {timeOnly(it.at, lang)}</span>
               {it.place && it.place !== t.encounters.kind[it.kind] && <span><Icon name="pin" />{it.place}</span>}
@@ -118,10 +118,9 @@ export function Encounters({ compact = false }: { compact?: boolean }) {
 
   return (
     <>
-      {compact ? <h2 style={{ marginTop: 0 }}>{t.encounters.title}</h2> : <h1>{t.encounters.title}</h1>}
+      <PageHead level={compact ? 2 : 1} title={t.encounters.title} action={!nothing && <Link to="/rencontres/nouvelle" className="btn btn--primary btn--small"><Icon name="plus" />{t.encounters.new}</Link>} />
       <PartnerNudge ready={past.length > 0} />
       <InstallOffer hold={nudgeDue(past.length > 0, me)} />
-      {!nothing && <BigAction icon="calendar" href="/rencontres/nouvelle" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}
       {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && <FirstSteps noChild={noChild} noFriend={noFriend} />}
       {ready && !nothing && ahead.length === 0 && <p className="muted">{t.encounters.empty}</p>}

@@ -31,6 +31,7 @@
 | `InstallOffer` | One card, after three different days of use: keep it on the home screen | Native prompt where the browser has one, the iPhone steps otherwise; « Plus tard » is final. |
 | `Turnstile` | The Cloudflare bot check on signup and forgot-password | Mounted only when /api/health reports a site key; hands its token to the form in a hidden `turnstile` field. |
 | `NotificationBell` | The bell in the header: what happened (invited, changed, answered, reminder), unread first then what you already read | A dot, never a number. Needs no permission; the same list the phone notification is made from. |
+| `PageHead` | How every page opens: an optional « ← Retour » (`BackLink`), then the title with the ONE main action beside it | Replaces the big orange tile. The action wraps under the title on a narrow screen. |
 | `SwipeRow` | A row that slides with a finger: red with a bin to the left (remove), accent with a pencil to the right (edit) | Only counts past the mark, otherwise it slides back; a mouse never slides. The row keeps its icon buttons. |
 | `Sheet` | A real full-screen sheet to edit one thing (a friend, a child, a group): « Retour » left, the confirm button right, the form under it | The confirm button submits the form by id. Escape goes back. Rendered in a portal above the tab bar. |
 | `WindowRow` | An open window (« on est libres… ») as a closed row in the Rencontres list; the families offered it, their answers, links and Supprimer open on a tap | Replaces the old Fenêtres page. Made from the second tab of the new-rencontre page. |

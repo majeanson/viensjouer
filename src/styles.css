@@ -149,10 +149,6 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .photo__x { position: absolute; top: 0.25rem; right: 0.25rem; width: 2rem; height: 2rem; border-radius: 50%; border: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 1.2rem; line-height: 1; cursor: pointer; }
 
 /* The shared page: the facts as a labelled list, and the three steps. */
-.facts { margin: 0 0 0.9rem; display: grid; gap: 0.5rem; }
-.facts div { display: grid; grid-template-columns: min(7rem, 38%) minmax(0, 1fr); gap: 0.5rem; }
-.facts dt { color: var(--muted); font-size: 0.85rem; font-weight: 600; padding-top: 0.1rem; overflow-wrap: anywhere; }
-.facts dd { margin: 0; overflow-wrap: anywhere; }
 .steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
 .steps li { position: relative; padding: 0.25rem 0 0.6rem 2rem; color: var(--muted); counter-increment: step; }
 .steps li::before { content: counter(step); position: absolute; left: 0; top: 0.2rem; width: 1.4rem; height: 1.4rem; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; color: var(--muted); }
@@ -165,7 +161,6 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .changes-preview ul { margin: 0.35rem 0 0; padding-left: 1.1rem; }
 .changed { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.05rem 0.4rem; border-radius: 4px; background: var(--accent); color: var(--accent-ink); vertical-align: middle; }
 .was { display: block; color: var(--muted); font-size: 0.8rem; text-decoration: line-through; margin-top: 0.1rem; }
-.notice--changed { background: color-mix(in srgb, var(--accent) 22%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); align-items: flex-start; }
 
 /* The undo bar (src/lib/toast.tsx). */
 .toasts { position: fixed; left: 0; right: 0; bottom: 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; padding: 0 var(--gutter); z-index: var(--z-toast); pointer-events: none; }
@@ -362,21 +357,10 @@ main:focus { outline: none; }
 }
 
 /* The reply page: while the question is out of view, three answers stay one tap away (phones; a desktop shows the question at once). */
-.answerbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-nav); display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.6rem var(--gutter) calc(0.6rem + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(60, 40, 10, 0.08); }
-.answerbar .btn { flex: 1 1 auto; white-space: nowrap; padding-inline: 0.4rem; }
-.answerbar .answerbar__yes { flex: 2 1 auto; }
-.shell--bar { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
-@media (min-width: 761px) { .answerbar { display: none; } }
-@media (prefers-reduced-motion: no-preference) { .answerbar { animation: slide-up 0.28s var(--ease) backwards; } }
 
 .rel { color: var(--ink); font-weight: 600; margin-left: 0.35em; }
 
-/* The main action of a page, a tile (BigAction) */
-.bigaction { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem; width: 100%; margin: 0.5rem 0 1rem; padding: 1rem; min-height: 5.5rem; border: 0; border-radius: var(--radius); background: var(--accent); color: var(--accent-ink); font: inherit; font-size: 1.1rem; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent); }
-.bigaction .ico { width: 2rem; height: 2rem; margin: 0; color: inherit; }
-.bigaction:hover { filter: brightness(0.96); }
 
-.bigaction:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .endactions { display: grid; gap: 0.75rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 .trial { display: grid; justify-items: center; gap: 0.4rem; text-align: center; margin: 1rem 0; }
 .trial p { margin: 0; }

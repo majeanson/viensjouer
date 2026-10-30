@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { whenLong } from '../lib/format'
 import { paperCode } from '../lib/link'
+import { BackLink } from '../components/PageHead'
 import { Icon } from '../components/Icon'
 import { Loading } from '../components/Loading'
 import { QueryError } from '../components/QueryError'
@@ -37,7 +38,7 @@ export function Cards() {
   return (
     <>
       <div className="noprint">
-        <Link to={`/rencontres/${e.id}`} className="muted small">← {e.title}</Link>
+        <BackLink to={`/rencontres/${e.id}`}>{e.title}</BackLink>
         <h1>{t.cards.title}</h1>
         <p className="muted">{t.cards.hint}</p>
         {invitations.length === 0 ? (

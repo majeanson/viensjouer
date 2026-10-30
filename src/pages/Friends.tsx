@@ -18,7 +18,8 @@ import { CircleInvite } from '../components/CircleInvite'
 import { Groups } from '../components/Groups'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
-import { Icon, BigAction, type IconName } from '../components/Icon'
+import { Icon, type IconName } from '../components/Icon'
+import { PageHead } from '../components/PageHead'
 
 interface Linked {
   linkId: string
@@ -120,8 +121,7 @@ export function Friends() {
 
   return (
     <>
-      <h1>{t.friends.title}</h1>
-      {!editing && !importing && <BigAction icon="users" onClick={() => setEditing('new')}>{t.families.add}</BigAction>}
+      <PageHead title={t.friends.title} action={!editing && !importing && <button type="button" className="btn btn--primary btn--small" onClick={() => setEditing('new')}><Icon name="plus" />{t.families.add}</button>} />
       <Children embedded />
       <div className="row" style={{ margin: '1.5rem 0 0.6rem' }}>
         <h2 style={{ margin: 0 }}><Icon name="users" />{t.friends.mine}</h2>

@@ -1,0 +1,12 @@
+/* What only the invitation page uses: the facts list, the « changed » notice and the slim answer bar. Loaded with that page, so every other screen downloads less. */
+.facts { margin: 0 0 0.9rem; display: grid; gap: 0.5rem; }
+.facts div { display: grid; grid-template-columns: min(7rem, 38%) minmax(0, 1fr); gap: 0.5rem; }
+.facts dt { color: var(--muted); font-size: 0.85rem; font-weight: 600; padding-top: 0.1rem; overflow-wrap: anywhere; }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+.notice--changed { background: color-mix(in srgb, var(--accent) 22%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); align-items: flex-start; }
+.answerbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-nav); display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.6rem var(--gutter) calc(0.6rem + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgba(60, 40, 10, 0.08); }
+.answerbar .btn { flex: 1 1 auto; white-space: nowrap; padding-inline: 0.4rem; }
+.answerbar .answerbar__yes { flex: 2 1 auto; }
+.shell--bar { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+@media (min-width: 761px) { .answerbar { display: none; } }
+@media (prefers-reduced-motion: no-preference) { .answerbar { animation: slide-up 0.28s var(--ease) backwards; } }

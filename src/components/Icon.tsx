@@ -64,24 +64,3 @@ export function Icon({ name, className = '' }: { name: IconName; className?: str
 
 // The icon of a kind of rencontre.
 export const kindIcon = (k: string): IconName => (k === 'park' ? 'tree' : k === 'home' ? 'home' : 'cake')
-
-// The one main action of a page: a wide centred tile, the icon above the words, right under the title.
-// Everything else on the page stays smaller and lower. With `href` it is a real link (ctrl-click opens a tab, the
-// address shows on hover) and a plain click calls `onClick` to navigate inside the app; without `href` it is a button.
-// (Importing `Link` here changed how the bundle splits and pushed the shared chunk over its cap.)
-export function BigAction({ icon, href, onClick, children }: { icon: IconName; href?: string; onClick: () => void; children: ReactNode }) {
-  const inner = (
-    <>
-      <Icon name={icon} />
-      <span>{children}</span>
-    </>
-  )
-  if (href) {
-    return (
-      <a href={href} className="bigaction" onClick={(e) => { if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) { e.preventDefault(); onClick() } }}>
-        {inner}
-      </a>
-    )
-  }
-  return <button type="button" className="bigaction" onClick={onClick}>{inner}</button>
-}

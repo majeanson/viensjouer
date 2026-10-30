@@ -11,6 +11,7 @@ import { useDeferredRemove } from '../lib/toast'
 import type { Child } from '../lib/types'
 import { Loading } from '../components/Loading'
 import { QueryError } from '../components/QueryError'
+import { Sheet } from '../components/Sheet'
 import { Icon, BigAction } from '../components/Icon'
 import { PALETTE } from '../lib/palette'
 
@@ -80,7 +81,8 @@ export function Children() {
         ))}
       </div>
       {editing ? (
-        <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
+        <Sheet title={cur ? cur.first_name : t.children.add} onBack={() => setEditing(null)} formId="child-form" saving={save.isPending} saveLabel={t.children.save}>
+        <form id="child-form" onSubmit={submit} key={cur?.id ?? 'new'}>
           <AvatarPicker
             name={cur?.first_name ?? ''}
             colour={cur?.colour}
@@ -116,11 +118,8 @@ export function Children() {
               </div>
             </div>
           </details>
-          <div className="cluster">
-            <button className="btn btn--primary" disabled={save.isPending}>{t.children.save}</button>
-            <button type="button" className="btn" onClick={() => setEditing(null)}>{t.encounters.back}</button>
-          </div>
         </form>
+        </Sheet>
       ) : null}
     </>
   )

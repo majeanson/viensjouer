@@ -42,15 +42,15 @@ export function Header() {
     mq.addEventListener('change', follow)
     return () => mq.removeEventListener('change', follow)
   }, [choice])
-  // In the menu the same two buttons read as words; on the bare header (signed out) they stay small tools.
+  // In the menu the same buttons are bare icons (the labels stay for a screen reader and as tooltips); signed out they stay small tools.
   const langBtn = (
-    <button className={me.signedIn ? 'btn' : 'tool'} lang={lang === 'fr' ? 'en' : 'fr'} aria-label={lang === 'fr' ? 'EN (English)' : 'FR (français)'} onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}>
-      {lang === 'fr' ? 'EN' : 'FR'}
+    <button className={me.signedIn ? 'btn btn--icon' : 'tool'} lang={lang === 'fr' ? 'en' : 'fr'} aria-label={lang === 'fr' ? 'EN (English)' : 'FR (français)'} title={lang === 'fr' ? 'English' : 'Français'} onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}>
+      {me.signedIn ? <Icon name="globe" /> : lang === 'fr' ? 'EN' : 'FR'}
     </button>
   )
   const themeBtn = (
-    <button className={me.signedIn ? 'btn' : 'tool tool--icon'} aria-label={t.common.themeNow[choice]} title={t.common.themeNow[choice]} onClick={flip}>
-      <Icon name={choice === 'auto' ? 'monitor' : resolveTheme(choice) === 'dark' ? 'moon' : 'sun'} />{me.signedIn && t.common.themeNow[choice]}
+    <button className={me.signedIn ? 'btn btn--icon' : 'tool tool--icon'} aria-label={t.common.themeNow[choice]} title={t.common.themeNow[choice]} onClick={flip}>
+      <Icon name={choice === 'auto' ? 'monitor' : resolveTheme(choice) === 'dark' ? 'moon' : 'sun'} />
     </button>
   )
   return (
@@ -69,15 +69,14 @@ export function Header() {
           <>
             <Suspense fallback={null}><NotificationBell /></Suspense>
             <div className="bell" ref={box}>
-              <button type="button" className="tool" aria-label={`${t.account.title}${me.displayName ? ` (${me.displayName})` : ''}`} title={me.displayName ?? t.account.title} aria-expanded={open} aria-controls="me-menu" onClick={() => setOpen((o) => !o)}>
+              <button type="button" className="tool" aria-label={`${t.account.menu}${me.displayName ? ` (${me.displayName})` : ''}`} title={me.displayName ?? t.account.menu} aria-expanded={open} aria-controls="me-menu" onClick={() => setOpen((o) => !o)}>
                 <Face name={me.displayName ?? '·'} colour="var(--host)" src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null} size="sm" />
               </button>
               {open && (
-                <div id="me-menu" className="bell__panel stack" style={{ width: 'auto', minWidth: '12rem' }}>
-                  <Link to="/compte" className="btn" onClick={() => setOpen(false)}><Icon name="user" />{t.account.title}</Link>
+                <div id="me-menu" className="bell__panel cluster" style={{ width: 'auto', padding: '0.5rem' }}>
                   {langBtn}
                   {themeBtn}
-                  <button className="btn" onClick={() => void signOut()}><Icon name="logout" />{t.auth.logout}</button>
+                  <button className="btn btn--icon" aria-label={t.auth.logout} title={t.auth.logout} onClick={() => void signOut()}><Icon name="logout" /></button>
                 </div>
               )}
             </div>

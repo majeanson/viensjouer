@@ -17,9 +17,9 @@ export function Shell({ children }: { children: ReactNode }) {
       <OfflineNotice />
       <nav className="nav" aria-label="Navigation">
         <NavLink to="/rencontres"><Icon name="calendar" /><span>{t.nav.home}</span></NavLink>
-        <NavLink to="/rencontres/nouvelle" className={() => "nav__new"}><Icon name="plus" /><span>{t.nav.new}</span></NavLink>
         <NavLink to="/amis"><Icon name="users" /><span>{t.nav.friends}</span></NavLink>
         <NavLink to="/enfants"><Icon name="home" /><span>{t.nav.children}</span></NavLink>
+        <NavLink to="/compte"><Icon name="user" /><span>{t.account.title}</span></NavLink>
       </nav>
       {me.demo && (
         <div className="notice">

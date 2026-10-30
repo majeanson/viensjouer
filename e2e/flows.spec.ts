@@ -40,11 +40,11 @@ async function host(page: Page, handlers: Record<string, Handler> = {}): Promise
 
 const detail = (invitations: unknown[] = [], over: Record<string, unknown> = {}) => ({ encounter: enc(over), invitations, messages: [], relais: [], souvenirs: [], changes: [] })
 
-test('three tabs and a plus, and a brand-new host is told the next step each time', async ({ page }) => {
+test('three tabs and the account, and a brand-new host is told the next step each time', async ({ page }) => {
   await host(page, { 'GET children': () => ({ json: { children: [] } }) })
   await page.goto('/rencontres')
   const nav = page.getByRole('navigation', { name: 'Navigation' })
-  await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Nouvelle', 'Amis', 'Ma famille'])
+  await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Amis', 'Ma famille', 'Mon compte'])
   await expect(page.getByText('Ajoute ton enfant.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Ajouter mon enfant' })).toBeVisible()
   // three steps, the first is the one to do
@@ -217,6 +217,24 @@ test('first steps: the child, then a friend, then one sentence, each right on th
   await expect(page).toHaveURL(/nouvelle[?]say=/)
   await expect(page.locator('input[name=startsAt]')).toHaveValue(/T14:00$/)
   await expect(page.getByRole('checkbox', { name: /Léa/ })).toBeChecked()
+})
+
+test('editing a friend opens a full-screen sheet with Retour and Enregistrer in its bar', async ({ page }) => {
+  const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'PATCH families': () => ({ json: { ok: true } }) })
+  await page.goto('/amis')
+  await page.locator('details.friend > summary').first().click()
+  await page.getByRole('button', { name: 'Modifier', exact: true }).click()
+  const sheet = page.getByRole('dialog', { name: 'Léa' })
+  await expect(sheet).toBeVisible()
+  const box = await sheet.boundingBox()
+  expect(box!.width).toBeGreaterThanOrEqual(page.viewportSize()!.width - 1)
+  await sheet.getByRole('button', { name: /Retour/ }).click()
+  await expect(sheet).toHaveCount(0)
+  await page.getByRole('button', { name: 'Modifier', exact: true }).click()
+  await page.getByRole('dialog').locator('input[name=parentName]').fill('Julie T')
+  await page.getByRole('dialog').getByRole('button', { name: 'Enregistrer' }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'PATCH' && c.path === 'families').length).toBe(1)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
 test('one sentence fills the form: kind, day, hour, place and the friend', async ({ page }) => {
@@ -506,7 +524,7 @@ test('English is its own chunk: a French visitor never downloads it, an English-
       await expect(page.getByRole('button', { name: 'Ajouter un ami' })).toBeVisible()
       expect(seen.fr, 'a French visitor must not download the English chunk').toHaveLength(0)
       // switching later keeps the page and swaps the words once the chunk is in
-      await page.getByRole('button', { name: /^Mon compte/ }).click()
+      await page.getByRole('button', { name: /^Menu/ }).click()
       await page.getByRole('button', { name: 'EN (English)' }).click()
       await expect(page.getByRole('button', { name: 'Add a friend' })).toBeVisible()
     }
@@ -576,7 +594,7 @@ test('the page language attribute follows the device, and the toggle', async ({ 
   await host(page)
   await page.goto('/rencontres')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
-  await page.getByRole('button', { name: /^My account/ }).click()
+  await page.getByRole('button', { name: /^Menu/ }).click()
   await page.getByRole('button', { name: 'FR (français)' }).click()
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
   await ctx.close()

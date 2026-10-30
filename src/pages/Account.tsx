@@ -68,11 +68,11 @@ export function Account() {
   return (
     <>
       <h1>{t.account.title}</h1>
-      <p className="muted small">{me.email}</p>
       <div className="stack">
         <Sec id="notifications" icon="bell" open={tab === 'notifications'} onOpen={pick}><NotificationsCard /></Sec>
         <Sec id="profile" icon="user" open={tab === 'profile'} onOpen={pick}>
           <div>
+            <p className="muted small">{me.email}</p>
             <AvatarPicker
               name={me.displayName ?? ''}
               colour="var(--host)"

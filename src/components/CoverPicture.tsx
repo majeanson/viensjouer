@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { api } from '../lib/api'
 import { useT } from '../i18n'
+import { Icon } from './Icon'
 import { resizeToJpeg } from '../lib/photo'
 import { useToast } from '../lib/toast'
 
@@ -57,8 +58,8 @@ export function CoverPicture({ encounterId, cover, enabled, onChanged, mode }: {
       {showControls && (
         <div className="cluster">
           <input ref={input} type="file" accept="image/*" hidden onChange={(e) => void pick(e.target.files)} />
-          <button type="button" className="btn btn--small" disabled={busy} onClick={() => input.current?.click()}>{busy ? t.souvenirs.adding : shown ? t.cover.change : t.cover.add}</button>
-          {shown && <button type="button" className="btn btn--small btn--danger" onClick={remove}>{t.cover.remove}</button>}
+          <button type="button" className="btn btn--small" disabled={busy} onClick={() => input.current?.click()}><Icon name="camera" />{busy ? t.souvenirs.adding : shown ? t.cover.change : t.cover.add}</button>
+          {shown && <button type="button" className="btn btn--small btn--danger btn--icon" aria-label={t.cover.remove} title={t.cover.remove} onClick={remove}><Icon name="x" /></button>}
         </div>
       )}
       {err && <div className="notice notice--err">{err}</div>}

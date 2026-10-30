@@ -149,7 +149,7 @@ test('every optional field on the reply page has a « Pourquoi ? » that says wh
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
   // Collapsed by default so the form stays light; one tap opens the reason.
   // ONE « Pourquoi ? » for the group; it names every field and what you lose by skipping it.
-  const whys = page.getByText('Pourquoi ?')
+  const whys = page.getByLabel('Pourquoi ?')
   await expect(whys).toHaveCount(1)
   await expect(page.getByText(/Sans ça : pas de rappel/)).toBeHidden()
   await whys.click()

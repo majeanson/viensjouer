@@ -52,7 +52,7 @@ export const EN: Dict = {
     resetSend: 'Save and sign in',
   },
   slots: { title: 'Which times suit you?', hint: 'Tap the ones you can make. The host will choose.', add: 'Offer other times', choose: 'Choose', yes: (n: number) => (n === 0 ? 'Nobody yet' : n === 1 ? '1 family can' : `${n} families can`), title2: 'Times on offer', remove: 'Remove' },
-  nav: { new: 'New', home: 'Get-togethers', friends: 'Friends', circle: 'The circle', calendar: 'Calendar', windows: 'Open windows', children: 'My family', families: 'Friend families' },
+  nav: { home: 'Get-togethers', friends: 'Friends', circle: 'The circle', calendar: 'Calendar', windows: 'Open windows', children: 'My family', families: 'Friend families' },
   circle: {
     title: 'The circle',
     hint: 'Your children’s friends whose family is also here. Each side sees only what concerns them.',
@@ -308,6 +308,7 @@ export const EN: Dict = {
   },
   account: {
     title: 'My account',
+    menu: 'Menu',
     tabs: { profile: 'Profile', notifications: 'Notifications', home: 'My family', calendar: 'Calendar', security: 'Security', data: 'Data' },
     keptHint: 'What we keep, where it is hosted, what it is for.',
     security: { password: 'Change my password', current: 'Current password', next: 'New password (8 characters minimum)', change: 'Change', changed: 'Password changed. Your other devices are signed out.', everywhere: 'Sign out everywhere', everywhereHint: 'Ends the session on all your other devices. This one stays signed in.', everywhereDone: 'Your other devices are signed out.' },

@@ -6,6 +6,7 @@ import { useT } from '../i18n'
 import { FamilyPicker } from './FamilyPicker'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
+import { Sheet } from './Sheet'
 import { Icon } from './Icon'
 import { Face } from './Face'
 import { colourOf } from '../lib/palette'
@@ -67,14 +68,12 @@ export function Groups({ families }: { families: Family[] }) {
         })}
       </div>
       {editing ? (
-        <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
+        <Sheet title={cur ? cur.name : t.groups.add} onBack={() => setEditing(null)} formId="group-form" saving={save.isPending} saveLabel={t.families.save}>
+        <form id="group-form" onSubmit={submit} key={cur?.id ?? 'new'}>
           <label className="field"><span><Icon name="tag" />{t.groups.name}</span><input className="input" name="name" required maxLength={60} defaultValue={cur?.name} placeholder={t.groups.namePlaceholder} /></label>
           <FamilyPicker families={families} groups={[]} selected={picked} onChange={setPicked} />
-          <div className="cluster" style={{ marginTop: '0.75rem' }}>
-            <button className="btn btn--primary" disabled={save.isPending}>{t.families.save}</button>
-            <button type="button" className="btn" onClick={() => setEditing(null)}>{t.encounters.back}</button>
-          </div>
         </form>
+        </Sheet>
       ) : (
         families.length > 0 && <button className="btn" style={{ marginTop: '0.75rem' }} onClick={() => open('new')}>{t.groups.add}</button>
       )}

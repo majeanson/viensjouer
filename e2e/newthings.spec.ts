@@ -88,7 +88,8 @@ test('a friend’s nap is saved from the friends form', async ({ page }) => {
 test('import a list: says what it understood, names the line to fix, then adds the good ones', async ({ page }) => {
   const stub = await host(page, { 'POST families': () => ({ status: 201, json: { added: 2, skipped: 0 } }) })
   await page.goto('/amis')
-  await page.getByRole('button', { name: 'Importer une liste' }).click()
+  await page.getByRole('button', { name: 'Nouvelle famille' }).click()
+  await page.getByRole('tab', { name: 'Importer une liste' }).click()
   const box = page.getByLabel('Importer une liste de familles')
   await box.fill('Julie, Léa, julie@example.com\nPaul\nSonia; Zoé')
   await expect(page.getByText('2 familles prêtes à ajouter.')).toBeVisible()

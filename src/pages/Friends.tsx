@@ -6,6 +6,7 @@ import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { ageLabel, whenShort } from '../lib/format'
 import { colourOf } from '../lib/palette'
+import { Sheet } from '../components/Sheet'
 import { Face } from '../components/Face'
 import { WhyMany } from '../components/WhyMany'
 import { Why } from '../components/Why'
@@ -117,42 +118,47 @@ export function Friends() {
     <>
       <h1>{t.friends.title}</h1>
       {!editing && !importing && <BigAction icon="users" onClick={() => setEditing('new')}>{t.families.add}</BigAction>}
-      {!editing && !importing && <button type="button" className="btn btn--small" onClick={() => setImporting(true)}>{t.families.importOpen}</button>}
-      {importing && <ImportFriends onClose={() => setImporting(false)} />}
       {q.data && fams.length === 0 && <p className="muted small">{t.friends.hint}</p>}
       {err && <div className="notice notice--err">{err}</div>}
 
-      {editing && (
-        <form className="card" onSubmit={submit} key={cur?.id ?? 'new'}>
-          <label className="field"><span><Icon name="smile" />{t.families.childFirstName}</span><input className="input" name="childFirstName" required maxLength={40} defaultValue={cur?.child_first_name} /></label>
-          <label className="field"><span><Icon name="user" />{t.families.parentName}</span><input className="input" name="parentName" required maxLength={60} defaultValue={cur?.parent_name} /></label>
-          <label className="field"><span><Icon name="mail" />{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /></label>
-          <label className="field"><span><Icon name="cake" />{t.families.birthdate}</span><input className="input" name="childBirthdate" type="date" defaultValue={cur?.child_birthdate ?? ''} /></label>
-          <label className="field"><span><Icon name="phone" />{t.families.phone}</span><input className="input" name="phone" type="tel" defaultValue={cur?.phone ?? ''} /></label>
-          <div className="field">
-            <span><Icon name="clock" />{t.children.nap}</span>
-            <div className="when when--even">
-              <label className="field"><span>{t.children.napFrom}</span><input className="input" name="napStart" type="time" step={900} defaultValue={cur?.nap_start ?? ''} /></label>
-              <label className="field"><span>{t.children.napTo}</span><input className="input" name="napEnd" type="time" step={900} defaultValue={cur?.nap_end ?? ''} /></label>
+      {(editing || importing) && (
+        <Sheet title={cur ? cur.child_first_name : t.families.add} onBack={() => { setEditing(null); setImporting(false) }} formId={editing ? 'friend-form' : undefined} saving={save.isPending} saveLabel={t.families.save}>
+          {!cur && (
+            <div className="seg" role="tablist" style={{ marginBottom: '1rem' }}>
+              <button type="button" role="tab" aria-selected={!importing} className={`btn ${!importing ? 'btn--on' : ''}`} onClick={() => { setImporting(false); setEditing('new') }}>{t.families.add}</button>
+              <button type="button" role="tab" aria-selected={importing} className={`btn ${importing ? 'btn--on' : ''}`} onClick={() => { setEditing(null); setImporting(true) }}>{t.families.importOpen}</button>
             </div>
-            <Why k="nap" />
-          </div>
-          <label className="field"><span><Icon name="alert" />{t.families.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={cur?.allergies ?? ''} /></label>
-          <label className="field"><span><Icon name="note" />{t.families.notes}</span><input className="input" name="notes" maxLength={1000} defaultValue={cur?.notes ?? ''} /></label>
-          <WhyMany
-            items={[
-              [t.families.email, 'friendEmail'],
-              [t.families.birthdate, 'friendBirthdate'],
-              [t.families.phone, 'phone'],
-              [t.families.allergies, 'allergies'],
-              [t.families.notes, 'notes'],
-            ]}
-          />
-          <div className="cluster" style={{ marginTop: '0.75rem' }}>
-            <button className="btn btn--primary" disabled={save.isPending}>{t.families.save}</button>
-            <button type="button" className="btn" onClick={() => setEditing(null)}>{t.encounters.back}</button>
-          </div>
-        </form>
+          )}
+          {importing && <ImportFriends onClose={() => setImporting(false)} />}
+          {editing && (
+          <form id="friend-form" onSubmit={submit} key={cur?.id ?? 'new'}>
+            <label className="field"><span><Icon name="smile" />{t.families.childFirstName}</span><input className="input" name="childFirstName" required maxLength={40} defaultValue={cur?.child_first_name} /></label>
+            <label className="field"><span><Icon name="user" />{t.families.parentName}</span><input className="input" name="parentName" required maxLength={60} defaultValue={cur?.parent_name} /></label>
+            <label className="field"><span><Icon name="mail" />{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /></label>
+            <label className="field"><span><Icon name="cake" />{t.families.birthdate}</span><input className="input" name="childBirthdate" type="date" defaultValue={cur?.child_birthdate ?? ''} /></label>
+            <label className="field"><span><Icon name="phone" />{t.families.phone}</span><input className="input" name="phone" type="tel" defaultValue={cur?.phone ?? ''} /></label>
+            <div className="field">
+              <span><Icon name="clock" />{t.children.nap}</span>
+              <div className="when when--even">
+                <label className="field"><span>{t.children.napFrom}</span><input className="input" name="napStart" type="time" step={900} defaultValue={cur?.nap_start ?? ''} /></label>
+                <label className="field"><span>{t.children.napTo}</span><input className="input" name="napEnd" type="time" step={900} defaultValue={cur?.nap_end ?? ''} /></label>
+              </div>
+              <Why k="nap" />
+            </div>
+            <label className="field"><span><Icon name="alert" />{t.families.allergies}</span><input className="input" name="allergies" maxLength={300} defaultValue={cur?.allergies ?? ''} /></label>
+            <label className="field"><span><Icon name="note" />{t.families.notes}</span><input className="input" name="notes" maxLength={1000} defaultValue={cur?.notes ?? ''} /></label>
+            <WhyMany
+              items={[
+                [t.families.email, 'friendEmail'],
+                [t.families.birthdate, 'friendBirthdate'],
+                [t.families.phone, 'phone'],
+                [t.families.allergies, 'allergies'],
+                [t.families.notes, 'notes'],
+              ]}
+            />
+          </form>
+          )}
+        </Sheet>
       )}
 
       {!editing && !importing && <InvitedBy />}

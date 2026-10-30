@@ -56,31 +56,27 @@ export function AvatarPicker({
     }
   }
   const shown = preview ?? src ?? null
+  const badge = { position: 'absolute', display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 999, border: '2px solid var(--card)' } as const
   return (
     <div className="avatarpick">
-      <Face name={name || '·'} colour={colour} src={shown} size="xl" />
+      <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
+        {enabled ? (
+          <button type="button" aria-label={shown ? t.avatar.change : t.avatar.add} title={shown ? t.avatar.change : t.avatar.add} disabled={busy} onClick={() => input.current?.click()} style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', borderRadius: 999, opacity: busy ? 0.6 : 1 }}>
+            <Face name={name || '·'} colour={colour} src={shown} size="xl" />
+            <span aria-hidden="true" style={{ ...badge, right: 0, bottom: 0, background: 'var(--accent)', color: 'var(--accent-ink)' }}><Icon name="camera" /></span>
+          </button>
+        ) : (
+          <Face name={name || '·'} colour={colour} src={shown} size="xl" />
+        )}
+        {enabled && shown && (
+          <button type="button" aria-label={t.avatar.remove} title={t.avatar.remove} onClick={() => { if (preview) { setPreview(null); onPick?.(null) } else void onRemove?.() }} style={{ ...badge, right: 0, top: 0, background: 'var(--card)', color: 'var(--ink)', borderColor: 'var(--line)', cursor: 'pointer', padding: 0, width: 36, height: 36 }}>
+            <Icon name="x" />
+          </button>
+        )}
+      </div>
       {enabled && (
         <div className="avatarpick__side">
           <input ref={input} type="file" accept="image/*" hidden onChange={(e) => void pick(e.target.files)} aria-label={label} />
-          <div className="cluster">
-            <button type="button" className="btn btn--small" disabled={busy} onClick={() => input.current?.click()}>
-              <Icon name="camera" />{busy ? t.souvenirs.adding : shown ? t.avatar.change : t.avatar.add}
-            </button>
-            {shown && (
-              <button
-                type="button"
-                className="btn btn--small btn--danger"
-                onClick={() => {
-                  if (preview) {
-                    setPreview(null)
-                    onPick?.(null)
-                  } else void onRemove?.()
-                }}
-              >
-                {t.avatar.remove}
-              </button>
-            )}
-          </div>
           <Why k="avatar" />
           {err && <div className="notice notice--err">{err}</div>}
         </div>

@@ -41,14 +41,14 @@ export function Encounters() {
   for (const i of q.data?.invitations ?? []) byEnc.set(i.encounter_id, [...(byEnc.get(i.encounter_id) ?? []), i])
 
   // A recurring rencontre is ONE card: its next date, and « encore N dates » for the rest (they stay reachable from its page).
-  const Mine = ({ e, more = 0 }: { e: Encounter; more?: number }) => (
+  const Mine = ({ e, more = 0, hero = false }: { e: Encounter; more?: number; hero?: boolean }) => (
     <Link to={`/rencontres/${e.id}`} className="card card--tap" data-kind={e.kind}>
-      {e.cover && <img className="cover" style={{ height: '7rem' }} src={`/api/cover/${e.id}?v=${e.cover}`} alt="" loading="lazy" onError={(ev) => { ev.currentTarget.style.display = 'none' }} />}
+      {e.cover && <img className="cover" style={{ height: hero ? '11rem' : '7rem' }} src={`/api/cover/${e.id}?v=${e.cover}`} alt="" loading="lazy" onError={(ev) => { ev.currentTarget.style.display = 'none' }} />}
       <div className="row">
-        <strong><Icon name={kindIcon(e.kind)} />{e.title}</strong>
+        <strong style={hero ? { fontSize: '1.3rem' } : undefined}><Icon name={kindIcon(e.kind)} />{e.title}</strong>
         {(e.status === 'postponed' || e.status === 'cancelled') && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}
       </div>
-      <p className="meta--row muted small">
+      <p className={hero ? 'meta--row' : 'meta--row muted small'} style={hero ? { fontSize: '1.1rem', fontWeight: 600 } : undefined}>
         <span><Icon name="clock" />{isOver(e) ? whenShort(e.starts_at, lang) : <>{humanWhen(e.starts_at, lang)} · {timeOnly(e.starts_at, lang)}</>}</span>
         {e.place && e.place !== t.encounters.kind[e.kind] && <span><Icon name="pin" />{e.place}</span>}
         {more > 0 && <span>{t.encounters.seriesMore(more)}</span>}
@@ -62,7 +62,7 @@ export function Encounters() {
   )
 
   // Everything ahead, one list, by date.
-  type Entry = { at: number; key: string; node: ReactNode }
+  type Entry = { at: number; key: string; node: ReactNode; big?: ReactNode }
   const ahead: Entry[] = []
   const coming = all.filter((x) => !isOver(x))
   const inSeries = (id: string | null | undefined) => (id ? coming.filter((x) => x.series_id === id) : [])
@@ -71,7 +71,7 @@ export function Encounters() {
     // The card of a series is its first date that is not cancelled (the first one when all are).
     const head = mates.find((x) => x.status !== 'cancelled') ?? mates[0]
     if (mates.length > 1 && head.id !== e.id) continue
-    ahead.push({ at: e.starts_at, key: `m-${e.id}`, node: <Mine e={e} more={mates.length > 1 ? mates.length - 1 : 0} /> })
+    ahead.push({ at: e.starts_at, key: `m-${e.id}`, node: <Mine e={e} more={mates.length > 1 ? mates.length - 1 : 0} />, big: <Mine e={e} more={mates.length > 1 ? mates.length - 1 : 0} hero /> })
   }
   for (const it of cal.data?.items ?? []) {
     if (it.type === 'invited') {
@@ -144,7 +144,7 @@ export function Encounters() {
       )}
       {ready && !nothing && ahead.length === 0 && <p className="muted">{t.encounters.empty}</p>}
       {ahead.length > 0 && <h2 className="muted small" style={{ marginTop: '1rem' }}>{t.encounters.upcoming}</h2>}
-      {ahead.map((x) => <div key={x.key}>{x.node}</div>)}
+      {ahead.map((x, i) => <div key={x.key}>{i === 0 && x.big ? x.big : x.node}</div>)}
       {past.length > 0 && <h2 className="muted small" style={{ marginTop: '1rem' }}>{t.encounters.past}</h2>}
       {past.map((e) => <Mine key={e.id} e={e} />)}
     </>

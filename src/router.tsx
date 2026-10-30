@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 const Door = lazy(() => import('./pages/Door').then((m) => ({ default: m.Door })))
-const Encounters = lazy(() => import('./pages/Encounters').then((m) => ({ default: m.Encounters })))
+const TwoPane = lazy(() => import('./pages/TwoPane').then((m) => ({ default: m.TwoPane })))
 const EncounterNew = lazy(() => import('./pages/EncounterNew').then((m) => ({ default: m.EncounterNew })))
 const EncounterDetail = lazy(() => import('./pages/EncounterDetail').then((m) => ({ default: m.EncounterDetail })))
 const Cards = lazy(() => import('./pages/Cards').then((m) => ({ default: m.Cards })))
@@ -47,9 +47,9 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Door />} />
       <Route path="/r/:token" element={<Reply />} />
-      <Route path="/rencontres" element={<Private><Encounters /></Private>} />
+      <Route path="/rencontres" element={<Private><TwoPane /></Private>} />
       <Route path="/rencontres/nouvelle" element={<Private><EncounterNew /></Private>} />
-      <Route path="/rencontres/:id" element={<Private><EncounterDetail /></Private>} />
+      <Route path="/rencontres/:id" element={<Private><TwoPane><EncounterDetail /></TwoPane></Private>} />
       <Route path="/rencontres/:id/cartes" element={<Private><Cards /></Private>} />
       <Route path="/enfants" element={<Private><Children /></Private>} />
       <Route path="/calendrier" element={<Navigate to="/rencontres" replace />} />

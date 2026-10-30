@@ -19,6 +19,7 @@ export function AvatarPicker({
   onPick,
   onRemove,
   label,
+  stacked = false,
 }: {
   name: string
   colour?: string
@@ -28,6 +29,7 @@ export function AvatarPicker({
   onPick?: (blob: Blob | null) => void
   onRemove?: () => void | Promise<void>
   label: string
+  stacked?: boolean
 }) {
   const t = useT()
   const input = useRef<HTMLInputElement>(null)
@@ -58,7 +60,7 @@ export function AvatarPicker({
   const shown = preview ?? src ?? null
   const badge = { position: 'absolute', display: 'grid', placeItems: 'center', width: 26, height: 26, borderRadius: 999, border: '2px solid var(--card)' } as const
   return (
-    <div className="avatarpick">
+    <div className="avatarpick" style={stacked ? { flexDirection: 'column', gap: '0.5rem', marginBottom: 0 } : undefined}>
       <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
         {enabled ? (
           <button type="button" aria-label={shown ? t.avatar.change : t.avatar.add} title={shown ? t.avatar.change : t.avatar.add} disabled={busy} onClick={() => input.current?.click()} style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', borderRadius: 999, opacity: busy ? 0.6 : 1 }}>

@@ -263,6 +263,49 @@ test('Ma famille and Mes amis carry their own actions beside the heading (add a 
   await expect(page.getByRole('dialog', { name: 'Groupes' })).toBeVisible()
 })
 
+test('a friend row slides with a finger: red with a bin to the left, only on purpose, and it slides back when let go early', async ({ page }) => {
+  const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'DELETE families': () => ({ json: { ok: true } }) })
+  await page.goto('/amis')
+  const row = page.locator('details.friend > summary').first()
+  const drag = async (to: number, release: boolean) =>
+    row.evaluate(async (el, [dx, up]) => {
+      const r = el.getBoundingClientRect()
+      const fire = (type: string, x: number) => el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerType: 'touch', pointerId: 7, clientX: x, clientY: r.top + 10 }))
+      fire('pointerdown', r.left + r.width - 20)
+      fire('pointermove', r.left + r.width - 20 + dx / 2)
+      fire('pointermove', r.left + r.width - 20 + dx)
+      await new Promise((ok) => setTimeout(ok, 50))
+      if (up) fire('pointerup', r.left + r.width - 20 + dx)
+    }, [to, release] as [number, boolean])
+  // mid-slide: the row has moved and a red layer with the bin shows under it
+  await drag(-60, false)
+  const moved = await page.locator('details.friend').first().evaluate((el) => (el.parentElement as HTMLElement).style.transform)
+  expect(moved).toContain('translateX(-')
+  await expect(page.locator('details.friend').first().locator('xpath=ancestor::div[2]').locator('[aria-hidden=true]').first()).toBeVisible()
+  // let go before the mark: back in place, nothing removed
+  await row.evaluate((el) => el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch', pointerId: 7 })))
+  await expect(page.locator('.toast')).toHaveCount(0)
+  // past the mark: removed, with the usual undo
+  await drag(-200, true)
+  await expect(page.locator('.toast').getByRole('button', { name: 'Annuler' })).toBeVisible()
+  await page.locator('.toast').getByRole('button', { name: 'Annuler' }).click()
+  expect(stub.calls.filter((c) => c.method === 'DELETE')).toHaveLength(0)
+})
+
+test('on a wide screen the Rencontres are a list on the left and the open one on the right', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await host(page, {
+    'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes')], { id: 'e1', title: 'Parc du samedi', starts_at: now + 3 * 86_400 }) } : { json: { encounters: [enc({ id: 'e1', title: 'Parc du samedi', starts_at: now + 3 * 86_400 }), enc({ id: 'e2', title: 'Chez nous', starts_at: now + 4 * 86_400 })], invitations: [] } }),
+  })
+  await page.goto('/rencontres')
+  await expect(page.getByText('Choisis une rencontre dans la liste.')).toBeVisible()
+  await page.getByRole('link', { name: /Chez nous/ }).click()
+  await expect(page).toHaveURL(/[/]rencontres[/]e2$/)
+  // the list stays, and the open one is marked
+  await expect(page.getByRole('link', { name: /Parc du samedi/ })).toBeVisible()
+  await expect(page.getByRole('link', { name: /Chez nous/ })).toHaveAttribute('aria-current', 'page')
+})
+
 test('one sentence fills the form: kind, day, hour, place and the friend', async ({ page }) => {
   const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'] } }) })
   await page.goto('/rencontres/nouvelle')

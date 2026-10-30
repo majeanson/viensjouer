@@ -69,11 +69,11 @@ export function Account() {
     <>
       <h1>{t.account.title}</h1>
       <div className="stack">
-        <Sec id="notifications" icon="bell" open={tab === 'notifications'} onOpen={pick}><NotificationsCard /></Sec>
         <Sec id="profile" icon="user" open={tab === 'profile'} onOpen={pick}>
           <div>
-            <p className="muted small">{me.email}</p>
+            <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
             <AvatarPicker
+              stacked
               name={me.displayName ?? ''}
               colour="var(--host)"
               src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null}
@@ -82,6 +82,7 @@ export function Account() {
               onUpload={async (blob) => { await api('avatar?kind=parent', { method: 'POST', body: blob }); await refresh() }}
               onRemove={async () => { await api('avatar', { method: 'DELETE', body: { kind: 'parent' } }); await refresh() }}
             />
+            <div style={{ flex: 1, minWidth: 0 }}>
             <form
               onSubmit={async (ev) => {
                 ev.preventDefault()
@@ -99,8 +100,11 @@ export function Account() {
               }}
             >
               <label className="field"><span><Icon name="user" />{t.profile.name}</span><input className="input" name="displayName" required maxLength={60} defaultValue={me.displayName ?? ''} autoComplete="given-name" /></label>
-              <button className="btn btn--primary" style={{ marginTop: '0.5rem' }}>{saved ? t.profile.saved : t.profile.save}</button>
+              <button className="btn btn--primary btn--small" style={{ marginTop: '0.5rem' }}>{saved ? t.profile.saved : t.profile.save}</button>
             </form>
+            <p className="muted small" style={{ margin: '0.75rem 0 0', overflowWrap: 'anywhere' }}><Icon name="mail" />{me.email}</p>
+            </div>
+            </div>
             {err && <div className="notice notice--err" style={{ marginTop: '0.75rem' }}>{err}</div>}
             {me.mail && !me.demo && (
               <details className="fold" style={{ marginTop: '1rem' }}>
@@ -155,6 +159,7 @@ export function Account() {
             )}
           </div>
         </Sec>
+        <Sec id="notifications" icon="bell" open={tab === 'notifications'} onOpen={pick}><NotificationsCard /></Sec>
 
         <Sec id="home" icon="home" open={tab === 'home'} onOpen={pick}>
           <>

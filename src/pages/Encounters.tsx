@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -26,8 +26,9 @@ interface Cal {
 
 // One agenda. What I host (with the faces invited and their answers), what others invite me to, my
 // « je suis libre » moments and the birthdays, in date order. The last two weeks sit below.
-export function Encounters() {
+export function Encounters({ compact = false }: { compact?: boolean }) {
   const nav = useNavigate()
+  const { id: openId } = useParams()
   const { me } = useAuth()
   const t = useT()
   const { lang } = useLang()
@@ -45,7 +46,7 @@ export function Encounters() {
 
   // A recurring rencontre is ONE card: its next date, and « encore N dates » for the rest (they stay reachable from its page).
   const Mine = ({ e, more = 0, hero = false }: { e: Encounter; more?: number; hero?: boolean }) => (
-    <Link to={`/rencontres/${e.id}`} className="card card--tap" data-kind={e.kind}>
+    <Link to={`/rencontres/${e.id}`} className="card card--tap" data-kind={e.kind} aria-current={e.id === openId ? 'page' : undefined} style={e.id === openId ? { boxShadow: '0 0 0 2px var(--accent)' } : undefined}>
       {e.cover && <img className="cover" style={{ height: hero ? '11rem' : '7rem' }} src={`/api/cover/${e.id}?v=${e.cover}`} alt="" loading="lazy" onError={(ev) => { ev.currentTarget.style.display = 'none' }} />}
       <div className="row">
         <strong style={hero ? { fontSize: '1.3rem' } : undefined}><Icon name={kindIcon(e.kind)} />{e.title}</strong>
@@ -117,7 +118,7 @@ export function Encounters() {
 
   return (
     <>
-      <h1>{t.encounters.title}</h1>
+      {compact ? <h2 style={{ marginTop: 0 }}>{t.encounters.title}</h2> : <h1>{t.encounters.title}</h1>}
       <PartnerNudge ready={past.length > 0} />
       <InstallOffer hold={nudgeDue(past.length > 0, me)} />
       {!nothing && <BigAction icon="calendar" href="/rencontres/nouvelle" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}

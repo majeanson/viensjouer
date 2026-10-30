@@ -108,6 +108,7 @@ export const EN: Dict = {
     remove: 'Remove',
   },
   encounters: {
+    pick: 'Pick a get-together from the list.',
     withChild: (n: string) => `With ${n}`,
     morePage: 'More: bring list, messages, photos, history',
     title: 'Get-togethers',

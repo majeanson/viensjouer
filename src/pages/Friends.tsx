@@ -6,7 +6,7 @@ import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { ageLabel, whenShort } from '../lib/format'
 import { colourOf } from '../lib/palette'
-import { swipe } from '../lib/swipe'
+import { SwipeRow } from '../components/SwipeRow'
 import { Children } from './Children'
 import { Sheet } from '../components/Sheet'
 import { Face } from '../components/Face'
@@ -123,7 +123,7 @@ export function Friends() {
       <h1>{t.friends.title}</h1>
       {!editing && !importing && <BigAction icon="users" onClick={() => setEditing('new')}>{t.families.add}</BigAction>}
       <Children embedded />
-      <div className="row" style={{ marginTop: '1.5rem' }}>
+      <div className="row" style={{ margin: '1.5rem 0 0.6rem' }}>
         <h2 style={{ margin: 0 }}><Icon name="users" />{t.friends.mine}</h2>
         <button type="button" className="btn btn--small btn--icon" aria-label={`${t.friends.groupsFold}${groups.length > 0 ? ` (${groups.length})` : ''}`} title={t.friends.groupsFold} onClick={() => setGroupsOpen(true)}><Icon name="tag" /></button>
       </div>
@@ -185,8 +185,9 @@ export function Friends() {
           ]
           const age = ageLabel(f.child_birthdate, lang)
           return (
-            <details key={f.id} className="card friend">
-              <summary {...swipe(() => remove(f), () => setEditing(f))}>
+            <SwipeRow key={f.id} onLeft={() => remove(f)} onRight={() => setEditing(f)} leftLabel={t.families.remove} rightLabel={t.encounters.edit}>
+            <details className="card friend" style={{ marginBottom: 0 }}>
+              <summary>
                 <Face name={f.child_first_name} colour={colourOf(f.child_first_name)} size="lg" />
                 <span className="friend__who">
                   <strong>{f.child_first_name}{f.email_bounced_at && <span className="chip chip--cancelled" style={{ marginLeft: '0.5rem' }}>{t.families.bounced}</span>}</strong>
@@ -215,6 +216,7 @@ export function Friends() {
                 {!f.linked_household_id && <CircleInvite family={f} />}
               </div>
             </details>
+            </SwipeRow>
           )
         })}
       </div>

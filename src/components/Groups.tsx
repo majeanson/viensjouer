@@ -6,7 +6,7 @@ import { useT } from '../i18n'
 import { FamilyPicker } from './FamilyPicker'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
-import { swipe } from '../lib/swipe'
+import { SwipeRow } from './SwipeRow'
 import { Sheet } from './Sheet'
 import { Icon } from './Icon'
 import { Face } from './Face'
@@ -56,8 +56,9 @@ export function Groups({ families }: { families: Family[] }) {
         {groups.map((g) => {
           const members = g.families.map((id) => families.find((f) => f.id === id)).filter((f): f is Family => !!f)
           return (
-            <details key={g.id} className="card friend">
-              <summary {...swipe(() => removeGroup(g), () => open(g))}>
+            <SwipeRow key={g.id} onLeft={() => removeGroup(g)} onRight={() => open(g)} leftLabel={t.families.remove} rightLabel={t.encounters.edit}>
+            <details className="card friend" style={{ marginBottom: 0 }}>
+              <summary>
                 <span className="faces" aria-hidden="true">{members.slice(0, 3).map((f) => <Face key={f.id} name={f.child_first_name} colour={colourOf(f.child_first_name)} size="md" />)}</span>
                 <span className="friend__who"><strong>{g.name}</strong><span className="muted small">{members.map((f) => f.child_first_name).join(', ') || '—'}</span></span>
               </summary>
@@ -66,6 +67,7 @@ export function Groups({ families }: { families: Family[] }) {
                 <button className="btn btn--small btn--danger btn--icon" aria-label={t.families.remove} title={t.families.remove} onClick={() => removeGroup(g)}><Icon name="trash" /></button>
               </div>
             </details>
+            </SwipeRow>
           )
         })}
       </div>

@@ -173,7 +173,7 @@ textarea.input { min-height: 5rem; resize: vertical; }
 .toast .linkbtn { color: inherit; font-weight: 700; }
 
 /* The host's card on a wide screen: the plan and the families left, the talk and the photos right. */
-.shell:has(.cols) { max-width: 1040px; }
+.shell:has(.cols), .shell:has(.twopane) { max-width: 1040px; }
 .cols { display: block; }
 @media (min-width: 900px) { .cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; } }
 

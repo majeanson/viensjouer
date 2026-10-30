@@ -11,7 +11,7 @@ import { useDeferredRemove } from '../lib/toast'
 import type { Child } from '../lib/types'
 import { Loading } from '../components/Loading'
 import { QueryError } from '../components/QueryError'
-import { swipe } from '../lib/swipe'
+import { SwipeRow } from '../components/SwipeRow'
 import { Sheet } from '../components/Sheet'
 import { Icon, BigAction } from '../components/Icon'
 import { PALETTE } from '../lib/palette'
@@ -66,7 +66,7 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
   return (
     <>
       {embedded ? (
-        <div className="row">
+        <div className="row" style={{ margin: '1rem 0 0.6rem' }}>
           <h2 style={{ margin: 0 }}><Icon name="smile" />{t.children.title}</h2>
           <button type="button" className="btn btn--small btn--icon" aria-label={t.children.add} title={t.children.add} onClick={() => { setPending(null); setEditing('new') }}><Icon name="plus" /></button>
         </div>
@@ -78,13 +78,15 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
       {q.data && kids.length === 0 && !editing && <p className="muted">{t.children.empty}</p>}
       <div className="stack">
         {kids.map((c) => (
-          <div key={c.id} className="card row" {...swipe(() => removeKid(c), () => { setPending(null); setEditing(c) })}>
+          <SwipeRow key={c.id} onLeft={() => removeKid(c)} onRight={() => { setPending(null); setEditing(c) }} leftLabel={t.children.remove} rightLabel={t.children.edit}>
+          <div className="card row" style={{ marginBottom: 0 }}>
             <span className="cluster"><Face name={c.first_name} colour={c.colour} src={c.photo ? `/api/avatar/child/${c.id}?v=${c.photo}` : null} size="lg" /><strong>{c.first_name}</strong><span className="muted small">{ageLabel(c.birthdate, lang)}</span></span>
             <span className="cluster">
               <button className="btn btn--small btn--icon" aria-label={t.children.edit} title={t.children.edit} onClick={() => { setPending(null); setEditing(c) }}><Icon name="edit" /></button>
               <button className="btn btn--small btn--danger btn--icon" aria-label={t.children.remove} title={t.children.remove} onClick={() => removeKid(c)}><Icon name="trash" /></button>
             </span>
           </div>
+          </SwipeRow>
         ))}
       </div>
       {editing ? (

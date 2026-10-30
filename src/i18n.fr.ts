@@ -106,6 +106,7 @@ export const FR = {
     remove: 'Retirer',
   },
   encounters: {
+    pick: 'Choisis une rencontre dans la liste.',
     withChild: (n: string) => `Avec ${n}`,
     morePage: 'Plus : à apporter, messages, photos, historique',
     title: 'Rencontres',

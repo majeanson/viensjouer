@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { ValidForm } from './ValidForm'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -37,26 +38,26 @@ export function FirstSteps({ noChild, noFriend }: { noChild: boolean; noFriend: 
       </ol>
       {err && <div className="notice notice--err" role="alert">{err}</div>}
       {noChild && (
-        <form onSubmit={(e) => addChild.mutate(String(data(e).get('firstName') ?? '').trim())}>
+        <ValidForm onSubmit={(e) => addChild.mutate(String(data(e).get('firstName') ?? '').trim())}>
           <label className="field"><span><Icon name="smile" />{t.first.childName}</span><input className="input" name="firstName" required maxLength={40} autoComplete="off" /></label>
           <button className="btn btn--primary" disabled={addChild.isPending}>{t.first.childBtn}</button>
-        </form>
+        </ValidForm>
       )}
       {!noChild && noFriend && (
         <>
-          <form onSubmit={(e) => { const f = data(e); addFriend.mutate({ childFirstName: String(f.get('child') ?? '').trim(), parentName: String(f.get('parent') ?? '').trim() }) }}>
+          <ValidForm onSubmit={(e) => { const f = data(e); addFriend.mutate({ childFirstName: String(f.get('child') ?? '').trim(), parentName: String(f.get('parent') ?? '').trim() }) }}>
             <label className="field"><span><Icon name="smile" />{t.first.friendChild}</span><input className="input" name="child" required maxLength={40} autoComplete="off" /></label>
             <label className="field"><span><Icon name="user" />{t.first.friendParent}</span><input className="input" name="parent" required maxLength={60} autoComplete="off" /></label>
             <button className="btn btn--primary" disabled={addFriend.isPending}>{t.first.friendBtn}</button>
-          </form>
+          </ValidForm>
           <Link to="/amis?importer=1" className="btn btn--small" style={{ marginTop: '0.5rem' }}>{t.families.importOpen}</Link>
         </>
       )}
       {!noChild && !noFriend && (
-        <form onSubmit={(e) => { const say = String(data(e).get('say') ?? '').trim(); nav(say ? `/rencontres/nouvelle?say=${encodeURIComponent(say)}` : '/rencontres/nouvelle') }}>
+        <ValidForm onSubmit={(e) => { const say = String(data(e).get('say') ?? '').trim(); nav(say ? `/rencontres/nouvelle?say=${encodeURIComponent(say)}` : '/rencontres/nouvelle') }}>
           <label className="field"><span><Icon name="sparkle" />{t.form.say}</span><input className="input" name="say" maxLength={200} placeholder={t.form.sayExample} autoComplete="off" /></label>
           <button className="btn btn--primary">{t.encounters.new}</button>
-        </form>
+        </ValidForm>
       )}
     </div>
   )

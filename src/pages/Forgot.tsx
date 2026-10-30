@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { ValidForm } from '../components/ValidForm'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
@@ -40,12 +41,12 @@ export function Forgot() {
       {sent ? (
         <div className="notice">{t.auth.forgotSent}</div>
       ) : (
-        <form className="card" onSubmit={submit}>
+        <ValidForm className="card" onSubmit={submit}>
           <label className="field"><span><Icon name="mail" />{t.auth.email}</span><input className="input" name="email" type="email" required autoComplete="email" /></label>
           {health.data?.turnstile && <Turnstile siteKey={health.data.turnstile} action="forgot" resetKey={tsTries} />}
           {err && <div className="notice notice--err">{err}</div>}
           <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : t.auth.forgotSend}</button>
-        </form>
+        </ValidForm>
       )}
       <p className="small"><Link to="/">{t.encounters.back}</Link></p>
       </main>
@@ -80,11 +81,11 @@ export function Reset() {
       <Header />
       <main id="main" tabIndex={-1}>
       <h1>{t.auth.resetTitle}</h1>
-      <form className="card" onSubmit={submit}>
+      <ValidForm className="card" onSubmit={submit}>
         <label className="field"><span><Icon name="lock" />{t.auth.newPassword}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
         {err && <div className="notice notice--err">{err}</div>}
         <button className="btn btn--primary btn--big" disabled={busy || !token}>{busy ? t.auth.working : t.auth.resetSend}</button>
-      </form>
+      </ValidForm>
       </main>
     </div>
   )

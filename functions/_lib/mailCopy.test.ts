@@ -72,3 +72,13 @@ describe('fromHeader and sendMail (a host writing to a friend)', () => {
     expect(sent.reply_to).toEqual(['marc@x.org'])
   })
 })
+
+describe('two hosting children', () => {
+  const v = { parent: 'Julie', host: 'Anne', child: 'Léa', title: 'Parc', when: 'samedi', friendOnly: false, link: 'https://x.test/a' }
+  it('the subject says « invitent » / « invite » to match one or two children', () => {
+    expect(invitationMail('fr', { ...v, hostChild: 'Noé' }).subject).toBe('Noé invite Léa — Parc')
+    expect(invitationMail('fr', { ...v, hostChild: 'Noé & Max' }).subject).toBe('Noé & Max invitent Léa — Parc')
+    expect(invitationMail('en', { ...v, hostChild: 'Noé' }).subject).toBe('Noé invites Léa: Parc')
+    expect(invitationMail('en', { ...v, hostChild: 'Noé & Max' }).subject).toBe('Noé & Max invite Léa: Parc')
+  })
+})

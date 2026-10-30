@@ -360,6 +360,26 @@ test('the two-pane layout has no serious accessibility violation, in light and d
   }
 })
 
+test('a wrong field is said in words under it, not in the browser bubble, and nothing is sent', async ({ page }) => {
+  const stub = await host(page, { 'POST families': () => ({ status: 201, json: { id: 'f9' } }) })
+  await page.goto('/amis')
+  await page.getByRole('button', { name: 'Nouvelle famille' }).click()
+  const dlg = page.getByRole('dialog')
+  await dlg.getByRole('button', { name: 'Enregistrer' }).click()
+  await expect(dlg.getByText('À remplir.')).toHaveCount(2) // the child's name and the parent's name
+  await expect(dlg.locator('input[name=childFirstName]')).toHaveAttribute('aria-invalid', 'true')
+  await dlg.getByLabel('Prénom de l’ami').fill('Léa')
+  await dlg.getByLabel('Prénom du parent').fill('Julie')
+  await dlg.locator('input[name=email]').fill('pas-un-courriel')
+  await dlg.locator('input[name=email]').blur()
+  await expect(dlg.getByText('Ce courriel ne semble pas valide.')).toBeVisible()
+  await dlg.getByRole('button', { name: 'Enregistrer' }).click()
+  expect(stub.calls.filter((c) => c.method === 'POST')).toHaveLength(0)
+  await dlg.locator('input[name=email]').fill('julie@example.com')
+  await dlg.getByRole('button', { name: 'Enregistrer' }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'families').length).toBe(1)
+})
+
 test('one sentence fills the form: kind, day, hour, place and the friend', async ({ page }) => {
   const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'] } }) })
   await page.goto('/rencontres/nouvelle')

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ValidForm } from './ValidForm'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -47,14 +48,14 @@ export function CircleDoor({ token, info }: { token: string; info: CircleInfo })
           <LinkFamilies token={token} />
         ) : (
           <>
-            <form className="card" onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>
+            <ValidForm className="card" onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>
               <h2><Icon name="user" />{t.circleDoor.create}</h2>
               <label className="field"><span><Icon name="user" />{t.reply.parentName}</span><input className="input" name="displayName" required maxLength={60} autoComplete="given-name" /></label>
               <label className="field"><span><Icon name="mail" />{t.reply.email}</span><input className="input" name="email" type="email" required autoComplete="email" /></label>
               <label className="field"><span><Icon name="lock" />{t.reply.claimPassword}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
               {err && <div className="notice notice--err" role="alert">{err}</div>}
               <button className="btn btn--primary btn--big" disabled={claim.isPending}>{t.reply.claimSend}</button>
-            </form>
+            </ValidForm>
             <p className="small">{t.circleDoor.haveAccount} <Link to="/">{t.circleDoor.signIn}</Link></p>
           </>
         )}

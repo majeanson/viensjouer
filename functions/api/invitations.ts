@@ -21,7 +21,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   const id = str(body?.id, 20)
   if (!id) return badRequest('id requis.')
   const row = await ctx.env.DB.prepare(
-    `SELECT i.token, i.scope, i.sent_at, f.email, f.mail_stopped_at, f.email_bounced_at, f.lang, f.parent_name, f.child_first_name, e.title, e.starts_at, c.first_name AS host_child, h.tz
+    `SELECT i.token, i.scope, i.sent_at, f.email, f.mail_stopped_at, f.email_bounced_at, f.lang, f.parent_name, f.child_first_name, e.title, e.starts_at, c.first_name || COALESCE(' & ' || (SELECT first_name FROM children WHERE id = e.co_child_id), '') AS host_child, h.tz
        FROM invitations i
        JOIN encounters e ON e.id = i.encounter_id
        JOIN friend_families f ON f.id = i.friend_family_id

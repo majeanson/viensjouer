@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { ValidForm } from '../components/ValidForm'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -36,13 +37,13 @@ export function Keep() {
       <main id="main" tabIndex={-1}>
       <h1>{t.trial.keepTitle}</h1>
       <p className="muted">{t.trial.keepHint}</p>
-      <form className="card" onSubmit={submit}>
+      <ValidForm className="card" onSubmit={submit}>
         <label className="field"><span><Icon name="user" />{t.auth.displayName}</span><input className="input" name="displayName" required maxLength={60} autoComplete="given-name" /></label>
         <label className="field"><span><Icon name="mail" />{t.auth.email}</span><input className="input" name="email" type="email" required autoComplete="email" /></label>
         <label className="field"><span><Icon name="lock" />{t.auth.password}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
         {err && <div className="notice notice--err">{err}</div>}
         <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : t.trial.keepSend}</button>
-      </form>
+      </ValidForm>
       </main>
     </div>
   )

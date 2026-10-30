@@ -63,7 +63,7 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
   }
   const now = nowSec()
   const { results } = await env.DB.prepare(
-    `SELECT i.id, e.household_id, i.token, f.email, f.lang, f.linked_household_id, f.parent_name, e.title, e.starts_at, e.place, h.tz, c.first_name AS host_child
+    `SELECT i.id, e.household_id, i.token, f.email, f.lang, f.linked_household_id, f.parent_name, e.title, e.starts_at, e.place, h.tz, c.first_name || COALESCE(' & ' || (SELECT first_name FROM children WHERE id = e.co_child_id), '') AS host_child
        FROM invitations i
        JOIN encounters e ON e.id = i.encounter_id
        JOIN friend_families f ON f.id = i.friend_family_id
@@ -121,7 +121,7 @@ export async function sendHostReminders(env: Env, origin: string): Promise<numbe
   if (!mailEnabled(env)) return 0
   const now = nowSec()
   const { results } = await env.DB.prepare(
-    `SELECT e.id, e.household_id, p.email, p.lang, p.display_name, e.title, e.starts_at, e.place, h.tz, c.first_name AS host_child
+    `SELECT e.id, e.household_id, p.email, p.lang, p.display_name, e.title, e.starts_at, e.place, h.tz, c.first_name || COALESCE(' & ' || (SELECT first_name FROM children WHERE id = e.co_child_id), '') AS host_child
        FROM encounters e
        JOIN households h ON h.id = e.household_id
        JOIN children c ON c.id = e.child_id

@@ -31,6 +31,7 @@
 | `InstallOffer` | One card, after three different days of use: keep it on the home screen | Native prompt where the browser has one, the iPhone steps otherwise; « Plus tard » is final. |
 | `Turnstile` | The Cloudflare bot check on signup and forgot-password | Mounted only when /api/health reports a site key; hands its token to the form in a hidden `turnstile` field. |
 | `NotificationBell` | The bell in the header: what happened (invited, changed, answered, reminder), unread first then what you already read | A dot, never a number. Needs no permission; the same list the phone notification is made from. |
+| `ValidForm` | A `<form>` whose mistakes are said in words under the field (and announced), not as the browser bubble | Same checks as the attributes (required, email, min/max length), shown when you leave a field and for every wrong one on send. Nothing is sent while one is wrong. |
 | `EmptyState` | Nothing here yet: one quiet centred sentence, and the action that fills it when there is one | Same on every list. |
 | `BackLink` | « ← Retour » at the top of a page: always the same words, size and place | Apart from PageHead on purpose: PageHead imports nothing from the router, so the pages that open with it do not pull the router into a shared chunk (that pushed a chunk over its cap). |
 | `PageHead` | How every page opens: the title with the ONE main action beside it | Replaces the big orange tile. The action wraps under the title on a narrow screen. |

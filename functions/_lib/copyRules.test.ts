@@ -2,7 +2,9 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { FR } from '../../src/i18n.fr'
+import { FR_MORE } from '../../src/i18n.fr.more'
 import { EN } from '../../src/i18n.en'
+import { EN_MORE } from '../../src/i18n.en.more'
 import { PRIVACY_FR } from '../../src/i18n.privacy.fr'
 import { PRIVACY_EN } from '../../src/i18n.privacy.en'
 import { WHY_FR } from '../../src/i18n.why.fr'
@@ -15,8 +17,8 @@ import { WHY_EN } from '../../src/i18n.why.en'
 //   - French and English carry the same keys at run time too (tsc already holds the types)
 type Dict = Record<string, unknown>
 // The privacy page's long text lives in its own lazy files (src/i18n.privacy.*.ts); the rules cover it as the "privacy." part of each language.
-const FRALL = { ...FR, privacyText: PRIVACY_FR, whyText: WHY_FR }
-const ENALL = { ...EN, privacyText: PRIVACY_EN, whyText: WHY_EN }
+const FRALL = { ...FR, ...FR_MORE, privacyText: PRIVACY_FR, whyText: WHY_FR }
+const ENALL = { ...EN, ...EN_MORE, privacyText: PRIVACY_EN, whyText: WHY_EN }
 
 const walk = (d: string): string[] =>
   readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(d, e.name)) : /\.(tsx?|mjs)$/.test(e.name) && !e.name.endsWith('i18n.ts') && !e.name.includes('copyRules') ? [join(d, e.name)] : []))

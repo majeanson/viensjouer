@@ -31,7 +31,7 @@ export function Cards() {
   if (!q.data) return <QueryError error={q.error} onRetry={() => void q.refetch()} />
   const { encounter: e, invitations } = q.data
   const off = chosenOff ?? new Set(only ? invitations.filter((i) => i.friend_family_id !== only).map((i) => i.id) : [])
-  const hostChild = kids.data?.children.find((c) => c.id === e.child_id)?.first_name ?? ''
+  const hostChild = [kids.data?.children.find((c) => c.id === e.child_id)?.first_name, e.co_child_name].filter(Boolean).join(' & ')
   const picked = invitations.filter((i) => !off.has(i.id))
   const toggle = (iid: string) => setOff(() => { const n = new Set(off); if (!n.delete(iid)) n.add(iid); return n })
 

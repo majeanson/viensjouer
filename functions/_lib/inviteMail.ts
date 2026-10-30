@@ -30,7 +30,7 @@ export async function sendEncounterInvitations(
 ): Promise<{ sent: number; skipped: number }> {
   if (!mailEnabled(env)) return { sent: 0, skipped: 0 }
   const { results } = await env.DB.prepare(
-    `SELECT i.id, i.token, i.scope, f.email, f.lang, f.parent_name, f.child_first_name, e.title, e.starts_at, c.first_name AS host_child, h.tz
+    `SELECT i.id, i.token, i.scope, f.email, f.lang, f.parent_name, f.child_first_name, e.title, e.starts_at, c.first_name || COALESCE(' & ' || (SELECT first_name FROM children WHERE id = e.co_child_id), '') AS host_child, h.tz
        FROM invitations i
        JOIN encounters e ON e.id = i.encounter_id
        JOIN friend_families f ON f.id = i.friend_family_id

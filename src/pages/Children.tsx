@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { ValidForm } from '../components/ValidForm'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
@@ -102,7 +103,7 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
       </div>
       {editing ? (
         <Sheet title={cur ? cur.first_name : t.children.add} onBack={async () => { await auto.flush(); setPending(null); setEditing(null) }} formId={cur ? undefined : 'child-form'} saving={save.isPending} saveLabel={t.children.save} autosave={cur ? auto.state : undefined}>
-        <form id="child-form" onSubmit={submit} onChange={cur ? auto.poke : undefined} key={cur?.id ?? 'new'}>
+        <ValidForm id="child-form" onSubmit={submit} onChange={cur ? auto.poke : undefined} key={cur?.id ?? 'new'}>
           <AvatarPicker
             name={cur?.first_name ?? ''}
             colour={cur?.colour}
@@ -138,7 +139,7 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
               </div>
             </div>
           </details>
-        </form>
+        </ValidForm>
         </Sheet>
       ) : null}
     </>

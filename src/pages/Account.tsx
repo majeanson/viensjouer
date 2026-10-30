@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
+import { ValidForm } from '../components/ValidForm'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -96,10 +97,10 @@ export function Account() {
               onRemove={async () => { await api('avatar', { method: 'DELETE', body: { kind: 'parent' } }); await refresh() }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
-            <form id="profile-form" onSubmit={(ev) => { ev.preventDefault(); void nameAuto.flush() }} onChange={nameAuto.poke}>
+            <ValidForm id="profile-form" onSubmit={(ev) => { ev.preventDefault(); void nameAuto.flush() }} onChange={nameAuto.poke}>
               <label className="field"><span><Icon name="user" />{t.profile.name}</span><input className="input" name="displayName" required maxLength={60} defaultValue={me.displayName ?? ''} autoComplete="given-name" /></label>
               <p className="muted small" role="status" style={{ margin: '0.25rem 0 0', minHeight: '1.2em' }}>{nameAuto.state === 'saved' ? <><Icon name="check" />{t.profile.saved}</> : nameAuto.state === 'saving' ? '…' : ''}</p>
-            </form>
+            </ValidForm>
             <p className="muted small" style={{ margin: '0.75rem 0 0', overflowWrap: 'anywhere' }}><Icon name="mail" />{me.email}</p>
             </div>
             </div>
@@ -181,7 +182,7 @@ export function Account() {
 
         <Sec id="security" icon="lock" open={tab === 'security'} onOpen={pick}>
           <div>
-            <form
+            <ValidForm
               onSubmit={async (e: FormEvent<HTMLFormElement>) => {
                 e.preventDefault()
                 const form = e.currentTarget
@@ -199,7 +200,7 @@ export function Account() {
               <label className="field"><span>{t.account.security.current}</span><input className="input" name="current" type="password" required autoComplete="current-password" /></label>
               <label className="field"><span>{t.account.security.next}</span><input className="input" name="next" type="password" required minLength={8} autoComplete="new-password" /></label>
               <button className="btn">{t.account.security.change}</button>
-            </form>
+            </ValidForm>
             <p className="muted small" style={{ margin: '0.75rem 0 0.5rem' }}>{t.account.security.everywhereHint}</p>
             <button
               className="btn"
@@ -231,14 +232,14 @@ export function Account() {
               <p className="muted small">{t.account.exportHint}</p>
               <a className="btn" href="/api/export" download>{t.account.exportBtn}</a>
             </div>
-            <form className="card" onSubmit={erase}>
+            <ValidForm className="card" onSubmit={erase}>
               <h2><Icon name="trash" />{t.account.deleteTitle}</h2>
               {me.demo ? <p className="muted small">{t.account.demoNote}</p> : <p className="muted small">{t.account.deleteHint}</p>}
               {!me.demo && <label className="field"><span><Icon name="lock" />{t.account.password}</span><input className="input" name="password" type="password" required autoComplete="current-password" /></label>}
               <label className="check"><input type="checkbox" required /><span>{t.account.confirm}</span></label>
               {err && <div className="notice notice--err">{err}</div>}
               <button className="btn btn--danger" disabled={busy}>{busy ? t.auth.working : t.account.deleteBtn}</button>
-            </form>
+            </ValidForm>
           </>
         </Sec>
       </div>

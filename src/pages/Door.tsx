@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { ValidForm } from '../components/ValidForm'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -63,7 +64,7 @@ export function Door() {
         <p className="muted">{t.door.pitch}</p>
       </section>
       <CardCode />
-      <form className="card" onSubmit={submit}>
+      <ValidForm className="card" onSubmit={submit}>
         <div className="seg" role="tablist" style={{ marginBottom: '1rem' }}>
           <button type="button" role="tab" aria-selected={mode === 'login'} className={`btn btn--small ${mode === 'login' ? 'btn--on' : ''}`} onClick={() => setMode('login')}>{t.door.haveAccount}</button>
           <button type="button" role="tab" aria-selected={mode === 'signup'} className={`btn btn--small ${mode === 'signup' ? 'btn--on' : ''}`} onClick={() => setMode('signup')}>{t.door.noAccount}</button>
@@ -76,7 +77,7 @@ export function Door() {
         {err && <div className="notice notice--err">{err}</div>}
         <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : mode === 'login' ? t.auth.submitLogin : t.auth.submitSignup}</button>
         {mode === 'login' && health.data?.mail && <p className="small" style={{ margin: '0.75rem 0 0' }}><Link to="/oubli">{t.auth.forgot}</Link></p>}
-      </form>
+      </ValidForm>
       <div className="trial">
         <button type="button" className="btn" disabled={busy} onClick={() => void go('demo')}>{t.trial.button}</button>
         <p className="muted small">{t.trial.hint}</p>

@@ -2,6 +2,7 @@ node_modules/
 dist/
 .vite/
 .wrangler/
+wrangler.e2e.toml
 *.tsbuildinfo
 
 # local secrets — never commit

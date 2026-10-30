@@ -7,7 +7,7 @@ import type { ChangeRow } from './changes'
 export interface ReplyCard {
   alive: boolean
   encounter: Omit<Encounter, 'address'> & { address: string | null }
-  host: { child_first_name: string; coChild?: string | null; parent_name: string; household_name: string; tz: string; childPhoto?: string | null; parentPhoto?: string | null }
+  host: { child_first_name: string; coChild?: string | null; coChildPhoto?: string | null; parent_name: string; household_name: string; tz: string; childPhoto?: string | null; parentPhoto?: string | null }
   you: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null; reply: ReplyKind | null; replyNote: string | null; remind: boolean; adults: number | null; kids: number | null; scope: 'friend' | 'family' }
   homeCard: HomeCard | null
   relais: { nap: string | null; ate: string | null; mood: string | null; note: string | null } | null

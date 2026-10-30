@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { ValidForm } from './ValidForm'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { K } from '../lib/query'
@@ -80,10 +81,10 @@ export function Groups({ families }: { families: Family[] }) {
       </div>
       {editing ? (
         <Sheet title={cur ? cur.name : t.groups.add} onBack={async () => { await auto.flush(); setEditing(null) }} formId={cur ? undefined : 'group-form'} saving={save.isPending} saveLabel={t.families.save} autosave={cur ? auto.state : undefined}>
-        <form id="group-form" onSubmit={submit} onChange={cur ? auto.poke : undefined} key={cur?.id ?? 'new'}>
+        <ValidForm id="group-form" onSubmit={submit} onChange={cur ? auto.poke : undefined} key={cur?.id ?? 'new'}>
           <label className="field"><span><Icon name="tag" />{t.groups.name}</span><input className="input" name="name" required maxLength={60} defaultValue={cur?.name} placeholder={t.groups.namePlaceholder} /></label>
           <FamilyPicker families={families} groups={[]} selected={picked} onChange={(p) => { setPicked(p); if (cur) auto.poke() }} />
-        </form>
+        </ValidForm>
         </Sheet>
       ) : (
         families.length > 0 && <button className="btn" style={{ marginTop: '0.75rem' }} onClick={() => open('new')}>{t.groups.add}</button>

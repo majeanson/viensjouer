@@ -27,7 +27,7 @@ interface Resolved {
   encounter: EncounterRow & { household_id: string }
   series_id: string | null
   family: { parent_name: string; email: string | null; phone: string | null; child_first_name: string; allergies: string | null }
-  host: { child_first_name: string; coChild: string | null; parent_name: string; household_name: string; tz: string; childPhoto: string | null; parentPhoto: string | null }
+  host: { child_first_name: string; coChild: string | null; coChildPhoto: string | null; parent_name: string; household_name: string; tz: string; childPhoto: string | null; parentPhoto: string | null }
 }
 
 async function resolve(env: Env, raw: string | undefined): Promise<Resolved | null> {
@@ -38,7 +38,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
     `SELECT i.id AS inv_id, i.friend_family_id, i.reply, i.reply_note, i.remind_at,
             e.id, e.series_id, e.household_id, e.child_id, e.kind, e.title, e.starts_at, e.ends_at, e.place, e.address, e.map_url, e.cover_key, e.show_guests, e.note, e.status, e.details, e.here_at, i.adults, i.kids, i.scope,
             f.parent_name, f.email, f.phone, f.child_first_name, f.allergies,
-            c.first_name AS host_child, c.photo_key AS host_child_photo, (SELECT first_name FROM children WHERE id = e.co_child_id) AS co_child,
+            c.first_name AS host_child, c.photo_key AS host_child_photo, (SELECT first_name FROM children WHERE id = e.co_child_id) AS co_child, (SELECT photo_key FROM children WHERE id = e.co_child_id) AS co_child_photo,
             (SELECT photo_key FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent_photo, h.name AS household_name, h.tz,
             (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent
        FROM invitations i
@@ -79,7 +79,7 @@ async function resolve(env: Env, raw: string | undefined): Promise<Resolved | nu
       allergies: row.allergies as string | null,
     },
     series_id: row.series_id as string | null,
-    host: { child_first_name: row.host_child as string, coChild: (row.co_child as string | null) ?? null, parent_name: (row.host_parent as string | null) ?? '', household_name: row.household_name as string, tz: row.tz as string, childPhoto: coverId(row.host_child_photo as string | null), parentPhoto: coverId(row.host_parent_photo as string | null) },
+    host: { child_first_name: row.host_child as string, coChild: (row.co_child as string | null) ?? null, coChildPhoto: coverId(row.co_child_photo as string | null), parent_name: (row.host_parent as string | null) ?? '', household_name: row.household_name as string, tz: row.tz as string, childPhoto: coverId(row.host_child_photo as string | null), parentPhoto: coverId(row.host_parent_photo as string | null) },
   }
 }
 

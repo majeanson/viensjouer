@@ -1,4 +1,5 @@
 import './reply.css'
+import { ValidForm } from '../components/ValidForm'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -184,7 +185,7 @@ function ReplyInner() {
   // One account form, shown under the answer once there is one (a parent who has just said yes is the one who
   // wants to see the friend again), else in the footer. Never before the question: it must not compete with it.
   const claimForm = (
-    <form className="card" style={{ textAlign: 'left' }} onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>
+    <ValidForm className="card" style={{ textAlign: 'left' }} onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>
       <h2><Icon name="user" />{t.reply.claimTitle}</h2>
       <p className="muted small">{t.reply.claimHint}</p>
       <label className="field"><span><Icon name="user" />{t.reply.parentName}</span><input className="input" name="displayName" required maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
@@ -192,7 +193,7 @@ function ReplyInner() {
       <label className="field"><span><Icon name="lock" />{t.reply.claimPassword}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
       {err && <div className="notice notice--err" role="alert">{err}</div>}
       <button className="btn btn--primary btn--big" disabled={claim.isPending}>{t.reply.claimSend}</button>
-    </form>
+    </ValidForm>
   )
   const offerAccount = answered && alive && !me.signedIn
   const calendarAfterYes = alive && answered && (you.reply === 'yes' || you.reply === 'maybe')
@@ -246,7 +247,7 @@ function ReplyInner() {
       <section className="card">
         {cover && <img className="cover" src={`/api/r/${token}/cover?v=${cover}`} alt="" />}
         <div className="faces" aria-hidden="true">
-          {host.coChild && <Face name={host.coChild} colour="var(--accent)" size="lg" />}
+          {host.coChild && <Face name={host.coChild} colour="var(--accent)" src={host.coChildPhoto ? `/api/r/${token}/avatar/cochild?v=${host.coChildPhoto}` : null} size="lg" />}
           <Face name={host.child_first_name} colour="var(--accent)" src={host.childPhoto ? `/api/r/${token}/avatar/child?v=${host.childPhoto}` : null} size="lg" />
           <Face name={host.parent_name || host.household_name} colour="var(--host)" src={host.parentPhoto ? `/api/r/${token}/avatar/parent?v=${host.parentPhoto}` : null} size="lg" />
         </div>
@@ -298,7 +299,7 @@ function ReplyInner() {
           )}
           <details className="why" key={String(justAnswered)} open={justAnswered && you.reply === 'yes' && (e.kind === 'birthday' || you.scope === 'family')} style={{ marginTop: '0.75rem' }}>
             <summary>{t.reply.extras}</summary>
-            <form onSubmit={saveExtras} style={{ marginTop: '0.75rem' }}>
+            <ValidForm onSubmit={saveExtras} style={{ marginTop: '0.75rem' }}>
               <label className="field"><span><Icon name="note" />{t.reply.note}</span><input className="input" name="note" maxLength={500} placeholder={t.reply.notePlaceholder} defaultValue={you.replyNote ?? ''} /></label>
               <label className="field"><span><Icon name="user" />{t.reply.parentName}</span><input className="input" name="parentName" maxLength={60} defaultValue={you.parent_name} autoComplete="given-name" /></label>
               <label className="field"><span><Icon name="mail" />{t.reply.email}</span><input className="input" name="email" type="email" defaultValue={you.email ?? ''} autoComplete="email" /></label>
@@ -321,7 +322,7 @@ function ReplyInner() {
               />
               {err && <div className="notice notice--err" role="alert">{err}</div>}
               <button className="btn btn--primary" disabled={post.isPending} style={{ marginTop: '0.75rem' }}>{t.reply.saveExtras}</button>
-            </form>
+            </ValidForm>
           </details>
         </div>
       ) : (
@@ -393,7 +394,7 @@ function ReplyInner() {
               </div>
             ))}
             {canBring ? (
-              <form
+              <ValidForm
                 className="cluster"
                 style={{ marginTop: '0.5rem' }}
                 onSubmit={(ev) => {
@@ -406,7 +407,7 @@ function ReplyInner() {
               >
                 <input className="input" name="add" maxLength={60} placeholder={t.bring.addMine} aria-label={t.bring.addMine} style={{ flex: '1 1 10rem' }} />
                 <button className="btn" disabled={bringPost.isPending}>{t.bring.add}</button>
-              </form>
+              </ValidForm>
             ) : (
               <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.bring.answerFirst}</p>
             )}

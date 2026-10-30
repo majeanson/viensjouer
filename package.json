@@ -21,7 +21,8 @@
     "check:bundle": "node scripts/check-bundle.mjs",
     "e2e:real": "node scripts/e2e-real.mjs",
     "e2e:prod": "playwright test -c playwright.real.config.ts",
-    "knip": "knip"
+    "knip": "node scripts/knip.mjs",
+    "check:all": "npm run verify && npm run e2e:ci && npm run e2e:real"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.5",

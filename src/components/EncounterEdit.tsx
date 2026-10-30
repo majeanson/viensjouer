@@ -1,4 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
+import { ValidForm } from './ValidForm'
 import { useMutation } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import { useLang, useT } from '../i18n'
@@ -87,7 +88,7 @@ export function EncounterEdit({
   }
 
   return (
-    <form ref={setForm} className="card" onSubmit={submit} onInput={() => setTick((n) => n + 1)}>
+    <ValidForm ref={setForm} className="card" onSubmit={submit} onInput={() => setTick((n) => n + 1)}>
       <h3><Icon name="edit" />{t.edit.title}</h3>
       {e.series_id && <p className="muted small">{t.edit.seriesOnly}</p>}
       {e.series_id && <label className="check"><input type="checkbox" name="series" /><span>{t.edit.seriesAll}</span></label>}
@@ -130,6 +131,6 @@ export function EncounterEdit({
         <button className="btn btn--primary" disabled={save.isPending || (changes.length === 0 && !guestsChanged)}>{t.edit.save}</button>
         <button type="button" className="btn" onClick={onClose}>{t.edit.cancel}</button>
       </div>
-    </form>
+    </ValidForm>
   )
 }

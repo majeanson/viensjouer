@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { ValidForm } from '../components/ValidForm'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
@@ -151,7 +152,7 @@ export function Friends() {
           )}
           {importing && <ImportFriends onClose={() => setImporting(false)} />}
           {editing && (
-          <form id="friend-form" onSubmit={submit} onChange={cur ? auto.poke : undefined} key={cur?.id ?? 'new'}>
+          <ValidForm id="friend-form" onSubmit={submit} onChange={cur ? auto.poke : undefined} key={cur?.id ?? 'new'}>
             <label className="field"><span><Icon name="smile" />{t.families.childFirstName}</span><input className="input" name="childFirstName" required maxLength={40} defaultValue={cur?.child_first_name} /></label>
             <label className="field"><span><Icon name="user" />{t.families.parentName}</span><input className="input" name="parentName" required maxLength={60} defaultValue={cur?.parent_name} /></label>
             <label className="field"><span><Icon name="mail" />{t.families.email}</span><input className="input" name="email" type="email" defaultValue={cur?.email ?? ''} /></label>
@@ -176,7 +177,7 @@ export function Friends() {
                 [t.families.notes, 'notes'],
               ]}
             />
-          </form>
+          </ValidForm>
           )}
         </Sheet>
       )}

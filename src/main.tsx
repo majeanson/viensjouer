@@ -9,7 +9,11 @@ import { queryClient } from './lib/query'
 import { LangContext, readLang, writeLang, type Dict, type Lang } from './i18n'
 import './styles.css'
 
-const loadDict = (l: Lang): Promise<Dict> => (l === 'en' ? import('./i18n.en').then((m) => m.EN) : import('./i18n.fr').then((m) => m.FR))
+// Each language is two files (the two halves of its dictionary), fetched together and merged.
+const loadDict = (l: Lang): Promise<Dict> =>
+  l === 'en'
+    ? Promise.all([import('./i18n.en'), import('./i18n.en.more')]).then(([a, b]) => ({ ...a.EN, ...b.EN_MORE }))
+    : Promise.all([import('./i18n.fr'), import('./i18n.fr.more')]).then(([a, b]) => ({ ...a.FR, ...b.FR_MORE }))
 
 function Root() {
   const [lang, setLangState] = useState<Lang>(readLang)

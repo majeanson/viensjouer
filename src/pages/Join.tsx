@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { ValidForm } from '../components/ValidForm'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -42,13 +43,13 @@ export function Join() {
         <>
           <h1>{t.parent.joinTitle(q.data.household)}</h1>
           <p className="muted">{t.parent.joinHint(q.data.inviter ?? '')}</p>
-          <form className="card" onSubmit={submit}>
+          <ValidForm className="card" onSubmit={submit}>
             <label className="field"><span><Icon name="user" />{t.auth.displayName}</span><input className="input" name="displayName" required maxLength={60} autoComplete="given-name" /></label>
             <label className="field"><span><Icon name="mail" />{t.auth.email}</span><input className="input" name="email" type="email" required autoComplete="email" /></label>
             <label className="field"><span><Icon name="lock" />{t.auth.password}</span><input className="input" name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
             {err && <div className="notice notice--err">{err}</div>}
             <button className="btn btn--primary btn--big" disabled={busy}>{busy ? t.auth.working : t.parent.joinSend}</button>
-          </form>
+          </ValidForm>
         </>
       ) : (
         <p className="muted">{t.common.loading}</p>

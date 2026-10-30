@@ -2,10 +2,13 @@
 // `Dict` (the shape of the French one) is the compile-time parity contract: EN must have every key FR has, or tsc fails.
 import { createContext, useContext } from 'react'
 import type { FR } from './i18n.fr'
+import type { FR_MORE } from './i18n.fr.more'
 
 export type Lang = 'fr' | 'en'
 
-export type Dict = typeof FR
+export type Core = typeof FR
+export type More = typeof FR_MORE
+export type Dict = Core & More
 
 // `dict` is the dictionary for `lang`. Neither is in the entry: src/main.tsx loads the one the visitor needs before it
 // renders anything, so no component ever sees this default.

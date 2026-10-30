@@ -67,7 +67,7 @@ export function invitationMail(lang: MailLang, v: { parent: string; host: string
     v.friendOnly ? `The invitation is for ${v.child} only.` : 'The whole family is welcome, siblings included.',
   )
   return {
-    subject: pick(lang, `${v.hostChild} invite ${v.child} — ${v.title}`, `${v.hostChild} invites ${v.child}: ${v.title}`),
+    subject: pick(lang, `${v.hostChild} invite${v.hostChild.includes(' & ') ? 'nt' : ''} ${v.child} — ${v.title}`, `${v.hostChild} invite${v.hostChild.includes(' & ') ? '' : 's'} ${v.child}: ${v.title}`),
     text: pick(
       lang,
       `Bonjour ${v.parent},\n\n${v.host} propose une rencontre : ${v.title}, ${v.when}. ${who}\n\nRéponds ici (pas de compte à créer) :\n${v.link}\n\n${SIGN}`,

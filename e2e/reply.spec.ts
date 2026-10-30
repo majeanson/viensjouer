@@ -194,7 +194,7 @@ test('the shared page says what it is, the facts, who it is for and what happens
   await expect(page.getByText(/ne demande aucun compte/)).toBeVisible()
   // after the answer the page says the host already knows, and the how-it-works card is gone (it was for before)
   await page.getByRole('button', { name: 'Oui, on y sera' }).click()
-  await expect(page.getByText('Marc voit ta réponse.')).toBeVisible()
+  await expect(page.getByText('Réponse envoyée. Merci !')).toBeVisible()
   await expect(page.locator('.steps')).toHaveCount(0)
 })
 
@@ -287,6 +287,8 @@ test('« À apporter »: take a line, add your own, and a family that has not an
 test('the calendar button is a download AND a link the calendar app keeps up to date', async ({ page }) => {
   await stub(page, card())
   await page.goto(`/${CODE}`)
+  await page.getByRole('button', { name: 'Oui, on y sera' }).click()
+  await page.getByText('Plus d’options', { exact: true }).click()
   await expect(page.getByRole('link', { name: 'Ajouter à mon calendrier' })).toHaveAttribute('href', `/api/r/${CODE}/ics`)
   await expect(page.getByRole('link', { name: 'Suivre dans mon calendrier (se met à jour)' })).toHaveAttribute('href', new RegExp(`^webcal://[^/]+/api/r/${CODE}/ics\\?s=1$`))
 })

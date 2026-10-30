@@ -200,6 +200,7 @@ test('« Refaire pareil » opens the form with the same kind, place, families an
     'GET encounters': () => ({ json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes', { scope: 'friend' })], { id: 'old', kind: 'home', title: 'Après la sieste', place: 'Chez nous', starts_at: past, note: 'Collation' }) }),
   })
   await page.goto('/rencontres/old')
+  await page.getByText('Plus d’options', { exact: true }).last().click()
   await page.getByRole('link', { name: 'Refaire pareil' }).click()
   await expect(page).toHaveURL(/nouvelle\?from=old/)
   await expect(page.getByRole('checkbox', { name: /Léa/ })).toBeChecked()
@@ -647,9 +648,7 @@ test('the host sees where the answers stand, emails every family not yet told in
         : { json: { encounters: [enc()], invitations: [] } },
   })
   await page.goto('/rencontres/e1')
-  const tally = page.getByRole('group', { name: 'Les réponses reçues' })
-  await expect(tally).toContainText('Oui · 1')
-  await expect(page.getByText('Il manque :')).toBeVisible()
+  await expect(page.getByText(/Oui 1 · Il manque :/)).toBeVisible()
   // Nobody has been told yet: ONE primary button emails the two who have an address (Eli has none: text or card).
   await page.getByRole('button', { name: 'Envoyer à 2 familles par courriel' }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'invitations').map((c) => c.body?.id)).toEqual(['i2', 'i3'])

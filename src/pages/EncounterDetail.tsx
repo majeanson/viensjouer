@@ -235,7 +235,6 @@ export function EncounterDetail() {
       ) : (
         <p className="cluster" style={{ margin: '0 0 0.75rem' }}>
           {e.status !== 'cancelled' && <button className="btn btn--small" onClick={() => setEditing(true)}><Icon name="edit" />{t.edit.button}</button>}
-          <Link to={`/rencontres/nouvelle?from=${e.id}`} className="btn btn--small"><Icon name="repeat" />{t.form.again}</Link>
         </p>
       )}
 
@@ -283,12 +282,12 @@ export function EncounterDetail() {
           <div className="card">
             <h3><Icon name="share" />{t.encounters.links}</h3>
             {invitations.length > 0 && (
-              <div className="cluster" style={{ marginBottom: '0.75rem' }} role="group" aria-label={t.encounters.tally}>
-                {(['yes', 'maybe', 'no'] as const).map((k) => ({ k, n: invitations.filter((i) => i.reply === k).length })).filter((x) => x.n > 0).map((x) => <span key={x.k} className={`chip chip--${x.k}`}>{t.encounters.reply[x.k]} · {x.n}</span>)}
-              </div>
-            )}
-            {invitations.length > 0 && (
-              <p className="muted small" style={{ margin: '0 0 0.75rem' }}>{silent.length > 0 ? t.encounters.missing(silent.map((i) => i.child_first_name).join(', ')) : t.encounters.allAnswered}</p>
+              <p className="muted small" style={{ margin: '0 0 0.75rem' }}>
+                {[
+                  (['yes', 'maybe', 'no'] as const).map((k) => ({ k, n: invitations.filter((i) => i.reply === k).length })).filter((x) => x.n > 0).map((x) => `${t.encounters.reply[x.k]} ${x.n}`).join(' · '),
+                  silent.length > 0 ? t.encounters.missing(silent.map((i) => i.child_first_name).join(', ')) : t.encounters.allAnswered,
+                ].filter(Boolean).join(' · ')}
+              </p>
             )}
             {unsentMail.length > 0 && <p style={{ margin: '0 0 0.75rem' }}><button className="btn btn--primary" disabled={resendAll.isPending} onClick={() => resendAll.mutate(unsentMail.map((i) => i.id))}><Icon name="mail" />{t.encounters.sendAll(unsentMail.length)}</button></p>}
             {invitations.map((i) => (
@@ -519,6 +518,7 @@ export function EncounterDetail() {
           <summary>{t.encounters.moreOptions}</summary>
           <CoverPicture mode="controls" encounterId={e.id} cover={e.cover ?? null} enabled={!!health.data?.photos && e.status !== 'cancelled'} onChanged={refresh} />
           <div className="cluster" style={{ marginTop: '0.5rem' }}>
+            <Link to={`/rencontres/nouvelle?from=${e.id}`} className="btn"><Icon name="repeat" />{t.form.again}</Link>
             {e.status !== 'cancelled' && e.status !== 'postponed' && <button className="btn" onClick={() => setPostponing(true)}><Icon name="umbrella" />{t.encounters.postpone}</button>}
             {e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => cancel(false, e.status)}>{t.encounters.cancel}</button>}
             {e.series_id && e.status !== 'cancelled' && <button className="btn btn--danger" onClick={() => cancel(true, e.status)}>{t.encounters.cancelSeries}</button>}

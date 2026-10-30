@@ -358,9 +358,9 @@ test('the list shows one calm line per rencontre: when, where, and the answers a
   })
   await page.goto('/rencontres')
   const card = page.locator('a.card--tap', { hasText: 'Au parc' })
-  await expect(card).toContainText('Oui · 2')
-  await expect(card).toContainText('Peut-être · 1')
-  await expect(card).toContainText('Pas de réponse · 3')
+  await expect(card).toContainText('Oui 2')
+  await expect(card).toContainText('Peut-être 1')
+  await expect(card).toContainText('Pas de réponse 3')
   await expect(card).not.toContainText('K0 ·') // never one chip per family
 })
 

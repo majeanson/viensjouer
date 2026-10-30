@@ -49,6 +49,10 @@
 
 ## 3. What just shipped
 
+### Declutter pass — 2026-10-29
+
+Amis and groups are CLOSED rows (face, name, one grey line, chevron); tags, contact, Modifier / Retirer, history and the circle invite open on a tap. Rencontres list: the answers are one grey line (« Oui 2 · Peut-être 1 »), upcoming only. Host page: counts and « Il manque » are ONE line; « Refaire pareil » sits under Plus d'options. Reply page: no « un seul toucher » hint, no « [host] voit ta réponse » (the saved notice says it), no calendar buttons before an answer, the other dates of a series are one folded row. Not done yet (audit candidates): per-family rows on the host page, the new-rencontre form's « how to send » block, Notifications / Calendar link / child nap+colour folds, one banner at a time on Rencontres.
+
 ### Friends and groups as rows, the bell, recurring as one card — 2026-10-29
 
 No new field. **Amis**: one row per friend like Ma famille (face, child, parent and age, group / « Sur Viens jouer » tags, Modifier and Retirer); email, phone, allergies, notes, « Déjà ensemble », the circle invite and « Couper le lien » sit under a « Détails » fold. Groups use the same row with the members' faces. **The bell** (`NotificationBell`, lazy so the first download is unchanged) replaces the « Nouveau » card: a dot, never a number; unread first, then what was read in the last 30 days (`GET /api/notifications?all=1`). **Tabs**: the chosen `.btn--on` is filled with the accent; tabs are pills. **Rencontres**: a recurring rencontre is one card (its next non-cancelled date, « Récurrente · encore N dates »). **Photos**: decoded through an `<img>` onto white before upload (Safari's `createImageBitmap` could leave the top blank; unconfirmed on the user's phone, re-add the photo to check); a cover that fails to load shows nothing. Also: typing in Les messages no longer remounts every message (rows were an inner component). Gates and `e2e:ci` green; the stylesheet stayed under its 6 KB cap by reusing `.linkrow`.

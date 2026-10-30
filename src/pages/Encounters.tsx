@@ -52,10 +52,10 @@ export function Encounters() {
         <span><Icon name="clock" />{isOver(e) ? whenShort(e.starts_at, lang) : <>{humanWhen(e.starts_at, lang)} · {timeOnly(e.starts_at, lang)}</>}</span>
         {e.place && e.place !== t.encounters.kind[e.kind] && <span><Icon name="pin" />{e.place}</span>}
       </p>
-      {(byEnc.get(e.id) ?? []).length > 0 && (
-        <div className="cluster">
-          {(['yes', 'maybe', 'no', 'none'] as const).map((k) => ({ k, n: (byEnc.get(e.id) ?? []).filter((i) => (i.reply ?? 'none') === k).length })).filter((x) => x.n > 0).map((x) => <span key={x.k} className={`chip ${x.k === 'none' ? '' : `chip--${x.k}`}`}>{t.encounters.reply[x.k]} · {x.n}</span>)}
-        </div>
+      {!isOver(e) && (byEnc.get(e.id) ?? []).length > 0 && (
+        <p className="muted small" style={{ margin: '0.35rem 0 0' }}>
+          {(['yes', 'maybe', 'no', 'none'] as const).map((k) => ({ k, n: (byEnc.get(e.id) ?? []).filter((i) => (i.reply ?? 'none') === k).length })).filter((x) => x.n > 0).map((x) => `${t.encounters.reply[x.k]} ${x.n}`).join(' · ')}
+        </p>
       )}
     </Link>
   )

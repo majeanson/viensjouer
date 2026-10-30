@@ -199,12 +199,6 @@ function ReplyInner() {
             {e.note && <div><dt><Icon name="note" />{t.reply.toKnow}</dt><dd>{e.note}{mark(freshOf('note'))}</dd></div>}
             {e.details?.gift && <div><dt><Icon name="gift" />{t.kinds.birthday.giftIs}</dt><dd>{e.details.gift}{mark(freshOf('gift'))}</dd></div>}
       </dl>
-          {!calendarAfterYes && (
-            <div className="cluster">
-              <a className="btn" href={`/api/r/${token}/ics`} download="rencontre.ics">{t.reply.calendar}</a>
-              <a className="btn btn--small" href={`webcal://${location.host}/api/r/${token}/ics?s=1`}>{t.reply.subscribe}</a>
-            </div>
-          )}
           {changes.length > 0 && (
             <details className="why" style={{ marginTop: '0.75rem' }}>
               <summary>{t.edit.history}</summary>
@@ -280,7 +274,6 @@ function ReplyInner() {
             <span><span className="muted small">{t.reply.yourReply}</span><br /><strong className={`chip chip--${you.reply}`}>{t.encounters.reply[you.reply!]}</strong>{you.replyNote && <span className="small"> · « {you.replyNote} »</span>}</span>
             <button className="btn btn--small" onClick={() => setEditing(true)}>{t.reply.change}</button>
           </div>
-          <p className="muted small" style={{ margin: '0.5rem 0 0' }}>{t.reply.hostKnows(host.parent_name || host.household_name)}</p>
           {alive && you.reply && (q.data.siblings ?? []).map((s) => s.reply !== null && s.reply === you.reply ? (
             <p key={s.token} className="muted small" style={{ margin: '0.5rem 0 0' }}><Icon name="check" />{t.reply.siblingSame(s.child, t.encounters.reply[s.reply])}</p>
           ) : (
@@ -335,7 +328,6 @@ function ReplyInner() {
           </div>
           {queued && <div className="notice" role="status" style={{ marginTop: '0.75rem' }}>{t.reply.queued}</div>}
           {err && <div className="notice notice--err" role="alert" style={{ marginTop: '0.75rem' }}>{err}</div>}
-          <p className="muted small" style={{ margin: '0.75rem 0 0' }}>{t.reply.oneTap}</p>
         </section>
       )}
       {details}
@@ -423,16 +415,17 @@ function ReplyInner() {
       )}
 
       {series.length > 0 && (
-        <div className="card">
-          <h2><Icon name="repeat" />{t.reply.seriesTitle}</h2>
-          <p className="muted small">{t.reply.seriesHint}</p>
+        <details className="fold">
+          <summary><span><Icon name="repeat" />{t.reply.seriesTitle} ({series.length})</span></summary>
+          <div>
           {series.map((w) => (
             <Link key={w.token} to={`/${paperCode(w.token)}`} className="row linkrow" style={{ textDecoration: 'none' }}>
               <span>{whenShort(w.starts_at, lang)}</span>
               <span className={`chip ${w.reply ? `chip--${w.reply}` : ''}`}>{w.reply ? t.encounters.reply[w.reply] : t.encounters.reply.none}</span>
             </Link>
           ))}
-        </div>
+          </div>
+        </details>
       )}
 
       {!answered && (

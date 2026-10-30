@@ -59,6 +59,8 @@ export function EncounterNew() {
   const [start, setStart] = useState(() => toLocalInput(nextSaturdayTen()))
   const [err, setErr] = useState<string | null>(null)
   // « Dis-le en une phrase »: the sentence fills the form below, which stays the place to correct it.
+  // « Proposer d'autres moments »: up to three more possible times, ticked by the families; the host picks later.
+  const [extra, setExtra] = useState<string[]>([])
   const [say, setSay] = useState('')
   const [sayMiss, setSayMiss] = useState(false)
   const [quickPlace, setQuickPlace] = useState('')
@@ -138,6 +140,7 @@ export function EncounterNew() {
       title,
       startsAt,
       ...(freq !== 'once' ? { startsAtList: repeatTimes(startsAt, freq, count) } : {}),
+      ...(freq === 'once' && extra.length > 0 ? { slots: extra.map(fromLocalInput).filter((x): x is number => !!x) } : {}),
       endsAt,
       place: f.get('place') || undefined,
       mapUrl: f.get('mapUrl') || undefined,
@@ -254,6 +257,13 @@ export function EncounterNew() {
                 ))}
               </div>
               <WhenInput name="startsAt" label={t.encounters.when} value={start} onChange={setStart} />
+              {freq === 'once' && extra.map((x, i) => (
+                <div key={i} className="stack">
+                  <WhenInput name={`slot${i}`} label={t.slots.title2} value={x} onChange={(v) => setExtra((l) => l.map((y, j) => (j === i ? v : y)))} />
+                  <button type="button" className="btn btn--small" onClick={() => setExtra((l) => l.filter((_, j) => j !== i))}>{t.slots.remove}</button>
+                </div>
+              ))}
+              {freq === 'once' && extra.length < 3 && <button type="button" className="btn btn--small" onClick={() => setExtra((l) => [...l, toLocalInput((fromLocalInput(l.length ? l[l.length - 1] : start) ?? nextSaturdayTen()) + 86_400)])}>{t.slots.add}</button>}
             </div>
             <label className="field"><span><Icon name="pin" />{t.encounters.place}</span><input
               className="input"

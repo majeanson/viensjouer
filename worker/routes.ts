@@ -50,6 +50,8 @@ import * as familyHistory from '../functions/api/family-history'
 import * as lastGuests from '../functions/api/last-guests'
 import * as bring from '../functions/api/bring'
 import * as replyBring from '../functions/api/r/bring'
+import * as slots from '../functions/api/slots'
+import * as replySlots from '../functions/api/r/slots'
 import * as feed from '../functions/api/feed'
 import * as calLink from '../functions/api/cal-link'
 import * as thanks from '../functions/api/thanks'
@@ -105,6 +107,7 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['family-history', familyHistory],
   ['last-guests', lastGuests],
   ['bring', bring],
+  ['slots', slots],
   ['feed/:token', feed],
   ['cal-link', calLink],
   ['thanks', thanks],
@@ -118,6 +121,7 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['r/:token/cover', replyCover],
   ['r/:token/avatar/:who', replyAvatar],
   ['r/:token/bring', replyBring],
+  ['r/:token/slots', replySlots],
   ['r/:token/photo/:id', replyPhotoImg],
   ['r/:token/photo', replyPhoto],
   ['r/:token/claim', replyClaim],

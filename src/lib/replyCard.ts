@@ -21,6 +21,7 @@ export interface ReplyCard {
   cover: string | null
   guests: { yes: string[]; maybe: string[]; waiting: number } | null
   bring: { id: string; label: string; by: string | null; mine: boolean }[]
+  slots?: { id: string; startsAt: number; mine: boolean }[]
 }
 
 export const REPLY_CARD_KEYS: Record<keyof ReplyCard, true> = {
@@ -40,6 +41,7 @@ export const REPLY_CARD_KEYS: Record<keyof ReplyCard, true> = {
   cover: true,
   guests: true,
   bring: true,
+  slots: true,
 }
 
 export const REPLY_YOU_KEYS: Record<keyof ReplyCard['you'], true> = {

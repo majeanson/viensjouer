@@ -49,6 +49,7 @@ export const FR = {
     newPassword: 'Nouveau mot de passe',
     resetSend: 'Enregistrer et entrer',
   },
+  slots: { title: 'Quels moments te conviennent ?', hint: 'Touche ceux où vous pouvez venir. L’hôte choisira.', add: 'Proposer d’autres moments', choose: 'Choisir', yes: (n: number) => (n === 0 ? 'Personne encore' : n === 1 ? '1 famille peut' : `${n} familles peuvent`), title2: 'Moments proposés', remove: 'Retirer' },
   nav: { new: 'Nouvelle', home: 'Rencontres', friends: 'Amis', circle: 'Le cercle', calendar: 'Calendrier', windows: 'Fenêtres', children: 'Ma famille', families: 'Familles amies' },
   circle: {
     title: 'Le cercle',

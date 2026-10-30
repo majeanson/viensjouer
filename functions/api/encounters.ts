@@ -2,6 +2,7 @@ import { badRequest, conflict, created, notFound, ok, readJson, str } from '../_
 import { FULL, roomFor } from '../_lib/ceilings'
 import { authed } from '../_lib/route'
 import { freshLinkCode, newId, nowSec, paperCode } from '../_lib/ids'
+import { MAX_SLOTS, cleanSlots } from '../_lib/slots'
 import { cleanMapUrl, coverId, isKind, isStatus, type EncounterRow, type Kind, type Reply, type Status } from '../_lib/encounters'
 import { changeLines, diffEncounter, shiftOccurrence, type Change, type Shift, type Snapshot } from '../_lib/changes'
 import { REMIND_LEAD_SEC } from '../_lib/reminders'
@@ -56,13 +57,14 @@ export const onRequestGet = authed(async (ctx, actor) => {
       .first<EncounterRow>()
     if (!e) return notFound()
     const now = nowSec()
-    const [inv, msgs, rel, sou, chg, brg] = await ctx.env.DB.batch([
+    const [inv, msgs, rel, sou, chg, brg, slt] = await ctx.env.DB.batch([
       ctx.env.DB.prepare(`${INVITE_SELECT} WHERE i.encounter_id = ? ORDER BY i.created_at`).bind(id),
       ctx.env.DB.prepare('SELECT id, author_kind, author_label, text, created_at, pinned FROM encounter_messages WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(id),
       ctx.env.DB.prepare('SELECT r.invitation_id, r.nap, r.ate, r.mood, r.note, r.expires_at FROM relais r JOIN invitations i ON i.id = r.invitation_id WHERE i.encounter_id = ? AND r.expires_at > ?').bind(id, now),
       ctx.env.DB.prepare('SELECT id, author_kind, author_label, created_at FROM souvenirs WHERE encounter_id = ? AND deleted_at IS NULL ORDER BY created_at').bind(id),
       ctx.env.DB.prepare('SELECT field, old_value, new_value, created_at FROM encounter_changes WHERE encounter_id = ? ORDER BY created_at DESC LIMIT 30').bind(id),
       ctx.env.DB.prepare('SELECT id, label, claimed_label, added_by FROM bring_items WHERE encounter_id = ? ORDER BY created_at').bind(id),
+      ctx.env.DB.prepare('SELECT s.id, s.starts_at, (SELECT COUNT(*) FROM slot_votes v WHERE v.slot_id = s.id) AS yes FROM encounter_slots s WHERE s.encounter_id = ? ORDER BY s.starts_at').bind(id),
     ])
     const { details, cover_key, show_guests, ...rest } = e
     return ok({
@@ -73,6 +75,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
       souvenirs: sou.results,
       changes: chg.results,
       bring: brg.results,
+      slots: slt.results,
     })
   }
   // The list: everything not older than two weeks, soonest first. A hub later paginates.
@@ -101,6 +104,8 @@ type Body = {
   // A weekly series: the FIRST occurrence is startsAt, the rest come from the browser (wall
   // time kept across DST); at most 12, ascending, within a year. Each is an ordinary rencontre.
   startsAtList?: number[]
+  // « Proposer plusieurs moments »: other possible times (with startsAt that makes at most four). Not for a series.
+  slots?: number[]
   series?: boolean
   details?: unknown
   here?: boolean
@@ -191,6 +196,11 @@ export const onRequestPost = authed(async (ctx, actor) => {
   }
   // « Marc t'invite »: the families that have an account hear about it in the app (and on their phone if they allowed it), whether or
   // not an email goes out. The first date only: a series' later dates have their own links, listed on each family's page.
+  const offered = times.length === 1 ? cleanSlots(body?.slots, ts) : []
+  if (offered.length > 0) {
+    const all = [...new Set([startsAt, ...offered])].sort((a, b) => a - b).slice(0, MAX_SLOTS)
+    await ctx.env.DB.batch(all.map((at) => ctx.env.DB.prepare('INSERT INTO encounter_slots (id, encounter_id, starts_at, created_at) VALUES (?, ?, ?, ?)').bind(newId(), ids[0], at, ts)))
+  }
   if (!isDemoEmail(actor.email)) await notifyInvited(ctx.env, actor, { title, startsAt: times[0] }, firstMinted)
   // « Envoyer tout de suite »: the invitations of the FIRST date go by email now (a series' later dates have their own links,
   // listed on each family's page). Off unless asked, and never in a trial.

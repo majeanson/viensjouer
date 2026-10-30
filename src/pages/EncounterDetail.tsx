@@ -31,6 +31,7 @@ interface Detail {
   souvenirs: Souvenir[]
   changes: ChangeRow[]
   bring: { id: string; label: string; claimed_label: string | null; added_by: string }[]
+  slots?: { id: string; starts_at: number; yes: number }[]
 }
 
 // The host's card. Left: the plan, WHO IS COMING, and one calm line per family (share, with the rest
@@ -97,6 +98,17 @@ export function EncounterDetail() {
     },
     onError: fail,
   })
+  // Choosing a time moves the rencontre to it (an ordinary edit, so the families see what changed) and clears the offer.
+  const settle = useMutation({
+    mutationFn: async (at: number) => {
+      const e = q.data!.encounter
+      await api('encounters', { method: 'PATCH', body: { id, startsAt: at, endsAt: e.ends_at ? at + (e.ends_at - e.starts_at) : null } })
+      await api('slots', { method: 'DELETE', body: { encounter: id } })
+    },
+    onSuccess: refresh,
+    onError: fail,
+  })
+  const dropSlot = useMutation({ mutationFn: (slot: string) => api('slots', { method: 'DELETE', body: { id: slot } }), onSuccess: refresh, onError: fail })
   const addBring = useMutation({ mutationFn: (label: string) => api('bring', { method: 'POST', body: { encounter: id, label } }), onSuccess: refresh, onError: fail })
   const thank = useMutation({
     mutationFn: (text: string) => api<{ sent: number; skipped?: number }>('thanks', { method: 'POST', body: { encounter: id, text } }),
@@ -398,6 +410,20 @@ export function EncounterDetail() {
         </div>
 
         <div>
+          {(q.data.slots ?? []).length > 1 && (
+            <section className="card" aria-label={t.slots.title2}>
+              <h2><Icon name="calendar" />{t.slots.title2}</h2>
+              {q.data.slots!.map((s) => (
+                <div key={s.id} className="row linkrow">
+                  <span>{whenLong(s.starts_at, lang)} <span className="muted small">· {t.slots.yes(s.yes)}</span></span>
+                  <span className="cluster">
+                    <button className="btn btn--small btn--primary" disabled={settle.isPending} onClick={() => settle.mutate(s.starts_at)}>{t.slots.choose}</button>
+                    <button className="btn btn--small btn--danger" disabled={dropSlot.isPending} onClick={() => dropSlot.mutate(s.id)}>{t.slots.remove}</button>
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
           <details className="fold">
             <summary><span><Icon name="bag" />{t.bring.title}{bring.length > 0 ? ` (${bringLine})` : ''}</span></summary>
             <div>

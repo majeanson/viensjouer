@@ -207,6 +207,33 @@ test('one sentence fills the form: kind, day, hour, place and the friend', async
   expect(stub.calls.filter((c) => c.method === 'POST')).toHaveLength(0)
 })
 
+test('offering other times sends them with the rencontre; the host picks one and the rencontre moves to it', async ({ page }) => {
+  const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'] } }) })
+  await page.goto('/rencontres/nouvelle')
+  await page.getByRole('button', { name: 'Proposer d’autres moments' }).click()
+  await page.getByRole('button', { name: 'Inviter', exact: true }).click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'encounters').length).toBe(1)
+  const body = stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')!.body!
+  expect((body.slots as number[]).length).toBe(1)
+  expect((body.slots as number[])[0]).toBeGreaterThan(body.startsAt as number)
+})
+
+test('the host sees how many families can make each time and picks one', async ({ page }) => {
+  const a = now + 4 * 86_400
+  const stub = await host(page, {
+    'GET encounters': () => ({ json: { ...detail([inv('i1', 'f1', 'Léa', 'Julie', null)], { id: 'e1', starts_at: a }), slots: [{ id: 's1', starts_at: a, yes: 1 }, { id: 's2', starts_at: a + 86_400, yes: 0 }] } }),
+    'PATCH encounters': () => ({ json: { ok: true } }),
+    'DELETE slots': () => ({ json: { ok: true } }),
+  })
+  await page.goto('/rencontres/e1')
+  const box = page.getByRole('region', { name: 'Moments proposés' })
+  await expect(box.getByText('1 famille peut')).toBeVisible()
+  await expect(box.getByText('Personne encore')).toBeVisible()
+  await box.getByRole('button', { name: 'Choisir' }).first().click()
+  await expect.poll(() => stub.calls.filter((c) => c.method === 'DELETE' && c.path === 'slots').length).toBe(1)
+  expect(stub.calls.find((c) => c.method === 'PATCH' && c.path === 'encounters')!.body).toMatchObject({ id: 'e1', startsAt: a })
+})
+
 test('« Refaire pareil » opens the form with the same kind, place, families and scope, a week on', async ({ page }) => {
   const past = now - 3 * 86_400
   await host(page, {

@@ -38,6 +38,18 @@ async function stub(page: Page, data: unknown, status = 200) {
   return posts
 }
 
+test('several times on offer: the family ticks the ones that suit, and sees only its own ticks', async ({ page }) => {
+  const at = Math.floor(Date.now() / 1000) + 5 * 86_400
+  const posts = await stub(page, card({ slots: [{ id: 's1', startsAt: at, mine: false }, { id: 's2', startsAt: at + 86_400, mine: true }] }))
+  await page.goto(`/${CODE}`)
+  const box = page.getByRole('region', { name: 'Quels moments te conviennent ?' })
+  await expect(box.getByRole('button')).toHaveCount(2)
+  await expect(box.getByRole('button').nth(1)).toHaveAttribute('aria-pressed', 'true')
+  await box.getByRole('button').first().click()
+  await expect.poll(() => posts.length).toBe(1)
+  expect(posts[0]).toEqual({ slot: 's1', on: true })
+})
+
 test('the invited parent sees the plan and the home card, then answers yes', async ({ page }) => {
   const posts = await stub(page, card())
   await page.goto(`/${CODE}`)

@@ -34,6 +34,8 @@ export async function purgeRemoved(env: Env, now = nowSec()): Promise<void> {
     const m = marks(ids.length)
     const { results: shots } = await env.DB.prepare(`SELECT media_key FROM souvenirs WHERE encounter_id IN (${m})`).bind(...ids).all<{ media_key: string }>()
     await env.DB.batch([
+      env.DB.prepare(`DELETE FROM slot_votes WHERE slot_id IN (SELECT id FROM encounter_slots WHERE encounter_id IN (${m}))`).bind(...ids),
+      env.DB.prepare(`DELETE FROM encounter_slots WHERE encounter_id IN (${m})`).bind(...ids),
       env.DB.prepare(`DELETE FROM bring_items WHERE encounter_id IN (${m})`).bind(...ids),
       env.DB.prepare(`DELETE FROM encounter_changes WHERE encounter_id IN (${m})`).bind(...ids),
       env.DB.prepare(`DELETE FROM encounter_messages WHERE encounter_id IN (${m})`).bind(...ids),

@@ -99,6 +99,11 @@ function ReplyInner() {
     onError: (e) => setErr(e.message),
   })
 
+  const slotPost = useMutation({
+    mutationFn: (b: { slot: string; on: boolean }) => api(`r/${token}/slots`, { method: 'POST', body: b }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: K.reply(token) }),
+    onError: (e) => setErr(e.message),
+  })
   const bringPost = useMutation({
     mutationFn: (body: Record<string, unknown>) => api(`r/${token}/bring`, { method: 'POST', body }),
     onSuccess: () => {
@@ -127,8 +132,9 @@ function ReplyInner() {
   if (isStatus(q.error, 410)) return <main id="main" className="shell"><div className="notice" role="status">{t.reply.ended((q.error as ApiError).message)}</div></main>
   if (q.data?.circle) return <CircleDoor token={token} info={q.data.circle} />
   if (!q.data) return <QueryError page error={q.error} dead={t.reply.dead} onRetry={() => void q.refetch()} />
-  const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos, changes: rawChanges, cover, guests, bring: rawBring } = q.data
+  const { encounter: e, host, you, messages, alive, series, homeCard, relais, souvenirs, souvenirsOpen, photos, changes: rawChanges, cover, guests, bring: rawBring, slots: rawSlots } = q.data
   const bring = rawBring ?? []
+  const slots = rawSlots ?? []
   const canBring = (you.reply === 'yes' || you.reply === 'maybe') && alive
   const changes = rawChanges ?? []
   const fresh = seenAt === null ? [] : changes.filter((c) => c.created_at > seenAt)
@@ -353,6 +359,20 @@ function ReplyInner() {
           <p className="muted small">{t.roster.public}</p>
           </div>
         </details>
+      )}
+
+      {alive && slots.length > 1 && (
+        <section className="card" aria-label={t.slots.title}>
+          <h2><Icon name="calendar" />{t.slots.title}</h2>
+          <p className="muted small">{t.slots.hint}</p>
+          <div className="stack">
+            {slots.map((s) => (
+              <button type="button" key={s.id} aria-pressed={s.mine} className={`btn ${s.mine ? 'btn--on' : ''}`} disabled={slotPost.isPending} onClick={() => slotPost.mutate({ slot: s.id, on: !s.mine })}>
+                {s.mine && <Icon name="check" />}{humanWhen(s.startsAt, lang)} · {timeOnly(s.startsAt, lang)}
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
       {(bring.length > 0 || canBring) && (

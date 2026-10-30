@@ -41,7 +41,8 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await expect(host.getByText('la collation · personne encore')).toBeVisible()
   // the fold's own title says what is taken and what is missing, without opening it
   await expect(host.getByText('À apporter (0 sur 1 pris · il manque : la collation)')).toBeVisible()
-  await host.getByText('Plus d’options', { exact: true }).first().click()
+  await host.locator('.linkrow.friend > summary').first().click() // the family's row is closed until tapped
+  await host.locator('.linkrow.friend').getByText('Plus d’options', { exact: true }).click()
   const written = await host.locator('.paper').first().innerText()
   const firstCode = written.match(/([a-z]{3,7}-[a-z]{3,7})$/)?.[1]
   expect(firstCode, `a two-word link in "${written}"`).toBeTruthy()
@@ -61,7 +62,7 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await expect(guest.getByRole('heading', { name: /invite Léa/ })).toBeVisible()
   await expect(guest).toHaveTitle(/invite Léa · Viens jouer/)
   await guest.getByRole('button', { name: 'Oui, on y sera' }).click()
-  await expect(guest.getByText('Marc voit ta réponse', { exact: false }).or(guest.getByText(/voit ta réponse/))).toBeVisible()
+  await expect(guest.getByText('Réponse envoyée. Merci !')).toBeVisible()
   const board = guest.getByLabel('Les messages', { exact: true })
   await board.locator('summary').click() // one line until opened
   await board.getByLabel('Écrire un message…').fill('On arrive vers 14 h')
@@ -97,7 +98,8 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   await expect(paper).toContainText(code!.split('-').join(' · '))
   await expect(host.locator('.sheet')).not.toContainText('Chez nous')
   await host.goto(hostUrl)
-  await host.getByText('Plus d’options', { exact: true }).first().click()
+  await host.locator('.linkrow.friend > summary').first().click() // the family's row is closed until tapped
+  await host.locator('.linkrow.friend').getByText('Plus d’options', { exact: true }).click()
   await host.getByRole('group', { name: 'Noter sa réponse' }).getByRole('button', { name: 'Peut-être' }).click()
   await expect.poll(async () => ((await (await guest.request.get(`/api/r/${code}`)).json()) as { you: { reply: string } }).you.reply).toBe('maybe')
 
@@ -134,6 +136,22 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   expect((await guest.request.get(`/api/r/${code}/cover`)).status()).toBe(200)
   expect((await guest.request.get(`/api/r/${code}/avatar/child`)).status()).toBe(200)
   expect((await guest.request.get(`/api/r/${code}/avatar/parent`)).status()).toBe(200)
+
+  // -- several times on offer: the host offers two, the family ticks one, the host sees one family can, then settles
+  const json = (method: 'post' | 'delete', url: string, data: unknown) => host.request.fetch(url, { method, data, headers: { 'x-csrf-token': csrf } })
+  const soon = Math.floor(Date.now() / 1000) + 9 * 86_400
+  expect((await json('post', '/api/slots', { encounter: encounterId, startsAt: soon })).status()).toBe(201)
+  expect((await json('post', '/api/slots', { encounter: encounterId, startsAt: soon + 86_400 })).status()).toBe(201)
+  const offer = (await (await guest.request.get(`/api/r/${code}`)).json()) as { slots: { id: string; mine: boolean }[] }
+  expect(offer.slots).toHaveLength(2)
+  const tick = await guest.request.post(`/api/r/${code}/slots`, { data: { slot: offer.slots[0].id, on: true } })
+  expect(tick.status()).toBe(200)
+  const after = (await (await guest.request.get(`/api/r/${code}`)).json()) as { slots: { mine: boolean }[] }
+  expect(after.slots.map((x) => x.mine)).toEqual([true, false])
+  const seen = (await (await host.request.get(`/api/encounters?id=${encounterId}`)).json()) as { slots: { yes: number }[] }
+  expect(seen.slots.map((x) => x.yes)).toEqual([1, 0])
+  expect((await json('delete', '/api/slots', { encounter: encounterId })).status()).toBe(200)
+  expect(((await (await guest.request.get(`/api/r/${code}`)).json()) as { slots: unknown[] }).slots).toHaveLength(0)
 
   // -- the link preview: what a messaging app shows when the link is texted
   const unfurl = async (path: string, lang = 'fr-CA') => (await guest.request.get(path, { headers: { accept: 'text/html', 'accept-language': lang } })).text()

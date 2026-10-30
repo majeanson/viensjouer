@@ -28,24 +28,24 @@ test('your face is one tap to your account and sign-out is its own button', asyn
   await expect.poll(signedOut).toBe(1)
 })
 
-test('the account is one tab at a time, and the tab is in the address', async ({ page }) => {
+test('the account is one row open at a time, and the open row is in the address', async ({ page }) => {
   await signedIn(page)
   await page.goto('/compte')
-  const tabs = page.getByRole('tablist', { name: 'Mon compte' })
-  await expect(tabs.getByRole('tab', { name: 'Profil' })).toHaveAttribute('aria-selected', 'true')
+  const row = (name: string) => page.locator('details.fold').filter({ has: page.locator('summary', { hasText: name }) })
+  await expect(row('Profil')).toHaveAttribute('open', '')
   await expect(page.locator('input[name=displayName]')).toBeVisible()
-  // the other tabs' content is not on the page yet
+  // the other rows' content is not on the page yet
   await expect(page.getByRole('button', { name: 'Tout effacer' })).toHaveCount(0)
-  await tabs.getByRole('tab', { name: 'Sécurité' }).click()
+  await row('Sécurité').locator('summary').click()
   await expect(page).toHaveURL(/tab=security/)
   await expect(page.getByLabel('Mot de passe actuel')).toBeVisible()
-  await expect(page.locator('input[name=displayName]')).toHaveCount(0)
-  await tabs.getByRole('tab', { name: 'Données' }).click()
+  await expect(row('Profil')).not.toHaveAttribute('open', '')
+  await row('Données').locator('summary').click()
   await expect(page.getByRole('link', { name: 'Ce qu’on garde' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Tout effacer' })).toBeVisible()
-  // a link or a refresh lands on the same tab
+  // a link or a refresh lands on the same row
   await page.reload()
-  await expect(tabs.getByRole('tab', { name: 'Données' })).toHaveAttribute('aria-selected', 'true')
+  await expect(row('Données')).toHaveAttribute('open', '')
 })
 
 test('the groups fold names itself once: no second « Groupes » heading inside it', async ({ page }) => {

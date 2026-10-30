@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
@@ -10,7 +10,7 @@ import { useInstall } from '../lib/install'
 import { CalendarFeed } from '../components/CalendarFeed'
 import { AvatarPicker } from '../components/AvatarPicker'
 import { useQuery } from '@tanstack/react-query'
-import { Icon } from '../components/Icon'
+import { Icon, type IconName } from '../components/Icon'
 import { NotificationsCard } from '../components/NotificationsCard'
 import { Credit } from '../components/Credit'
 
@@ -18,6 +18,19 @@ import { Credit } from '../components/Credit'
 // who I am, my household, my calendar and the app, my security, my data (what is kept, a download, « tout effacer »).
 const TABS = ['profile', 'notifications', 'home', 'calendar', 'security', 'data'] as const
 type Tab = (typeof TABS)[number]
+
+// One row of the account: closed it is a line, opened (a tap, or ?tab= in the address) it holds its form. Its content is only
+// mounted once opened, so a closed row costs no request.
+function Sec({ id, icon, open, onOpen, children }: { id: Tab; icon: IconName; open: boolean; onOpen: (id: Tab, on: boolean) => void; children: ReactNode }) {
+  const t = useT()
+  const [shown, setShown] = useState(open)
+  return (
+    <details className="fold" id={`sec-${id}`} open={open} onToggle={(e) => { if (e.currentTarget.open) setShown(true); onOpen(id, e.currentTarget.open) }}>
+      <summary><span><Icon name={icon} />{t.account.tabs[id]}</span></summary>
+      <div className="card--nest">{shown && children}</div>
+    </details>
+  )
+}
 
 export function Account() {
   const t = useT()
@@ -28,6 +41,8 @@ export function Account() {
   const asked = params.get('tab')
   const tab: Tab = TABS.find((x) => x === asked) ?? 'profile'
   const [err, setErr] = useState<string | null>(null)
+  // The row that is open lives in the address, so a link or a refresh lands on it (the profile is the default).
+  const pick = (id: Tab, on: boolean) => { if (on && id !== tab) { setErr(null); setParams(id === 'profile' ? {} : { tab: id }, { replace: true }) } }
   const install = useInstall()
   const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
   const [saved, setSaved] = useState(false)
@@ -54,17 +69,10 @@ export function Account() {
     <>
       <h1>{t.account.title}</h1>
       <p className="muted small">{me.email}</p>
-      <div className="seg" role="tablist" aria-label={t.account.title} style={{ marginBottom: '1rem' }}>
-        {TABS.map((x) => (
-          <button key={x} type="button" role="tab" id={`tab-${x}`} aria-selected={tab === x} aria-controls="account-panel" className={`btn btn--small ${tab === x ? 'btn--on' : ''}`} onClick={() => { setErr(null); setParams(x === 'profile' ? {} : { tab: x }, { replace: true }) }}>
-            {t.account.tabs[x]}
-          </button>
-        ))}
-      </div>
-      <div role="tabpanel" id="account-panel" aria-labelledby={`tab-${tab}`}>
-        {tab === 'notifications' && <NotificationsCard />}
-        {tab === 'profile' && (
-          <div className="card">
+      <div className="stack">
+        <Sec id="notifications" icon="bell" open={tab === 'notifications'} onOpen={pick}><NotificationsCard /></Sec>
+        <Sec id="profile" icon="user" open={tab === 'profile'} onOpen={pick}>
+          <div>
             <AvatarPicker
               name={me.displayName ?? ''}
               colour="var(--host)"
@@ -146,16 +154,16 @@ export function Account() {
               </details>
             )}
           </div>
-        )}
+        </Sec>
 
-        {tab === 'home' && (
+        <Sec id="home" icon="home" open={tab === 'home'} onOpen={pick}>
           <>
             <div className="card card--nest"><ParentInvite /></div>
             <div className="card card--nest"><HomeCardForm /></div>
           </>
-        )}
+        </Sec>
 
-        {tab === 'calendar' && (
+        <Sec id="calendar" icon="calendar" open={tab === 'calendar'} onOpen={pick}>
           <>
             <CalendarFeed />
             {!install.installed && (install.canPrompt || install.ios) && (
@@ -166,10 +174,10 @@ export function Account() {
               </div>
             )}
           </>
-        )}
+        </Sec>
 
-        {tab === 'security' && (
-          <div className="card">
+        <Sec id="security" icon="lock" open={tab === 'security'} onOpen={pick}>
+          <div>
             <form
               onSubmit={async (e: FormEvent<HTMLFormElement>) => {
                 e.preventDefault()
@@ -206,9 +214,9 @@ export function Account() {
             </button>
             {secNote && <p className="small" role="status" style={{ margin: '0.5rem 0 0' }}>{secNote}</p>}
           </div>
-        )}
+        </Sec>
 
-        {tab === 'data' && (
+        <Sec id="data" icon="shield" open={tab === 'data'} onOpen={pick}>
           <>
             <div className="card">
               <h2><Icon name="shield" />{t.privacy.title}</h2>
@@ -229,7 +237,7 @@ export function Account() {
               <button className="btn btn--danger" disabled={busy}>{busy ? t.auth.working : t.account.deleteBtn}</button>
             </form>
           </>
-        )}
+        </Sec>
       </div>
       <Credit />
     </>

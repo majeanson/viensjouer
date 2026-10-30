@@ -407,7 +407,7 @@ test('« Mon calendrier »: get a secret link, copy it, rotate it only after a s
     },
   })
   await page.goto('/compte')
-  await page.getByRole('tab', { name: 'Agenda' }).click()
+  await page.locator('summary', { hasText: 'Agenda' }).click()
   await expect(page.getByRole('heading', { name: 'Mon calendrier' })).toBeVisible()
   await page.getByRole('button', { name: 'Obtenir mon lien' }).click()
   await expect(page.getByText('ne le partage pas')).toBeVisible()
@@ -451,7 +451,7 @@ test('on an iPhone the account page explains « Sur l’écran d’accueil »', 
   const page = await ctx.newPage()
   await host(page)
   await page.goto('/compte')
-  await page.getByRole('tab', { name: 'Agenda' }).click()
+  await page.locator('summary', { hasText: 'Agenda' }).click()
   await expect(page.getByRole('heading', { name: 'Sur l’écran d’accueil' })).toBeVisible()
   await expect(page.getByText(/bouton Partager de Safari/)).toBeVisible()
   await ctx.close()

@@ -142,16 +142,14 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   const soon = Math.floor(Date.now() / 1000) + 9 * 86_400
   expect((await json('post', '/api/slots', { encounter: encounterId, startsAt: soon })).status()).toBe(201)
   expect((await json('post', '/api/slots', { encounter: encounterId, startsAt: soon + 86_400 })).status()).toBe(201)
-  const offer = (await (await guest.request.get(`/api/r/${code}`)).json()) as { slots: { id: string; mine: boolean }[] }
-  expect(offer.slots).toHaveLength(2)
-  const tick = await guest.request.post(`/api/r/${code}/slots`, { data: { slot: offer.slots[0].id, on: true } })
-  expect(tick.status()).toBe(200)
-  const after = (await (await guest.request.get(`/api/r/${code}`)).json()) as { slots: { mine: boolean }[] }
-  expect(after.slots.map((x) => x.mine)).toEqual([true, false])
-  const seen = (await (await host.request.get(`/api/encounters?id=${encounterId}`)).json()) as { slots: { yes: number }[] }
-  expect(seen.slots.map((x) => x.yes)).toEqual([1, 0])
+  const hostSlots = async () => ((await (await host.request.get(`/api/encounters?id=${encounterId}`)).json()) as { slots: { id: string; yes: number }[] }).slots
+  const offered = await hostSlots()
+  expect(offered).toHaveLength(2)
+  // (the guest side is rate limited per address, so only two requests of it here)
+  expect((await guest.request.post(`/api/r/${code}/slots`, { data: { slot: offered[0].id, on: true } })).status()).toBe(200)
+  expect((await hostSlots()).map((x) => x.yes)).toEqual([1, 0])
   expect((await json('delete', '/api/slots', { encounter: encounterId })).status()).toBe(200)
-  expect(((await (await guest.request.get(`/api/r/${code}`)).json()) as { slots: unknown[] }).slots).toHaveLength(0)
+  expect(await hostSlots()).toHaveLength(0)
 
   // -- the link preview: what a messaging app shows when the link is texted
   const unfurl = async (path: string, lang = 'fr-CA') => (await guest.request.get(path, { headers: { accept: 'text/html', 'accept-language': lang } })).text()

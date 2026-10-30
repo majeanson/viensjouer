@@ -61,7 +61,7 @@ export function EncounterNew() {
   // « Dis-le en une phrase »: the sentence fills the form below, which stays the place to correct it.
   // « Proposer d'autres moments »: up to three more possible times, ticked by the families; the host picks later.
   const [extra, setExtra] = useState<string[]>([])
-  const [say, setSay] = useState('')
+  const [say, setSay] = useState(params.get('say') ?? '')
   const [sayMiss, setSayMiss] = useState(false)
   const [quickPlace, setQuickPlace] = useState('')
   const [quickN, setQuickN] = useState(0)
@@ -105,8 +105,8 @@ export function EncounterNew() {
   })
 
   const children = kids.data?.children ?? []
-  function fill() {
-    const q = parseQuick(say, fams.data?.families ?? [])
+  function fill(text = say) {
+    const q = parseQuick(text, fams.data?.families ?? [])
     setSayMiss(!q.kind && !q.startsAt && !q.place && q.familyIds.length === 0)
     if (q.kind) chooseKind(q.kind)
     if (q.startsAt) setStart(toLocalInput(q.startsAt))
@@ -119,6 +119,14 @@ export function EncounterNew() {
   const lastIds = (last.data?.familyIds ?? []).filter((id) => (fams.data?.families ?? []).some((f) => f.id === id))
   const prev = src.data?.encounter
   const prevEnd = prev?.ends_at ? toLocalTime(prev.ends_at) : ''
+
+  // A sentence typed on the first-steps card arrives in the address and fills the form once, when the friends are known.
+  const sayApplied = useRef(false)
+  useEffect(() => {
+    if (sayApplied.current || !fams.data || !params.get('say')) return
+    sayApplied.current = true
+    fill(params.get('say') ?? '')
+  }, [fams.data])
 
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -192,12 +200,12 @@ export function EncounterNew() {
             <span><Icon name="sparkle" />{t.form.say}</span>
             <input className="input" value={say} maxLength={200} placeholder={t.form.sayExample} onChange={(e) => { setSay(e.target.value); setSayMiss(false) }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); fill() } }} />
           </label>
-          <button type="button" className="btn btn--small" disabled={!say.trim()} onClick={fill}>{t.form.sayGo}</button>
+          <button type="button" className="btn btn--small" disabled={!say.trim()} onClick={() => fill()}>{t.form.sayGo}</button>
           {sayMiss && <p className="muted small" role="status" style={{ margin: '0.5rem 0 0' }}>{t.form.sayMiss}</p>}
         </div>
       )}
       {mode === 'free' ? (
-        <Windows embedded />
+        <Windows />
       ) : (
         <form onSubmit={submit}>
           {err && <div className="notice notice--err">{err}</div>}

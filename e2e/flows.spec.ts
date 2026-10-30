@@ -46,7 +46,7 @@ test('three tabs and a plus, and a brand-new host is told the next step each tim
   const nav = page.getByRole('navigation', { name: 'Navigation' })
   await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Nouvelle', 'Amis', 'Ma famille'])
   await expect(page.getByText('Ajoute ton enfant.')).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Ajouter mon enfant' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Ajouter mon enfant' })).toBeVisible()
   // three steps, the first is the one to do
   await expect(page.locator('.steps li')).toHaveCount(3)
   await expect(page.locator('.steps li.now')).toHaveText(/Ajoute ton enfant/)
@@ -87,6 +87,7 @@ test('the agenda mixes my rencontres, invitations, free moments and birthdays by
         today: '2030-01-01',
       },
     }),
+    'GET windows': () => ({ json: { windows: [{ id: 'w1', child_id: 'c1', starts_at: now + 5 * 86_400, ends_at: now + 5 * 86_400 + 7200, note: null, targets: [] }] } }),
     'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }),
   })
   await page.goto('/rencontres')
@@ -191,6 +192,31 @@ test('the short form writes the title itself, and refuses an end time that is no
   expect(String(body.title)).toMatch(/^Au parc, dimanche 10 h$/)
   expect((body.endsAt as number) - (body.startsAt as number)).toBe(2 * 3600)
   expect(body.invite).toEqual(['f1'])
+})
+
+test('first steps: the child, then a friend, then one sentence, each right on the empty Rencontres page', async ({ page }) => {
+  let kids: unknown[] = []
+  let friends: unknown[] = []
+  const stub = await host(page, {
+    'GET children': () => ({ json: { children: kids } }),
+    'POST children': () => ((kids = [{ id: 'c1', first_name: 'Noé', birthdate: null, colour: '#ccc', position: 0 }]), { status: 201, json: { id: 'c1' } }),
+    'GET families': () => ({ json: { families: friends } }),
+    'POST families': () => ((friends = [fam('f1', 'Léa', 'Julie')]), { status: 201, json: { id: 'f1' } }),
+    'GET encounters': () => ({ json: { encounters: [], invitations: [] } }),
+  })
+  await page.goto('/rencontres')
+  await page.getByLabel('Prénom de ton enfant').fill('Noé')
+  await page.getByRole('button', { name: 'Ajouter mon enfant' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'children')?.body).toMatchObject({ firstName: 'Noé' })
+  await page.getByLabel('Prénom de son enfant').fill('Léa')
+  await page.getByLabel('Prénom du parent').fill('Julie')
+  await page.getByRole('button', { name: 'Ajouter un ami' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'families')?.body).toMatchObject({ childFirstName: 'Léa', parentName: 'Julie' })
+  await page.getByLabel('Dis-le en une phrase').fill('Parc dimanche 14h avec Léa')
+  await page.getByRole('button', { name: 'Proposer une rencontre' }).click()
+  await expect(page).toHaveURL(/nouvelle[?]say=/)
+  await expect(page.locator('input[name=startsAt]')).toHaveValue(/T14:00$/)
+  await expect(page.getByRole('checkbox', { name: /Léa/ })).toBeChecked()
 })
 
 test('one sentence fills the form: kind, day, hour, place and the friend', async ({ page }) => {
@@ -475,14 +501,14 @@ test('English is its own chunk: a French visitor never downloads it, an English-
     await host(page)
     await page.goto('/rencontres')
     if (name === 'en') {
-      await expect(page.getByRole('link', { name: 'Add a friend' })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Add a friend' })).toBeVisible()
     } else {
-      await expect(page.getByRole('link', { name: 'Ajouter un ami' })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Ajouter un ami' })).toBeVisible()
       expect(seen.fr, 'a French visitor must not download the English chunk').toHaveLength(0)
       // switching later keeps the page and swaps the words once the chunk is in
       await page.getByRole('button', { name: /^Mon compte/ }).click()
       await page.getByRole('button', { name: 'EN (English)' }).click()
-      await expect(page.getByRole('link', { name: 'Add a friend' })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Add a friend' })).toBeVisible()
     }
     await ctx.close()
   }

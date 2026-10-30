@@ -14,7 +14,6 @@ const StopMail = lazy(() => import('./pages/StopMail').then((m) => ({ default: m
 const Keep = lazy(() => import('./pages/Keep').then((m) => ({ default: m.Keep })))
 const Privacy = lazy(() => import('./pages/Privacy').then((m) => ({ default: m.Privacy })))
 const Account = lazy(() => import('./pages/Account').then((m) => ({ default: m.Account })))
-const Windows = lazy(() => import('./pages/Windows').then((m) => ({ default: m.Windows })))
 const WindowReply = lazy(() => import('./pages/WindowReply').then((m) => ({ default: m.WindowReply })))
 const Forgot = lazy(() => import('./pages/Forgot').then((m) => ({ default: m.Forgot })))
 const Reset = lazy(() => import('./pages/Forgot').then((m) => ({ default: m.Reset })))
@@ -54,7 +53,7 @@ export function AppRoutes() {
       <Route path="/rencontres/:id/cartes" element={<Private><Cards /></Private>} />
       <Route path="/enfants" element={<Private><Children /></Private>} />
       <Route path="/calendrier" element={<Navigate to="/rencontres" replace />} />
-      <Route path="/fenetres" element={<Private><Windows /></Private>} />
+      <Route path="/fenetres" element={<Navigate to="/rencontres" replace />} />
       <Route path="/w/:token" element={<WindowReply />} />
       <Route path="/amis" element={<Private><Friends /></Private>} />
       <Route path="/cercle" element={<Navigate to="/amis" replace />} />

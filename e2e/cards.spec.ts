@@ -149,7 +149,7 @@ test('every list page has one big tile for its main action, right under the titl
   await page.route('**/api/encounters', (r) => r.fulfill({ json: { encounters: [enc({})], invitations: [] } }))
   await page.route('**/api/windows', (r) => r.fulfill({ json: { windows: [] } }))
   await page.route('**/api/calendar', (r) => r.fulfill({ json: { busy: [], free: [], windows: [] } }))
-  for (const [path, name] of [['/rencontres', 'Proposer une rencontre'], ['/amis', 'Nouvelle famille'], ['/enfants', 'Ajouter un enfant'], ['/fenetres', 'Ouvrir une fenêtre']] as const) {
+  for (const [path, name] of [['/rencontres', 'Proposer une rencontre'], ['/amis', 'Nouvelle famille'], ['/enfants', 'Ajouter un enfant']] as const) {
     await page.goto(path)
     const tile = page.locator('.bigaction')
     await expect(tile, path).toHaveCount(1)

@@ -6,8 +6,10 @@ import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
 import { humanWhen, timeOnly, whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
-import type { Child, Encounter, Family, InvitationSummary } from '../lib/types'
+import type { Child, Encounter, Family, InvitationSummary, OpenWindow } from '../lib/types'
 import { Icon, BigAction, kindIcon } from '../components/Icon'
+import { WindowRow } from '../components/WindowRow'
+import { FirstSteps } from '../components/FirstSteps'
 import { PartnerNudge, nudgeDue } from '../components/PartnerNudge'
 import { useAuth } from '../lib/auth'
 import { InstallOffer } from '../components/InstallOffer'
@@ -31,6 +33,7 @@ export function Encounters() {
   const { lang } = useLang()
   const q = useQuery({ queryKey: K.encounters, queryFn: () => api<{ encounters: Encounter[]; invitations: InvitationSummary[] }>('encounters') })
   const cal = useQuery({ queryKey: K.calendar, queryFn: () => api<Cal>('calendar') })
+  const wins = useQuery({ queryKey: K.windows, queryFn: () => api<{ windows: OpenWindow[] }>('windows') })
   const kids = useQuery({ queryKey: K.children, queryFn: () => api<{ children: Child[] }>('children') })
   const fams = useQuery({ queryKey: K.families, queryFn: () => api<{ families: Family[] }>('families') })
   const now = Math.floor(Date.now() / 1000)
@@ -90,19 +93,8 @@ export function Encounters() {
         ),
       })
     } else if (it.type === 'window') {
-      ahead.push({
-        at: it.at,
-        key: `w-${it.id}`,
-        node: (
-          <Link to="/fenetres" className="card card--tap">
-            <div className="row"><strong><Icon name="sparkle" />{t.agenda.free}</strong><span className="chip">{t.windows.chip}</span></div>
-            <p className="meta--row muted small">
-              <span><Icon name="clock" />{whenShort(it.at, lang)} → {whenShort(it.endsAt, lang)}</span>
-              {it.note && <span><Icon name="note" />{it.note}</span>}
-            </p>
-          </Link>
-        ),
-      })
+      const w = (wins.data?.windows ?? []).find((x) => x.id === it.id)
+      if (w) ahead.push({ at: it.at, key: `w-${it.id}`, node: <WindowRow w={w} /> })
     }
   }
   for (const b of cal.data?.birthdays ?? []) {
@@ -130,18 +122,7 @@ export function Encounters() {
       <InstallOffer hold={nudgeDue(past.length > 0, me)} />
       {!nothing && <BigAction icon="calendar" href="/rencontres/nouvelle" onClick={() => nav('/rencontres/nouvelle')}>{t.encounters.new}</BigAction>}
       {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
-      {nothing && (
-        <div className="card">
-          <h2><Icon name="check" />{t.first.title}</h2>
-          <ol className="steps">
-            <li className={noChild ? 'now' : 'done'}>{noChild ? t.first.child : t.first.childDone}</li>
-            <li className={noChild ? '' : noFriend ? 'now' : 'done'}>{noFriend ? t.first.friend : t.first.friendDone}</li>
-            <li className={noChild || noFriend ? '' : 'now'}>{noChild || noFriend ? t.first.later : t.first.go}</li>
-          </ol>
-          {noChild ? <Link to="/enfants" className="btn btn--primary">{t.first.childBtn}</Link> : noFriend ? <Link to="/amis" className="btn btn--primary">{t.first.friendBtn}</Link> : <Link to="/rencontres/nouvelle" className="btn btn--primary">{t.encounters.new}</Link>}
-          {!noChild && noFriend && <Link to="/amis?importer=1" className="btn" style={{ marginLeft: '0.5rem' }}>{t.families.importOpen}</Link>}
-        </div>
-      )}
+      {nothing && <FirstSteps noChild={noChild} noFriend={noFriend} />}
       {ready && !nothing && ahead.length === 0 && <p className="muted">{t.encounters.empty}</p>}
       {ahead.length > 0 && <h2 className="muted small" style={{ marginTop: '1rem' }}>{t.encounters.upcoming}</h2>}
       {ahead.map((x, i) => <div key={x.key}>{i === 0 && x.big ? x.big : x.node}</div>)}

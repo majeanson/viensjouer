@@ -336,6 +336,20 @@ function ReplyInner() {
           {err && <div className="notice notice--err" role="alert" style={{ marginTop: '0.75rem' }}>{err}</div>}
         </section>
       )}
+      {alive && slots.length > 1 && (
+        <section className="card" aria-label={t.slots.title}>
+          <h2><Icon name="calendar" />{t.slots.title}</h2>
+          <p className="muted small">{t.slots.hint}</p>
+          <div className="stack">
+            {slots.map((s) => (
+              <button type="button" key={s.id} aria-pressed={s.mine} className={`btn ${s.mine ? 'btn--on' : ''}`} disabled={slotPost.isPending} onClick={() => slotPost.mutate({ slot: s.id, on: !s.mine })}>
+                {s.mine && <Icon name="check" />}{humanWhen(s.startsAt, lang)} · {timeOnly(s.startsAt, lang)}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {details}
       {me.signedIn && <LinkFamilies token={token} />}
 
@@ -359,20 +373,6 @@ function ReplyInner() {
           <p className="muted small">{t.roster.public}</p>
           </div>
         </details>
-      )}
-
-      {alive && slots.length > 1 && (
-        <section className="card" aria-label={t.slots.title}>
-          <h2><Icon name="calendar" />{t.slots.title}</h2>
-          <p className="muted small">{t.slots.hint}</p>
-          <div className="stack">
-            {slots.map((s) => (
-              <button type="button" key={s.id} aria-pressed={s.mine} className={`btn ${s.mine ? 'btn--on' : ''}`} disabled={slotPost.isPending} onClick={() => slotPost.mutate({ slot: s.id, on: !s.mine })}>
-                {s.mine && <Icon name="check" />}{humanWhen(s.startsAt, lang)} · {timeOnly(s.startsAt, lang)}
-              </button>
-            ))}
-          </div>
-        </section>
       )}
 
       {(bring.length > 0 || canBring) && (

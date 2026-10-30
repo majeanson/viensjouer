@@ -42,9 +42,9 @@ test('a new host adds a family inside the form, it ticks itself, and the invitat
   await expect(page.getByRole('checkbox', { name: /Léa/ })).toBeChecked()
   expect(posted.families[0]).toEqual({ childFirstName: 'Léa', parentName: 'Julie' })
 
-  await page.getByText('Plus de choix', { exact: true }).click()
+  await page.getByText('Plus d’options', { exact: true }).click()
   await page.getByLabel('Titre').fill('Au parc')
-  await page.getByRole('button', { name: 'Créer et obtenir les liens' }).click()
+  await page.getByRole('button', { name: 'Inviter', exact: true }).click()
   await expect.poll(() => posted.encounters.length).toBe(1)
   expect(posted.encounters[0]).toMatchObject({ kind: 'park', title: 'Au parc', scope: 'family', invite: ['f-new'] })
 })
@@ -86,7 +86,7 @@ test('repeat is a frequency (once, every week, every 2 weeks, every month), with
     return j({ encounter: { id: 'e1', child_id: 'c1', kind: 'park', title: 'P', starts_at: 1, ends_at: null, place: null, address: null, note: null, status: 'proposed', details: {}, hereOpen: false }, invitations: [], messages: [], relais: [], souvenirs: [] })
   })
   await page.goto('/rencontres/nouvelle')
-  await page.getByText('Plus de choix').click()
+  await page.getByText('Plus d’options').click()
   const freq = page.getByLabel('Répéter')
   await expect(freq.locator('option')).toHaveText(['Une seule fois', 'Chaque semaine', 'Aux 2 semaines', 'Chaque mois'])
   await expect(page.getByLabel('Nombre de rencontres')).toHaveCount(0)
@@ -95,7 +95,7 @@ test('repeat is a frequency (once, every week, every 2 weeks, every month), with
   await page.getByLabel('Nombre de rencontres').selectOption('3')
   await page.getByRole('checkbox', { name: /Léa/ }).check()
   await page.getByLabel('Titre').fill('Parc aux deux semaines')
-  await page.getByRole('button', { name: 'Créer et obtenir les liens' }).click()
+  await page.getByRole('button', { name: 'Inviter', exact: true }).click()
   await expect.poll(() => posted.length).toBe(1)
 
   const list = posted[0].startsAtList as number[]
@@ -128,12 +128,12 @@ test('a family with no email gets a ready-to-send message with the short link', 
     return j({})
   })
   await page.goto('/rencontres/e1')
-  // one calm line per family; the short link and the hint sit under « Plus de choix »
-  await page.getByText('Plus de choix', { exact: true }).first().click()
+  // one calm line per family; the short link and the hint sit under « Plus d’options »
+  await page.getByText('Plus d’options', { exact: true }).first().click()
   await expect(page.locator('.paper').getByText(/\/lune-miel$/)).toBeVisible()
   // the message that goes out is shown before it is sent
   await expect(page.locator('.msgpreview').first()).toContainText('/lune-miel')
-  // Léa has no email: « Envoyer par texto » is her ONE button. Paul has one: « Envoyer par courriel » is his, the text option sits under « Plus de choix ».
+  // Léa has no email: « Envoyer par texto » is her ONE button. Paul has one: « Envoyer par courriel » is his, the text option sits under « Plus d’options ».
   await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Envoyer par courriel' })).toHaveCount(1)
   await page.getByRole('button', { name: 'Envoyer par texto' }).first().click()

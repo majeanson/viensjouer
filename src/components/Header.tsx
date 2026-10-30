@@ -45,7 +45,7 @@ export function Header() {
         {me.signedIn && (
           <>
             <Link to="/compte" className="tool" aria-label={`${t.account.title}${me.displayName ? ` (${me.displayName})` : ''}`} title={me.displayName ?? t.account.title}><Face name={me.displayName ?? '·'} colour="var(--host)" src={me.photo ? `/api/avatar/parent/me?v=${me.photo}` : null} size="sm" /></Link>
-            <button className="tool tool--icon" aria-label={t.auth.logout} title={t.auth.logout} onClick={() => void signOut()}><Icon name="logout" /></button>
+            <button className="tool tool--icon" aria-label={t.auth.logout} title={t.auth.logout} onClick={() => void signOut()}><Icon name="logout" /><span className="tool__t">{t.auth.logout}</span></button>
           </>
         )}
       </div>

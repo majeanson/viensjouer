@@ -125,9 +125,9 @@ test('the host\'s board: write, pin at the top, remove with an undo, links are l
     'PATCH messages': () => ({ json: { ok: true } }),
   })
   await page.goto('/rencontres/e1')
-  const board = page.getByLabel('Le tableau', { exact: true })
+  const board = page.getByLabel('Les messages', { exact: true })
   // closed until there is something new: one line with the count, opened when curious
-  await expect(board.locator('summary')).toContainText('Le tableau (3)')
+  await expect(board.locator('summary')).toContainText('Les messages (3)')
   await board.locator('summary').click()
   // the pinned one leads, in its own block
   await expect(board.locator('.blist--pinned')).toContainText('Rendez-vous à la fontaine')
@@ -140,7 +140,7 @@ test('the host\'s board: write, pin at the top, remove with an undo, links are l
   // write
   await board.getByRole('button', { name: 'Publier' }).click() // nothing written yet: a calm hint, never a dead button
   await expect(board.getByText('Écris un mot d’abord.')).toBeVisible()
-  await board.getByLabel('Écrire sur le tableau…').fill('À samedi !')
+  await board.getByLabel('Écrire un message…').fill('À samedi !')
   await board.getByRole('button', { name: 'Publier' }).click()
   await expect.poll(() => calls.filter((c) => c.method === 'POST' && c.path === 'messages').length).toBe(1)
   expect((calls.find((c) => c.method === 'POST' && c.path === 'messages')!.body as { text: string }).text).toBe('À samedi !')
@@ -150,10 +150,10 @@ test('the host\'s board: write, pin at the top, remove with an undo, links are l
   expect(calls.find((c) => c.method === 'PATCH' && c.path === 'messages')!.body).toMatchObject({ pinned: true })
   // remove: gone at once, undoable, nothing sent yet
   await board.getByRole('button', { name: 'Retirer' }).first().click()
-  await expect(board.locator('summary')).toContainText('Le tableau (2)')
+  await expect(board.locator('summary')).toContainText('Les messages (2)')
   expect(calls.filter((c) => c.method === 'DELETE' && c.path === 'messages')).toHaveLength(0)
   await page.locator('.toast').getByRole('button', { name: 'Annuler' }).click()
-  await expect(board.locator('summary')).toContainText('Le tableau (3)')
+  await expect(board.locator('summary')).toContainText('Les messages (3)')
 })
 
 // ---- the invited side
@@ -186,7 +186,7 @@ test('an invited family sees the host faces, reads the board, marks what is new,
   const posts = await guest(page, card({ messages: [msg('m1', 'host', 'Marc', 'On se retrouve à la fontaine', 7200), msg('m2', 'guest', 'Paul', 'Je viens avec Max', 600), msg('m3', 'guest', 'Julie', 'Super !', 300, { mine: true })] }))
   await page.goto('/lune-miel')
   await expect(page.locator('.faces .face img')).toHaveCount(2)
-  const board = page.getByLabel('Le tableau', { exact: true })
+  const board = page.getByLabel('Les messages', { exact: true })
   // new since the last visit on this device: Paul's note, not the older host one and not my own
   await expect(board.locator('.bmsg--new')).toHaveCount(1)
   await expect(board.locator('.bmsg--new')).toContainText('Je viens avec Max')
@@ -195,7 +195,7 @@ test('an invited family sees the host faces, reads the board, marks what is new,
   await expect(board.locator('.bmsg', { hasText: 'On se retrouve' })).toContainText('Hôte')
   await expect(board.getByRole('button', { name: 'Retirer' })).toHaveCount(1)
   await expect(board.getByRole('button', { name: 'Épingler' })).toHaveCount(0)
-  await board.getByLabel('Écrire sur le tableau…').fill('On apporte des fruits')
+  await board.getByLabel('Écrire un message…').fill('On apporte des fruits')
   await board.getByRole('button', { name: 'Publier' }).click()
   await expect.poll(() => posts.length).toBe(1)
   expect(posts[0]).toEqual({ message: 'On apporte des fruits' })
@@ -207,10 +207,10 @@ test('an invited family sees the host faces, reads the board, marks what is new,
 test('once the get-together is over the board can still be read, not written', async ({ page }) => {
   await guest(page, card({ alive: false, messages: [msg('m1', 'host', 'Marc', 'Merci d’être venus !', 86400)] }))
   await page.goto('/lune-miel')
-  const board = page.getByLabel('Le tableau', { exact: true })
+  const board = page.getByLabel('Les messages', { exact: true })
   await expect(board).toContainText('Merci d’être venus !')
-  await expect(board.getByLabel('Écrire sur le tableau…')).toHaveCount(0)
-  await expect(board).toContainText('le tableau reste ouvert à la lecture')
+  await expect(board.getByLabel('Écrire un message…')).toHaveCount(0)
+  await expect(board).toContainText('les messages restent ouverts à la lecture')
 })
 
 test('the invitation asks first: « Vous venez ? » sits right under the facts, before the explanations', async ({ page }) => {
@@ -219,7 +219,7 @@ test('the invitation asks first: « Vous venez ? » sits right under the facts, 
   const y = async (t: RegExp | string) => (await page.getByText(t).first().boundingBox())!.y
   const ask = await y('Vous venez ?')
   expect(ask).toBeLessThan(await y('Comment ça marche'))
-  expect(ask).toBeLessThan(await y('Le tableau'))
+  expect(ask).toBeLessThan(await y('Les messages'))
   // and it is reachable without scrolling on a phone
   expect(ask).toBeLessThan(844)
 })
@@ -242,7 +242,7 @@ test('the tabs sit under the thumb on a phone and on top on a desktop, with icon
 test('inputs, questions and concepts carry an icon, and icons are decorative', async ({ page }) => {
   await host(page, { 'GET families': () => ({ json: { families: [{ id: 'f1', parent_name: 'Julie', email: null, phone: null, child_first_name: 'Léa', child_birthdate: null, allergies: null, notes: null, linked_household_id: null }] } }) })
   await page.goto('/rencontres/nouvelle')
-  await page.getByText('Plus de choix').click()
+  await page.getByText('Plus d’options').click()
   expect(await page.locator('label.field svg.ico').count()).toBeGreaterThanOrEqual(6)
   expect(await page.locator('h3 svg.ico').count()).toBeGreaterThanOrEqual(2)
   // every icon is hidden from assistive tech: the words carry the meaning

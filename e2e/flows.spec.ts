@@ -115,7 +115,7 @@ test('each rencontre shows who is coming, who is maybe, who is not and who has n
 test('cancelling a rencontre happens at once and can be taken back from the undo bar', async ({ page }) => {
   const stub = await host(page, { 'GET encounters': () => ({ json: detail([inv('i1', 'f1', 'Léa', 'Julie', 'yes')]) }) })
   await page.goto('/rencontres/e1')
-  await page.getByText('Plus d’options', { exact: true }).click()
+  await page.getByText('Plus d’options', { exact: true }).last().click()
   await page.getByRole('button', { name: 'Annuler la rencontre' }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'PATCH').length).toBe(1)
   expect(stub.calls.find((c) => c.method === 'PATCH')!.body).toMatchObject({ id: 'e1', status: 'cancelled' })
@@ -169,14 +169,14 @@ test('the short form writes the title itself, and refuses an end time that is no
   await page.getByRole('button', { name: 'Dimanche 10 h' }).click()
   await expect(page.locator('input[name=startsAt]')).toHaveValue(/T10:00$/)
   // an end time before the start is refused, with the reason
-  await page.getByText('Plus de choix').click()
+  await page.getByText('Plus d’options').click()
   await page.getByLabel('Jusqu’à (facultatif)').fill('09:00')
-  await page.getByRole('button', { name: 'Créer et obtenir les liens' }).click()
+  await page.getByRole('button', { name: 'Inviter', exact: true }).click()
   await expect(page.getByText('La fin doit venir après le début, le même jour.')).toBeVisible()
   expect(stub.calls.filter((c) => c.method === 'POST' && c.path === 'encounters')).toHaveLength(0)
   // a good one goes, same day, with an automatic title
   await page.getByLabel('Jusqu’à (facultatif)').fill('12:00')
-  await page.getByRole('button', { name: 'Créer et obtenir les liens' }).click()
+  await page.getByRole('button', { name: 'Inviter', exact: true }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'encounters').length).toBe(1)
   const body = stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')!.body!
   expect(String(body.title)).toMatch(/^Au parc, dimanche 10 h$/)
@@ -328,7 +328,7 @@ test('« Où » remembers the places used before and brings the map link back', 
   await expect(page.locator('#past-places option')).toHaveCount(2)
   await page.getByLabel('Où').fill('parc lafontaine')
   await expect(page.getByText('Lien de carte et adresse repris de la dernière fois.')).toBeVisible()
-  await page.getByText('Plus de choix').click()
+  await page.getByText('Plus d’options').click()
   await expect(page.locator('input[name=mapUrl]')).toHaveValue('https://maps.app.goo.gl/abc')
   // a link already typed is never overwritten
   await page.locator('input[name=mapUrl]').fill('https://maps.app.goo.gl/mine')
@@ -534,7 +534,7 @@ test('the new-rencontre form takes a day and an hour as two pickers and sends on
   await page.getByLabel('Jour', { exact: true }).fill('2030-05-04')
   await page.getByLabel('Heure', { exact: true }).fill('09:30')
   await page.getByRole('checkbox').first().check()
-  await page.getByRole('button', { name: /Créer et obtenir/ }).click()
+  await page.getByRole('button', { name: 'Inviter', exact: true }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'encounters').length).toBe(1)
   const body = stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')!.body as { startsAt: number }
   expect(body.startsAt).toBe(Math.floor(new Date('2030-05-04T09:30').getTime() / 1000))
@@ -546,10 +546,10 @@ test('the new-rencontre form sends the plan B inside details', async ({ page }) 
     'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'] } }),
   })
   await page.goto('/rencontres/nouvelle')
-  await page.getByText('Plus de choix').click()
+  await page.getByText('Plus d’options').click()
   await page.getByLabel('Plan B').fill('S’il pleut : chez nous')
   await page.getByRole('checkbox').first().check()
-  await page.getByRole('button', { name: /Créer et obtenir/ }).click()
+  await page.getByRole('button', { name: 'Inviter', exact: true }).click()
   await expect.poll(() => stub.calls.filter((c) => c.method === 'POST' && c.path === 'encounters').length).toBe(1)
   expect(stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')!.body).toMatchObject({ details: { planB: 'S’il pleut : chez nous' } })
 })
@@ -675,7 +675,7 @@ test('an answered family is one calm line: no send buttons until it is needed', 
   })
   await page.goto('/rencontres/e1')
   await expect(page.getByRole('button', { name: 'Envoyer par texto' })).toHaveCount(1) // only Max, who has not answered (no email: the text message is his one button)
-  await expect(page.getByText('Plus de choix', { exact: true })).toHaveCount(2) // every family keeps its options
+  await expect(page.getByText('Plus d’options', { exact: true })).toHaveCount(3) // one per family, one for the card
 })
 
 test('after cancelling, the host can tell the families why, on the board they see', async ({ page }) => {
@@ -766,7 +766,7 @@ test('Reporter asks for a reason, sends it with the email choice, and the card s
     'PATCH encounters': (b) => { status = String(b?.status ?? status); return { json: { changed: 1, notified: 1 } } },
   })
   await page.goto('/rencontres/e1')
-  await page.getByText('Plus d’options', { exact: true }).click()
+  await page.getByText('Plus d’options', { exact: true }).last().click()
   await page.getByRole('button', { name: 'Reporter', exact: true }).click()
   const form = page.locator('form', { hasText: 'Les réponses restent' })
   await form.getByLabel('Pourquoi ? (facultatif)').fill('Il pleut')

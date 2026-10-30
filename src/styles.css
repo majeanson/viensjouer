@@ -394,3 +394,6 @@ input[type="date"]::-webkit-date-and-time-value, input[type="time"]::-webkit-dat
 /* « Comment ça marche » at the foot of the door */
 .how { margin: 2rem 0 1rem; }
 .how ol { margin: 0.5rem 0; padding-left: 1.25rem; display: grid; gap: 0.4rem; }
+/* the sign-out arrow gets its word when there is room: an icon alone is a guess */
+.tool__t { display: none; margin-left: 0.4rem; }
+@media (min-width: 421px) { .tool__t { display: inline; } }

@@ -193,7 +193,7 @@ test('« envoyer tout de suite » is a tickbox, off by default, only offered whe
   await expect(box).not.toBeChecked()
   await expect(page.getByText('1 famille a un courriel.')).toBeVisible()
   await box.check()
-  await page.getByRole('button', { name: 'Créer et obtenir les liens' }).click()
+  await page.getByRole('button', { name: 'Inviter', exact: true }).click()
   await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')?.body).toMatchObject({ sendNow: true })
   await expect(page.getByText('1 invitation envoyée par courriel.')).toBeVisible()
 })
@@ -206,7 +206,7 @@ test('without ticking it, nothing is asked to be sent', async ({ page }) => {
   })
   await page.goto('/rencontres/nouvelle')
   await page.getByRole('checkbox', { name: /Léa/ }).check()
-  await page.getByRole('button', { name: 'Créer et obtenir les liens' }).click()
+  await page.getByRole('button', { name: 'Inviter', exact: true }).click()
   await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')?.body).toMatchObject({ sendNow: false })
 })
 
@@ -290,7 +290,7 @@ test('the host card keeps the main thing in view and tucks the rest under « Plu
   await page.goto('/rencontres/e1')
   await expect(page.getByRole('button', { name: 'Confirmer la rencontre' })).toBeVisible()
   for (const name of ['Annuler la rencontre', 'Supprimer', 'Reporter']) await expect(page.getByRole('button', { name, exact: true })).toBeHidden()
-  await page.getByText('Plus d’options', { exact: true }).click()
+  await page.getByText('Plus d’options', { exact: true }).last().click()
   for (const name of ['Annuler la rencontre', 'Supprimer', 'Reporter']) await expect(page.getByRole('button', { name, exact: true })).toBeVisible()
 })
 
@@ -332,7 +332,7 @@ test('the board stays closed when nothing is new', async ({ page }) => {
   await host(page, { 'GET encounters': (_b, url) => (url.searchParams.get('id') ? { json: DETAIL({}, [INV('i1', 'Léa', 'yes')], [{ id: 'm1', author_kind: 'guest', author_label: 'Julie', text: 'vieux mot', created_at: now - 7200, pinned: 0, mine: false, invitation_id: null }]) } : { json: { encounters: [], invitations: [] } }) })
   await page.goto('/rencontres/e1')
   await expect(page.locator('details.board')).not.toHaveAttribute('open', '')
-  await expect(page.locator('details.board summary')).toContainText('Le tableau (1)')
+  await expect(page.locator('details.board summary')).toContainText('Les messages (1)')
 })
 
 test('the list shows one calm line per rencontre: when, where, and the answers as counts', async ({ page }) => {
@@ -369,7 +369,7 @@ test('the card box is straight (never tilted), and is drawn as a ticket with a d
 
 // ---- circles: « Ils t'ont invité », « Inviter dans mon cercle », and the page the code opens ---------------------------------
 
-test('Amis lists the hosts who invited you and adds one in one tap (the same link as « Lier nos familles »)', async ({ page }) => {
+test('Amis lists the hosts who invited you and adds one in one tap (the same link as « Ajouter à mes amis »)', async ({ page }) => {
   let hosts = [
     { hostName: 'Marc', hostChild: 'Noé', title: 'Au parc', startsAt: Math.floor(Date.now() / 1000) + 86_400, token: 'banquet-liseron', kind: 'rencontre' },
     { hostName: 'Sonia', hostChild: 'Zoé', title: null, startsAt: null, token: 'mince-poche', kind: 'circle' },
@@ -475,7 +475,7 @@ test('signed in with an account: the same code asks for one tap, not a new accou
   await page.goto('/banquet-liseron')
   await expect(page.getByRole('heading', { name: 'Marc t’invite dans son cercle' })).toBeVisible()
   await expect(page.getByLabel('Choisissez un mot de passe')).toHaveCount(0)
-  await page.getByRole('region', { name: 'Lier nos familles' }).getByRole('button', { name: 'Lier nos familles' }).click()
+  await page.getByRole('region', { name: 'Ajouter à mes amis' }).getByRole('button', { name: 'Ajouter à mes amis' }).click()
   await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'link-invitation')?.body).toEqual({ code: 'banquet-liseron' })
 })
 

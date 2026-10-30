@@ -10,7 +10,7 @@ test('the whole walk, host and invited parent, on the real stack', async ({ brow
   // -- the host: the door, the sandbox, a new rencontre
   await host.goto('/')
   await host.getByRole('button', { name: 'Essayer sans compte' }).click()
-  await expect(host).toHaveURL(/\/rencontres$/)
+  await expect(host).toHaveURL(/\/rencontres$/, { timeout: 20_000 }) // a cold Worker can take a while to open the trial
   await expect(host.getByRole('heading', { name: 'Rencontres' })).toBeVisible()
   await host.locator('a, button').filter({ hasText: 'Proposer une rencontre' }).first().click()
   await host.getByRole('checkbox', { name: /Léa/ }).check()

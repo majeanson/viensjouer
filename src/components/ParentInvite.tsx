@@ -31,7 +31,7 @@ export function ParentInvite() {
   return (
     <section style={{ marginTop: '1.5rem' }}>
       <h2><Icon name="users" />{t.parent.title}</h2>
-      <p className="muted small">{t.parent.hint}</p>
+      {!(q.data?.invites ?? []).length && <p className="muted small">{t.parent.hint}</p>}
       {err && <div className="notice notice--err">{err}</div>}
       {(q.data?.invites ?? []).map((i) => (
         <div key={i.id} className="card">

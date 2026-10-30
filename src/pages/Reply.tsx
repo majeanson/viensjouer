@@ -47,7 +47,7 @@ function ReplyInner() {
   const [done, setDone] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [claiming, setClaiming] = useState(false)
-  const questionRef = useRef<HTMLElement>(null)
+  const questionRef = useRef<HTMLDivElement>(null)
   const [offscreen, setOffscreen] = useState(false)
   const [queued, setQueued] = useState<ReplyKind | null>(() => readPending(token))
   const { me, refresh } = useAuth()
@@ -317,9 +317,9 @@ function ReplyInner() {
           </details>
         </div>
       ) : (
-        <section className="card" ref={questionRef}>
+        <section className="card">
           <h2 id="reply-question"><Icon name="help" />{t.reply.question}</h2>
-          <div className="stack" role="group" aria-labelledby="reply-question">
+          <div className="stack" role="group" aria-labelledby="reply-question" ref={questionRef}>
             <button type="button" className="btn btn--big btn--yes" disabled={post.isPending} onClick={() => answer('yes')}><Icon name="check" />{t.reply.yes}</button>
             <div className="seg">
               <button type="button" className="btn" disabled={post.isPending} onClick={() => answer('maybe')}><Icon name="help" />{t.reply.maybe}</button>

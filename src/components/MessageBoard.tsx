@@ -149,7 +149,7 @@ export function MessageBoard({
         <span><Icon name="message" />{t.board.title}{messages.length > 0 ? ` (${messages.length})` : ''}{fresh > 0 && <span className="changed" aria-live="polite" style={{ marginLeft: '0.5rem' }}>{t.board.newCount(fresh)}</span>}</span>
       </summary>
       <div>
-      <p className="muted small" style={{ margin: '0 0 0.75rem' }}>{t.board.hint}</p>
+      {messages.length === 0 && <p className="muted small" style={{ margin: '0 0 0.75rem' }}>{t.board.hint}</p>}
 
       {pinned.length > 0 && (
         <ul className="blist blist--pinned" aria-label={t.board.pinned}>

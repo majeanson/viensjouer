@@ -119,7 +119,7 @@ export function Friends() {
       {!editing && !importing && <BigAction icon="users" onClick={() => setEditing('new')}>{t.families.add}</BigAction>}
       {!editing && !importing && <button type="button" className="btn btn--small" onClick={() => setImporting(true)}>{t.families.importOpen}</button>}
       {importing && <ImportFriends onClose={() => setImporting(false)} />}
-      <p className="muted small">{t.friends.hint}</p>
+      {q.data && fams.length === 0 && <p className="muted small">{t.friends.hint}</p>}
       {err && <div className="notice notice--err">{err}</div>}
 
       {editing && (

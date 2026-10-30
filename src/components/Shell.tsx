@@ -19,7 +19,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <NavLink to="/rencontres"><Icon name="calendar" /><span>{t.nav.home}</span></NavLink>
         <NavLink to="/amis"><Icon name="users" /><span>{t.nav.friends}</span></NavLink>
         <NavLink to="/enfants"><Icon name="home" /><span>{t.nav.children}</span></NavLink>
-        <NavLink to="/compte"><Icon name="user" /><span>{t.account.title}</span></NavLink>
+        <NavLink to="/compte"><Icon name="user" /><span>{t.nav.account}</span></NavLink>
       </nav>
       {me.demo && (
         <div className="notice">

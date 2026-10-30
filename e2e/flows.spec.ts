@@ -44,7 +44,7 @@ test('three tabs and the account, and a brand-new host is told the next step eac
   await host(page, { 'GET children': () => ({ json: { children: [] } }) })
   await page.goto('/rencontres')
   const nav = page.getByRole('navigation', { name: 'Navigation' })
-  await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Amis', 'Ma famille', 'Mon compte'])
+  await expect(nav.getByRole('link')).toHaveText(['Rencontres', 'Amis', 'Ma famille', 'Compte'])
   await expect(page.getByText('Ajoute ton enfant.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Ajouter mon enfant' })).toBeVisible()
   // three steps, the first is the one to do

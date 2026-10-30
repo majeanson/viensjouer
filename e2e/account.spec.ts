@@ -20,7 +20,7 @@ test('your face is one tap to your account and sign-out is its own button', asyn
   const signedOut = await signedIn(page)
   await page.goto('/rencontres')
   await expect(page.locator('details.menu')).toHaveCount(0)
-  await page.getByRole('navigation', { name: 'Navigation' }).getByRole('link', { name: 'Mon compte' }).click()
+  await page.getByRole('navigation', { name: 'Navigation' }).getByRole('link', { name: 'Compte' }).click()
   await expect(page).toHaveURL(/\/compte$/)
   await page.getByRole('button', { name: /^Menu/ }).click()
   await page.getByRole('button', { name: 'Déconnexion' }).click()

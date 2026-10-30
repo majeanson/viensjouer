@@ -52,7 +52,7 @@ export const EN: Dict = {
     resetSend: 'Save and sign in',
   },
   slots: { title: 'Which times suit you?', hint: 'Tap the ones you can make. The host will choose.', add: 'Offer other times', choose: 'Choose', yes: (n: number) => (n === 0 ? 'Nobody yet' : n === 1 ? '1 family can' : `${n} families can`), title2: 'Times on offer', remove: 'Remove' },
-  nav: { home: 'Get-togethers', friends: 'Friends', circle: 'The circle', calendar: 'Calendar', windows: 'Open windows', children: 'My family', families: 'Friend families' },
+  nav: { account: 'Account', home: 'Get-togethers', friends: 'Friends', circle: 'The circle', calendar: 'Calendar', windows: 'Open windows', children: 'My family', families: 'Friend families' },
   circle: {
     title: 'The circle',
     hint: 'Your children’s friends whose family is also here. Each side sees only what concerns them.',

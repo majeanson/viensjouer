@@ -106,6 +106,7 @@ export const FR = {
     remove: 'Retirer',
   },
   encounters: {
+    withChild: (n: string) => `Avec ${n}`,
     morePage: 'Plus : à apporter, messages, photos, historique',
     title: 'Rencontres',
     empty: 'Rien de prévu. Propose une rencontre, un parc, un samedi, un lien.',
@@ -196,6 +197,7 @@ export const FR = {
     windowEnded: (host: string) => `Cette disponibilité n’est plus là. Si tu as une question, écris à ${host}.`,
     ended: (host: string) => `Cette rencontre est terminée. Si tu as une question, écris à ${host}.`,
     invites: (host: string, child: string) => `${host} invite ${child}`,
+    invitesTwo: (a: string, b: string, child: string) => `${a} et ${b} invitent ${child}`,
     from: (parent: string) => `de la part de ${parent}`,
     question: 'Vous venez ?',
     yes: 'Oui, on y sera',

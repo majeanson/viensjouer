@@ -33,6 +33,8 @@ export interface Family {
 export interface Encounter {
   id: string
   child_id: string
+  co_child_id?: string | null
+  co_child_name?: string | null
   kind: Kind
   title: string
   starts_at: number

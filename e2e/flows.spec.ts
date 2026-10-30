@@ -237,6 +237,32 @@ test('editing a friend opens a full-screen sheet with Retour and Enregistrer in 
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
+test('with two children, both can host: tick both and the rencontre carries the second', async ({ page }) => {
+  const stub = await host(page, {
+    'GET children': () => ({ json: { children: [{ id: 'c1', first_name: 'Noé', birthdate: null, colour: '#c33', position: 0 }, { id: 'c2', first_name: 'Max', birthdate: null, colour: '#33c', position: 1 }] } }),
+    'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }),
+    'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'] } }),
+  })
+  await page.goto('/rencontres/nouvelle')
+  const who = page.getByRole('button', { name: 'Noé' })
+  await expect(who).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Max' }).click()
+  await expect(page.getByRole('button', { name: 'Max' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(who).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('checkbox', { name: /Léa/ }).check()
+  await page.getByRole('button', { name: 'Inviter', exact: true }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'encounters')?.body).toMatchObject({ childId: 'c1', coChildId: 'c2' })
+})
+
+test('Ma famille and Mes amis carry their own actions beside the heading (add a child, groups)', async ({ page }) => {
+  await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'GET groups': () => ({ json: { groups: [] } }) })
+  await page.goto('/amis')
+  await expect(page.getByRole('heading', { name: 'Ma famille' }).locator('xpath=..').getByRole('button', { name: 'Ajouter un enfant' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Mes amis' }).locator('xpath=..').getByRole('button', { name: 'Groupes' })).toBeVisible()
+  await page.getByRole('button', { name: 'Groupes' }).click()
+  await expect(page.getByRole('dialog', { name: 'Groupes' })).toBeVisible()
+})
+
 test('one sentence fills the form: kind, day, hour, place and the friend', async ({ page }) => {
   const stub = await host(page, { 'GET families': () => ({ json: { families: [fam('f1', 'Léa', 'Julie')] } }), 'POST encounters': () => ({ status: 201, json: { id: 'e9', ids: ['e9'] } }) })
   await page.goto('/rencontres/nouvelle')

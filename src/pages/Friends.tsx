@@ -79,6 +79,7 @@ export function Friends() {
   const [params] = useSearchParams()
   const [importing, setImporting] = useState(params.get('importer') === '1')
   const [err, setErr] = useState<string | null>(null)
+  const [groupsOpen, setGroupsOpen] = useState(false)
   const invalidate = () => qc.invalidateQueries({ queryKey: K.families })
 
   const save = useMutation({
@@ -122,7 +123,10 @@ export function Friends() {
       <h1>{t.friends.title}</h1>
       {!editing && !importing && <BigAction icon="users" onClick={() => setEditing('new')}>{t.families.add}</BigAction>}
       <Children embedded />
-      <h2 style={{ marginTop: '1.5rem' }}><Icon name="users" />{t.friends.mine}</h2>
+      <div className="row" style={{ marginTop: '1.5rem' }}>
+        <h2 style={{ margin: 0 }}><Icon name="users" />{t.friends.mine}</h2>
+        <button type="button" className="btn btn--small btn--icon" aria-label={`${t.friends.groupsFold}${groups.length > 0 ? ` (${groups.length})` : ''}`} title={t.friends.groupsFold} onClick={() => setGroupsOpen(true)}><Icon name="tag" /></button>
+      </div>
       {q.data && fams.length === 0 && <p className="muted small">{t.friends.hint}</p>}
       {err && <div className="notice notice--err">{err}</div>}
 
@@ -228,10 +232,11 @@ export function Friends() {
         </section>
       )}
 
-      <details className="fold" style={{ marginTop: '1.25rem' }}>
-        <summary><span><Icon name="tag" />{t.friends.groupsFold}{groups.length > 0 ? ` (${groups.length})` : ''}</span></summary>
-        <div><Groups families={q.data?.families ?? []} /></div>
-      </details>
+      {groupsOpen && (
+        <Sheet title={t.friends.groupsFold} onBack={() => setGroupsOpen(false)}>
+          <Groups families={q.data?.families ?? []} />
+        </Sheet>
+      )}
     </>
   )
 }

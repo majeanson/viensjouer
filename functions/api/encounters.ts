@@ -52,7 +52,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
   const url = new URL(ctx.request.url)
   const id = url.searchParams.get('id')
   if (id) {
-    const e = await ctx.env.DB.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, map_url, note, status, series_id, here_at, details, cover_key, show_guests, thanked_at FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
+    const e = await ctx.env.DB.prepare('SELECT id, child_id, co_child_id, (SELECT first_name FROM children WHERE id = encounters.co_child_id) AS co_child_name, kind, title, starts_at, ends_at, place, address, map_url, note, status, series_id, here_at, details, cover_key, show_guests, thanked_at FROM encounters WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
       .bind(id, actor.householdId)
       .first<EncounterRow>()
     if (!e) return notFound()
@@ -98,6 +98,8 @@ export const onRequestGet = authed(async (ctx, actor) => {
 type Body = {
   id?: string
   childId?: string
+  // The second hosting child (« Léa et Noé vous invitent »), another child of the same household.
+  coChildId?: string
   kind?: string
   title?: string
   startsAt?: number
@@ -170,6 +172,9 @@ export const onRequestPost = authed(async (ctx, actor) => {
   if (!isKind(body?.kind)) return badRequest('Genre inconnu.')
   const child = await ctx.env.DB.prepare('SELECT id FROM children WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(childId, actor.householdId).first()
   if (!child) return badRequest('Enfant inconnu.')
+  const coWanted = str(body?.coChildId, 20)
+  const coChild = coWanted && coWanted !== childId ? await ctx.env.DB.prepare('SELECT id FROM children WHERE id = ? AND household_id = ? AND deleted_at IS NULL').bind(coWanted, actor.householdId).first<{ id: string }>() : null
+  if (coWanted && coWanted !== childId && !coChild) return badRequest('Enfant inconnu.')
   const endsAt = typeof body?.endsAt === 'number' && body.endsAt > startsAt ? Math.floor(body.endsAt) : null
   const times = seriesTimes(startsAt, body?.startsAtList)
   if (!times) return badRequest('Série invalide (12 occurrences au plus, sur un an).')
@@ -187,9 +192,9 @@ export const onRequestPost = authed(async (ctx, actor) => {
     const id = newId()
     ids.push(id)
     await ctx.env.DB.prepare(
-      'INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, ends_at, place, address, map_url, note, series_id, details, default_scope, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO encounters (id, household_id, child_id, kind, title, starts_at, ends_at, place, address, map_url, note, series_id, details, default_scope, created_at, updated_at, co_child_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     )
-      .bind(id, actor.householdId, childId, body!.kind, title, at, endsAt ? at + (endsAt - startsAt) : null, str(body?.place, 120), str(body?.address, 200), mapUrl, str(body?.note, 1000), seriesId, JSON.stringify(cleanDetails(body!.kind as Kind, body?.details)), scope, ts, ts)
+      .bind(id, actor.householdId, childId, body!.kind, title, at, endsAt ? at + (endsAt - startsAt) : null, str(body?.place, 120), str(body?.address, 200), mapUrl, str(body?.note, 1000), seriesId, JSON.stringify(cleanDetails(body!.kind as Kind, body?.details)), scope, ts, ts, coChild?.id ?? null)
       .run()
     const minted = await mintInvitations(ctx.env.DB, actor.householdId, id, invite, scope)
     if (id === ids[0]) firstMinted = minted

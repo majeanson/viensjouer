@@ -68,16 +68,18 @@ export function AvatarPicker({
         ) : (
           <Face name={name || '·'} colour={colour} src={shown} size="xl" />
         )}
-        {enabled && shown && (
-          <button type="button" aria-label={t.avatar.remove} title={t.avatar.remove} onClick={() => { if (preview) { setPreview(null); onPick?.(null) } else void onRemove?.() }} style={{ ...badge, right: 0, top: 0, background: 'var(--card)', color: 'var(--ink)', borderColor: 'var(--line)', cursor: 'pointer', padding: 0, width: 36, height: 36 }}>
-            <Icon name="x" />
-          </button>
-        )}
       </div>
       {enabled && (
         <div className="avatarpick__side">
           <input ref={input} type="file" accept="image/*" hidden onChange={(e) => void pick(e.target.files)} aria-label={label} />
-          <Why k="avatar" />
+          <div className="cluster">
+            {shown && (
+              <button type="button" className="btn btn--small btn--icon" aria-label={t.avatar.remove} title={t.avatar.remove} onClick={() => { if (preview) { setPreview(null); onPick?.(null) } else void onRemove?.() }}>
+                <Icon name="trash" />
+              </button>
+            )}
+            <Why k="avatar" />
+          </div>
           {err && <div className="notice notice--err">{err}</div>}
         </div>
       )}

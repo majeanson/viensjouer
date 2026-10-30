@@ -108,6 +108,7 @@ export const EN: Dict = {
     remove: 'Remove',
   },
   encounters: {
+    withChild: (n: string) => `With ${n}`,
     morePage: 'More: bring list, messages, photos, history',
     title: 'Get-togethers',
     empty: 'Nothing planned. Propose one, a park, a Saturday, a link.',
@@ -198,6 +199,7 @@ export const EN: Dict = {
     windowEnded: (host: string) => `This free moment is gone. If you have a question, write to ${host}.`,
     ended: (host: string) => `This get-together is over. If you have a question, write to ${host}.`,
     invites: (host: string, child: string) => `${host} invites ${child}`,
+    invitesTwo: (a: string, b: string, child: string) => `${a} and ${b} invite ${child}`,
     from: (parent: string) => `from ${parent}`,
     question: 'Are you coming?',
     yes: 'Yes, we’ll be there',

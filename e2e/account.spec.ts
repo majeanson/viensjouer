@@ -47,11 +47,11 @@ test('the account is one row open at a time, and the open row is in the address'
   await expect(row('Données')).toHaveAttribute('open', '')
 })
 
-test('the groups fold names itself once: no second « Groupes » heading inside it', async ({ page }) => {
+test('the groups sheet names itself once: no second « Groupes » heading inside it', async ({ page }) => {
   await signedIn(page)
   await page.route('**/api/families', (r) => r.fulfill({ json: { families: [] } }))
   await page.route('**/api/groups', (r) => r.fulfill({ json: { groups: [] } }))
   await page.goto('/amis')
-  await page.locator('details.fold', { hasText: 'Groupes' }).locator('summary').click()
+  await page.getByRole('button', { name: 'Groupes' }).click()
   await expect(page.getByText('Groupes', { exact: true })).toHaveCount(1)
 })

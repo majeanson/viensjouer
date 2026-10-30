@@ -52,6 +52,8 @@ export function EncounterNew() {
   const [mode, setMode] = useState<'plan' | 'free'>('plan')
   const [kind, setKind] = useState<Kind>('park')
   const [childId, setChildId] = useState<string | null>(null)
+  // A second hosting child: « Léa et Noé vous invitent ». The buttons below are tick-able; at least one stays ticked.
+  const [coId, setCoId] = useState<string | null>(null)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [scope, setScope] = useState<Scope>('family')
   const [freq, setFreq] = useState<Frequency>('once')
@@ -78,6 +80,7 @@ export function EncounterNew() {
     const { encounter: e, invitations } = src.data
     setKind(e.kind)
     setChildId(e.child_id)
+    setCoId(e.co_child_id ?? null)
     setPicked(new Set(invitations.map((i) => i.friend_family_id)))
     const sc = invitations[0]?.scope ?? defaultScope(e.kind)
     setScope(sc)
@@ -124,6 +127,12 @@ export function EncounterNew() {
     if (q.familyIds.length) setPicked((p) => new Set([...p, ...q.familyIds]))
   }
   const chosen = childId ?? children[0]?.id ?? null
+  const hostIds = [chosen, coId && coId !== chosen ? coId : null].filter((x): x is string => !!x)
+  const toggleHost = (id: string) => {
+    const next = hostIds.includes(id) ? (hostIds.length > 1 ? hostIds.filter((x) => x !== id) : hostIds) : [hostIds[0], id]
+    setChildId(next[0] ?? null)
+    setCoId(next[1] ?? null)
+  }
   // « Les mêmes familles que la dernière fois »: not offered when this form is already « Refaire pareil » (it has its own).
   const last = useQuery({ queryKey: K.lastGuests(chosen ?? ''), queryFn: () => api<{ familyIds: string[] }>(`last-guests?child=${chosen}`), enabled: !!chosen && !from })
   const lastIds = (last.data?.familyIds ?? []).filter((id) => (fams.data?.families ?? []).some((f) => f.id === id))
@@ -156,6 +165,7 @@ export function EncounterNew() {
     willMail.current = !!me.mail && mailableNow
     create.mutate({
       childId: chosen,
+      ...(coId && coId !== chosen ? { coChildId: coId } : {}),
       kind,
       title,
       startsAt,
@@ -226,7 +236,7 @@ export function EncounterNew() {
                 <h3><Icon name="smile" />{t.encounters.whoInvites}</h3>
                 <div className="seg" style={{ marginBottom: '0.75rem' }}>
                   {children.map((c) => (
-                    <button type="button" key={c.id} className={`btn ${chosen === c.id ? 'btn--on' : ''}`} onClick={() => setChildId(c.id)}><Face name={c.first_name} colour={c.colour} src={c.photo ? `/api/avatar/child/${c.id}?v=${c.photo}` : null} size="sm" />{c.first_name}</button>
+                    <button type="button" key={c.id} aria-pressed={hostIds.includes(c.id)} className={`btn ${hostIds.includes(c.id) ? 'btn--on' : ''}`} onClick={() => toggleHost(c.id)}><Face name={c.first_name} colour={c.colour} src={c.photo ? `/api/avatar/child/${c.id}?v=${c.photo}` : null} size="sm" />{c.first_name}</button>
                   ))}
                 </div>
               </>

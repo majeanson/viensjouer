@@ -6,6 +6,7 @@ import { useT } from '../i18n'
 import { FamilyPicker } from './FamilyPicker'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
+import { swipe } from '../lib/swipe'
 import { Sheet } from './Sheet'
 import { Icon } from './Icon'
 import { Face } from './Face'
@@ -38,6 +39,7 @@ export function Groups({ families }: { families: Family[] }) {
     setEditing(g)
     setPicked(new Set(g === 'new' ? [] : g.families))
   }
+  const removeGroup = (g: Group) => rm.remove(g.id, t.undo.removed, async () => { await api('groups', { method: 'DELETE', body: { id: g.id } }); void refresh() })
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const body: Record<string, unknown> = { name: new FormData(e.currentTarget).get('name'), families: [...picked] }
@@ -55,13 +57,13 @@ export function Groups({ families }: { families: Family[] }) {
           const members = g.families.map((id) => families.find((f) => f.id === id)).filter((f): f is Family => !!f)
           return (
             <details key={g.id} className="card friend">
-              <summary>
+              <summary {...swipe(() => removeGroup(g), () => open(g))}>
                 <span className="faces" aria-hidden="true">{members.slice(0, 3).map((f) => <Face key={f.id} name={f.child_first_name} colour={colourOf(f.child_first_name)} size="md" />)}</span>
                 <span className="friend__who"><strong>{g.name}</strong><span className="muted small">{members.map((f) => f.child_first_name).join(', ') || '—'}</span></span>
               </summary>
               <div className="cluster" style={{ marginTop: '0.75rem' }}>
-                <button className="btn btn--small" onClick={() => open(g)}>{t.encounters.edit}</button>
-                <button className="btn btn--small btn--danger" onClick={() => rm.remove(g.id, t.undo.removed, async () => { await api('groups', { method: 'DELETE', body: { id: g.id } }); void refresh() })}>{t.families.remove}</button>
+                <button className="btn btn--small btn--icon" aria-label={t.encounters.edit} title={t.encounters.edit} onClick={() => open(g)}><Icon name="edit" /></button>
+                <button className="btn btn--small btn--danger btn--icon" aria-label={t.families.remove} title={t.families.remove} onClick={() => removeGroup(g)}><Icon name="trash" /></button>
               </div>
             </details>
           )

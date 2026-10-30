@@ -11,6 +11,7 @@ import { useDeferredRemove } from '../lib/toast'
 import type { Child } from '../lib/types'
 import { Loading } from '../components/Loading'
 import { QueryError } from '../components/QueryError'
+import { swipe } from '../lib/swipe'
 import { Sheet } from '../components/Sheet'
 import { Icon, BigAction } from '../components/Icon'
 import { PALETTE } from '../lib/palette'
@@ -60,22 +61,28 @@ export function Children({ embedded = false }: { embedded?: boolean }) {
     save.mutate(body)
   }
 
+  const removeKid = (c: Child) => rm.remove(c.id, t.undo.removed, async () => { await api('children', { method: 'DELETE', body: { id: c.id } }); void invalidate() })
   const kids = rm.visible(q.data?.children ?? [])
   return (
     <>
-      {embedded ? <h2><Icon name="smile" />{t.children.title}</h2> : <h1>{t.children.title}</h1>}
-      {!editing && (embedded ? <button type="button" className="btn btn--small" onClick={() => { setPending(null); setEditing('new') }}>{t.children.add}</button> : <BigAction icon="smile" onClick={() => { setPending(null); setEditing('new') }}>{t.children.add}</BigAction>)}
+      {embedded ? (
+        <div className="row">
+          <h2 style={{ margin: 0 }}><Icon name="smile" />{t.children.title}</h2>
+          <button type="button" className="btn btn--small btn--icon" aria-label={t.children.add} title={t.children.add} onClick={() => { setPending(null); setEditing('new') }}><Icon name="plus" /></button>
+        </div>
+      ) : <h1>{t.children.title}</h1>}
+      {!embedded && !editing && <BigAction icon="smile" onClick={() => { setPending(null); setEditing('new') }}>{t.children.add}</BigAction>}
       {err && <div className="notice notice--err">{err}</div>}
       {q.isLoading && <Loading />}
       {q.isError && !q.data && <QueryError error={q.error} onRetry={() => void q.refetch()} />}
       {q.data && kids.length === 0 && !editing && <p className="muted">{t.children.empty}</p>}
       <div className="stack">
         {kids.map((c) => (
-          <div key={c.id} className="card row">
+          <div key={c.id} className="card row" {...swipe(() => removeKid(c), () => { setPending(null); setEditing(c) })}>
             <span className="cluster"><Face name={c.first_name} colour={c.colour} src={c.photo ? `/api/avatar/child/${c.id}?v=${c.photo}` : null} size="lg" /><strong>{c.first_name}</strong><span className="muted small">{ageLabel(c.birthdate, lang)}</span></span>
             <span className="cluster">
-              <button className="btn btn--small" onClick={() => { setPending(null); setEditing(c) }}>{t.children.edit}</button>
-              <button className="btn btn--small btn--danger" onClick={() => rm.remove(c.id, t.undo.removed, async () => { await api('children', { method: 'DELETE', body: { id: c.id } }); void invalidate() })}>{t.children.remove}</button>
+              <button className="btn btn--small btn--icon" aria-label={t.children.edit} title={t.children.edit} onClick={() => { setPending(null); setEditing(c) }}><Icon name="edit" /></button>
+              <button className="btn btn--small btn--danger btn--icon" aria-label={t.children.remove} title={t.children.remove} onClick={() => removeKid(c)}><Icon name="trash" /></button>
             </span>
           </div>
         ))}

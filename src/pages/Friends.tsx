@@ -122,7 +122,7 @@ export function Friends() {
   return (
     <>
       <PageHead title={t.friends.title} action={!editing && !importing && <button type="button" className="btn btn--primary btn--small" onClick={() => setEditing('new')}><Icon name="plus" />{t.families.add}</button>} />
-      <Children embedded />
+      <Children />
       <div className="row" style={{ margin: '1.5rem 0 0.6rem' }}>
         <h2 style={{ margin: 0 }}><Icon name="users" />{t.friends.mine}</h2>
         <button type="button" className="btn btn--small btn--icon" aria-label={`${t.friends.groupsFold}${groups.length > 0 ? ` (${groups.length})` : ''}`} title={t.friends.groupsFold} onClick={() => setGroupsOpen(true)}><Icon name="tag" /></button>

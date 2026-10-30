@@ -1,12 +1,8 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 
-// One way to open every page: an optional « ← Retour », then the title with the page's ONE main action beside it (small, on the right;
-// it wraps under the title on a narrow screen). The big orange tile is gone: the action is always in the same place.
-export function BackLink({ to, children }: { to: string; children: ReactNode }) {
-  return <Link to={to} className="muted small" style={{ display: 'inline-block', marginBottom: '0.5rem' }}>← {children}</Link>
-}
-
+// One way to open every page: the title with the page's ONE main action beside it (small, on the right; it wraps under the title on a
+// narrow screen). The big orange tile is gone: the action is always in the same place. (The « ← Retour » link is BackLink, apart: this
+// file imports nothing from the router, so the many pages that open with it do not each pull the router into the shared chunk.)
 export function PageHead({ title, action, level = 1 }: { title: ReactNode; action?: ReactNode; level?: 1 | 2 }) {
   const H = level === 1 ? 'h1' : 'h2'
   return (

@@ -122,7 +122,7 @@ export function Encounters({ compact = false }: { compact?: boolean }) {
       <PageHead level={compact ? 2 : 1} title={t.encounters.title} action={!nothing && <Link to="/rencontres/nouvelle" className="btn btn--primary btn--small"><Icon name="plus" />{t.encounters.new}</Link>} />
       <PartnerNudge ready={past.length > 0} />
       <InstallOffer hold={nudgeDue(past.length > 0, me)} />
-      {!ready && <div aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
+      {!ready && <div role="status" aria-busy="true" aria-label={t.common.loading}>{[0, 1, 2].map((n) => <div key={n} className="card skeleton" />)}</div>}
       {nothing && <FirstSteps noChild={noChild} noFriend={noFriend} />}
       {ready && !nothing && ahead.length === 0 && <EmptyState>{t.encounters.empty}</EmptyState>}
       {ahead.length > 0 && <h2 className="muted small" style={{ marginTop: '1rem' }}>{t.encounters.upcoming}</h2>}

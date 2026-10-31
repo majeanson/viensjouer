@@ -29,3 +29,15 @@ describe('accessibility, on the source', () => {
     expect(bad).toEqual([])
   })
 })
+
+// A div has no role of its own, so an aria-label on it is ignored or refused by screen readers (axe: aria-prohibited-attr). A labelled
+// placeholder says what it is with role="status" (or another role); found on a slow machine by the real-data sweep.
+describe('a label needs a role', () => {
+  it('no bare <div> or <span> carries an aria-label without a role', () => {
+    const bad: string[] = []
+    for (const f of files) {
+      for (const m of readFileSync(f, 'utf8').matchAll(/<(?:div|span)\b[^>]*aria-label=[^>]*>/g)) if (!/\brole=/.test(m[0])) bad.push(`${f.slice(src.length + 1)}: ${m[0].slice(0, 100)}`)
+    }
+    expect(bad).toEqual([])
+  })
+})

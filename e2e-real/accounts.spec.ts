@@ -1,31 +1,10 @@
-import { expect, test, type BrowserContext, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
+import { call, inDays, signup } from './helpers'
 
 // TWO REAL ACCOUNTS on the real Worker and a real D1, no stubs, no secrets, nothing to set up: the test creates both households itself
 // (fake addresses, a mail-less local stack, so nothing leaves). They meet the way two families do: the first invites the second to a
 // rencontre, the second (signed in) opens the link and ties the two families together, then hosts one back; both write on the board; the
 // first hosts with two children; the second ticks the times that suit. `npm run e2e:real` runs this and the single-guest walk.
-const PASSWORD = 'correct-horse-battery-9'
-const stamp = Date.now().toString(36)
-
-async function csrf(ctx: BrowserContext): Promise<string> {
-  return (await ctx.cookies()).find((c) => c.name === 'vj-csrf' || c.name === 'vj_csrf')?.value ?? ''
-}
-async function call<T = Record<string, unknown>>(ctx: BrowserContext, method: 'get' | 'post' | 'patch' | 'delete', path: string, data?: unknown): Promise<{ status: number; body: T }> {
-  const r = await ctx.request.fetch(`/api/${path}`, { method, ...(data === undefined ? {} : { data }), headers: { 'x-csrf-token': await csrf(ctx) } })
-  const text = await r.text()
-  return { status: r.status(), body: (text ? JSON.parse(text) : {}) as T }
-}
-async function signup(ctx: BrowserContext, who: string): Promise<void> {
-  const r = await ctx.request.post('/api/auth/signup', { data: { email: `${who}-${stamp}@example.test`, password: PASSWORD, displayName: who } })
-  expect(r.status(), `signup ${who}`).toBe(201)
-}
-const inDays = (n: number, hour = 14) => {
-  const d = new Date()
-  d.setDate(d.getDate() + n)
-  d.setHours(hour, 0, 0, 0)
-  return Math.floor(d.getTime() / 1000)
-}
-
 interface Enc { encounter: { id: string; co_child_name?: string | null }; invitations: { id: string; token: string; friend_family_id: string; reply: string | null }[]; slots?: { id: string; yes: number }[] }
 
 test('two real accounts: invite, link the families, host back, board, two hosting children, times to tick', async ({ browser }) => {
@@ -147,5 +126,3 @@ test('two real accounts: invite, link the families, host back, board, two hostin
   await ctxB.close()
 })
 
-// A page object-free helper kept for readability in failures.
-void (null as unknown as Page)

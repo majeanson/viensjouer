@@ -7,7 +7,7 @@ import { ApiError, api, isStatus } from '../lib/api'
 import { clearPending, readPending, writePending } from '../lib/pendingAnswer'
 import { K } from '../lib/query'
 import { useLang, useT } from '../i18n'
-import { humanWhen, timeOnly, whenDay, whenShort } from '../lib/format'
+import { humanWhen, timeOnly, whenShort } from '../lib/format'
 import { paperCode } from '../lib/link'
 import { fromRow, isPrivate, readSeen, seenKey, showValue, writeSeen, type ChangeField, type ChangeRow } from '../lib/changes'
 import { useAuth } from '../lib/auth'
@@ -19,7 +19,6 @@ import type { Reply as ReplyKind } from '../lib/types'
 import type { ReplyCard as Card } from '../lib/replyCard'
 import { Header } from '../components/Header'
 import { Loading } from '../components/Loading'
-import { Rel } from '../components/Rel'
 import { QueryError } from '../components/QueryError'
 import { Icon } from '../components/Icon'
 import { LinkFamilies } from '../components/LinkFamilies'
@@ -255,20 +254,12 @@ function ReplyInner() {
         <h1 style={{ marginTop: '0.25rem' }}>{host.coChild ? t.reply.invitesTwo(host.child_first_name, host.coChild, you.child_first_name) : t.reply.invites(host.child_first_name, you.child_first_name)}</h1>
         <p className="muted">{t.reply.organizer(host.parent_name || host.household_name, host.child_first_name)}</p>
         <p><strong>{you.scope === 'friend' ? t.scope.youFriend(you.child_first_name) : t.scope.youFamily}</strong></p>
-        <p className="lead">{humanWhen(e.starts_at, lang)}</p>
+        <p className="lead">{humanWhen(e.starts_at, lang)}{mark(freshOf('starts_at', 'ends_at'))}</p>
         <p className="muted" style={{ marginTop: 0 }}>
-          {e.title} · {timeOnly(e.starts_at, lang)}{e.ends_at && <><span aria-hidden="true"> → </span><span className="sr-only"> {t.reply.untilWord} </span>{timeOnly(e.ends_at, lang)}</>}
-          {e.place && e.place !== e.title && <> · {e.place}</>}
+          {e.title}{mark(freshOf('title'))} · {timeOnly(e.starts_at, lang)}{e.ends_at && <><span aria-hidden="true"> → </span><span className="sr-only"> {t.reply.untilWord} </span>{timeOnly(e.ends_at, lang)}</>}
+          {e.place && e.place !== e.title && <> · {e.place}{mark(freshOf('place'))}</>}
         </p>
         {e.details?.planB && <p style={{ marginTop: 0 }}><Icon name="umbrella" /><strong>{t.encounters.planB} :</strong> {e.details.planB}{mark(freshOf('planB'))}</p>}
-        <details className="why" key={String(fresh.length > 0)} open={fresh.length > 0}>
-          <summary>{t.reply.allDetails}</summary>
-        <dl className="facts" style={{ marginTop: '0.5rem' }}>
-          <div><dt><Icon name="tag" />{t.reply.what}</dt><dd>{e.title}{mark(freshOf('title'))}</dd></div>
-          <div><dt><Icon name="calendar" />{t.reply.when}</dt><dd>{whenDay(e.starts_at, lang)}, {timeOnly(e.starts_at, lang)}{e.ends_at && <><span aria-hidden="true"> → </span><span className="sr-only"> {t.reply.untilWord} </span>{timeOnly(e.ends_at, lang)}</>}<Rel at={e.starts_at} />{mark(freshOf('starts_at', 'ends_at'))}</dd></div>
-          {e.place && <div><dt><Icon name="pin" />{t.reply.where}</dt><dd>{e.place}{mark(freshOf('place'))}</dd></div>}
-        </dl>
-        </details>
         {e.hereAt && <div className="notice">{t.kinds.park.hereSince(timeOnly(e.hereAt, lang))}</div>}
         {e.status === 'cancelled' && <div className="notice notice--err">{t.encounters.status.cancelled}</div>}
         {e.status === 'postponed' && alive && <div className="notice" role="status">{t.reply.postponed}</div>}

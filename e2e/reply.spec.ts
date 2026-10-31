@@ -200,10 +200,9 @@ test('the shared page says what it is, the facts, who it is for and what happens
   await page.goto(`/${CODE}`)
   await expect(page.getByText(/^Invitation · /)).toBeVisible()
   await expect(page.getByText('Organisé par Marc, le parent de Noé.')).toBeVisible()
-  // the facts as labelled rows, folded under « Tous les détails »
+  // the address and the notes as labelled rows, in the one fold (the what, when and where are already in the heading card)
   await openMore(page)
-  await page.getByText('Tous les détails').click()
-  for (const label of ['Quoi', 'Quand', 'Où', 'Adresse', 'À savoir']) await expect(page.getByText(label, { exact: true }).first()).toBeVisible()
+  for (const label of ['Adresse', 'À savoir']) await expect(page.getByText(label, { exact: true }).first()).toBeVisible()
   await expect(page.getByText('Sieste à 13 h')).toBeVisible()
   // the three steps, the first one being "now"
   await page.getByText('Comment ça marche').click()

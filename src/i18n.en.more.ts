@@ -132,7 +132,6 @@ export const EN_MORE: More = {
     addressLabel: 'Address',
     toKnow: 'Good to know',
     stepsTitle: 'How it works',
-    allDetails: 'All the details',
     step1: 'You say whether you are coming: yes, maybe or no. No account to create.',
     step2: (host: string) => `${host} sees your answer right away.`,
     step3: 'If you say yes, the address shows (when one is given) and you can ask for a reminder the day before.',

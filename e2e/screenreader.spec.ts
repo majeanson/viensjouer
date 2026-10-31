@@ -44,8 +44,9 @@ test('the three answers are one named group, and the time range is spoken', asyn
   const group = page.getByRole('group', { name: 'Vous venez ?' }).first()
   await expect(group.getByRole('button')).toHaveCount(3)
   // « → » is drawn but hidden from the tree; the word is there for those who listen
-  await expect(page.locator('.facts').first().locator('[aria-hidden="true"]', { hasText: '→' })).toHaveCount(1)
-  await expect(page.locator('.facts').first().locator('.sr-only', { hasText: 'jusqu’à' })).toHaveCount(1)
+  const range = page.locator('p', { has: page.locator('.sr-only', { hasText: 'jusqu’à' }) })
+  await expect(range.locator('[aria-hidden="true"]', { hasText: '→' })).toHaveCount(1)
+  await expect(range.locator('.sr-only', { hasText: 'jusqu’à' })).toHaveCount(1)
 })
 
 test('a refused answer is announced as an alert', async ({ page }) => {

@@ -6,7 +6,7 @@ import { useT } from '../i18n'
 // how a wrong one is shown: when you leave it, and for every wrong one when you try to send. Nothing is sent while a field is wrong.
 type Field = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 
-export function ValidForm({ onSubmit, onBlur, ...rest }: ComponentProps<'form'>) {
+export function ValidForm({ onSubmit, onBlur, onInput, ...rest }: ComponentProps<'form'>) {
   const t = useT()
   const words = (el: Field): string => {
     const v = el.validity
@@ -28,10 +28,19 @@ export function ValidForm({ onSubmit, onBlur, ...rest }: ComponentProps<'form'>)
     host?.append(msg)
     el.setAttribute('aria-invalid', 'true')
   }
+  // Leaving a field says what is wrong with it, except when the next thing touched is a button: a sentence that appears (or goes)
+  // between the press and the release moves the button from under the finger and the tap is lost. The send itself says it all.
   const leave = (e: FocusEvent<HTMLFormElement>) => {
     const el = e.target
-    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) show(el)
+    const toButton = e.relatedTarget instanceof HTMLButtonElement
+    if (!toButton && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) show(el)
     onBlur?.(e)
+  }
+  // While you type, a sentence already on screen follows what you type (and goes the moment the field is right).
+  const typing = (e: Parameters<NonNullable<ComponentProps<'form'>['onInput']>>[0]) => {
+    const el = e.target
+    if ((el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) && el.getAttribute('aria-invalid')) show(el)
+    onInput?.(e)
   }
   const send = (e: Parameters<NonNullable<ComponentProps<'form'>['onSubmit']>>[0]) => {
     const fields = [...e.currentTarget.elements].filter((x): x is Field => x instanceof HTMLInputElement || x instanceof HTMLTextAreaElement || x instanceof HTMLSelectElement)
@@ -45,5 +54,5 @@ export function ValidForm({ onSubmit, onBlur, ...rest }: ComponentProps<'form'>)
     onSubmit?.(e)
   }
   // `noValidate` keeps the browser's bubble away; the checks above are the same ones, said our way.
-  return <form noValidate onSubmit={send} onBlur={leave} {...rest} />
+  return <form noValidate onSubmit={send} onBlur={leave} onInput={typing} {...rest} />
 }

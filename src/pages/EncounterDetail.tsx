@@ -249,7 +249,7 @@ export function EncounterDetail() {
         {e.series_id && <span className="chip">{t.encounters.seriesChip}</span>}
       </div>
       <ul className="meta">
-        <li><Icon name={kindIcon(e.kind)} />{t.encounters.kind[e.kind]} <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span></li>
+        <li><Icon name={kindIcon(e.kind)} />{t.encounters.kind[e.kind]} {e.status !== 'proposed' && <span className={`chip chip--${e.status}`}>{t.encounters.status[e.status]}</span>}</li>
         {e.co_child_name && <li><Icon name="smile" />{t.encounters.withChild(e.co_child_name)}</li>}
         <li><Icon name="clock" />{whenLong(e.starts_at, lang)}{e.ends_at ? ` → ${timeOnly(e.ends_at, lang)}` : ''}<Rel at={e.starts_at} /></li>
         {e.place && <li><Icon name="pin" />{e.place}{e.map_url && <>{' '}· <a href={e.map_url} target="_blank" rel="noopener noreferrer">{t.reply.openMap}</a></>}</li>}

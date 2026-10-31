@@ -131,7 +131,6 @@ export const FR_MORE = {
     addressLabel: 'Adresse',
     toKnow: 'À savoir',
     stepsTitle: 'Comment ça marche',
-    allDetails: 'Tous les détails',
     step1: 'Tu dis si vous venez : oui, peut-être ou non. Pas de compte à créer.',
     step2: (host: string) => `${host} voit ta réponse tout de suite.`,
     step3: 'Si tu dis oui, l’adresse s’affiche (quand elle est donnée) et tu peux demander un rappel la veille.',

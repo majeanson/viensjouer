@@ -18,6 +18,7 @@ import { ImportFriends } from '../components/ImportFriends'
 import { InvitedBy } from '../components/InvitedBy'
 import { CircleInvite } from '../components/CircleInvite'
 import { Groups } from '../components/Groups'
+import { SharedCircles } from '../components/SharedCircles'
 import { useDeferredRemove } from '../lib/toast'
 import type { Family, Group } from '../lib/types'
 import { Icon, type IconName } from '../components/Icon'
@@ -245,6 +246,8 @@ export function Friends() {
           ))}
         </section>
       )}
+
+      {!editing && !importing && q.data && <SharedCircles families={fams} />}
 
       {groupsOpen && (
         <Sheet title={t.friends.groupsFold} onBack={() => setGroupsOpen(false)}>

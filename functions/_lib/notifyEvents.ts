@@ -5,6 +5,7 @@ import { changeLines, type Change } from './changes'
 import { nowSec, paperCode, whenLong } from './ids'
 import { accountsOfFamily, notify, parentsOf, type Recipient } from './notify'
 import { NOTE } from './notifyCopy'
+import { FAMILY_ACCOUNT } from './sharedCircles'
 
 interface Family {
   linked_household_id: string | null
@@ -22,7 +23,7 @@ export async function notifyInvited(env: Env, host: { householdId: string; displ
     if (!minted.length) return
     const tz = await tzOf(env, host.householdId)
     for (const m of minted) {
-      const fam = await env.DB.prepare('SELECT linked_household_id, email FROM friend_families WHERE id = ?').bind(m.familyId).first<Family>()
+      const fam = await env.DB.prepare(`SELECT ${FAMILY_ACCOUNT} AS linked_household_id, f.email FROM friend_families f WHERE f.id = ?`).bind(m.familyId).first<Family>()
       if (!fam) continue
       await notify(env, await accountsOfFamily(env, fam, host.householdId), { kind: 'invited', url: `/${paperCode(m.token)}`, words: (lang) => NOTE.invited(lang, { host: host.displayName, title: e.title, when: whenLong(e.startsAt, lang, tz) }) })
     }
@@ -36,7 +37,7 @@ export async function notifyChanged(env: Env, host: { householdId: string }, e: 
   try {
     const tz = await tzOf(env, host.householdId)
     const { results } = await env.DB.prepare(
-      `SELECT i.token, f.linked_household_id, f.email FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id
+      `SELECT i.token, ${FAMILY_ACCOUNT} AS linked_household_id, f.email FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id
         WHERE i.encounter_id = ? AND f.deleted_at IS NULL AND (i.reply IS NULL OR i.reply != 'no') LIMIT 40`,
     )
       .bind(e.id)

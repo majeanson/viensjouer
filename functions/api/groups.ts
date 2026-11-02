@@ -14,7 +14,7 @@ async function ownedFamilyIds(db: D1Database, householdId: string, ids: unknown)
   const wanted = ids.filter((v): v is string => typeof v === 'string').slice(0, 200)
   if (!wanted.length) return []
   const { results } = await db
-    .prepare(`SELECT id FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND id IN (${wanted.map(() => '?').join(',')})`)
+    .prepare(`SELECT id FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND shared_circle_id IS NULL AND id IN (${wanted.map(() => '?').join(',')})`)
     .bind(householdId, ...wanted)
     .all<{ id: string }>()
   return results.map((r) => r.id)

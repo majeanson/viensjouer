@@ -15,6 +15,9 @@ import * as resendWebhook from '../functions/api/resend-webhook'
 import * as pushApi from '../functions/api/push'
 import * as linkInvitation from '../functions/api/link-invitation'
 import * as circleInvite from '../functions/api/circle-invite'
+import * as sharedCircles from '../functions/api/shared-circles'
+import * as sharedCircleInvite from '../functions/api/shared-circle-invite'
+import * as sharedCircleJoin from '../functions/api/shared-circle-join'
 import * as invitedBy from '../functions/api/invited-by'
 import * as notificationsApi from '../functions/api/notifications'
 import * as encounters from '../functions/api/encounters'
@@ -78,6 +81,9 @@ const TABLE: ReadonlyArray<readonly [pattern: string, mod: RouteMod]> = [
   ['push', pushApi],
   ['link-invitation', linkInvitation],
   ['circle-invite', circleInvite],
+  ['shared-circles', sharedCircles],
+  ['shared-circle-invite', sharedCircleInvite],
+  ['shared-circle-join', sharedCircleJoin],
   ['invited-by', invitedBy],
   ['notifications', notificationsApi],
   ['encounters', encounters],

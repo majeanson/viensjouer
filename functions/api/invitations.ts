@@ -7,6 +7,7 @@ import { invitationMail, withUnsubscribe } from '../_lib/mailCopy'
 import { isDemoEmail } from '../_lib/demo'
 import { isScope } from '../_lib/kinds'
 import { MAIL_CAP_MESSAGE, mailRoom, recordMail } from '../_lib/mailBudget'
+import { FAMILY_EMAIL } from '../_lib/sharedCircles'
 
 // A second send to the same family inside this window is refused: one tap, one mail.
 const RESEND_COOLDOWN_SEC = 5 * 60
@@ -21,7 +22,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   const id = str(body?.id, 20)
   if (!id) return badRequest('id requis.')
   const row = await ctx.env.DB.prepare(
-    `SELECT i.token, i.scope, i.sent_at, f.email, f.mail_stopped_at, f.email_bounced_at, f.lang, f.parent_name, f.child_first_name, e.title, e.starts_at, c.first_name || COALESCE(' & ' || (SELECT first_name FROM children WHERE id = e.co_child_id), '') AS host_child, h.tz
+    `SELECT i.token, i.scope, i.sent_at, ${FAMILY_EMAIL} AS email, (f.shared_circle_id IS NOT NULL) AS via_circle, f.mail_stopped_at, f.email_bounced_at, f.lang, f.parent_name, f.child_first_name, e.title, e.starts_at, c.first_name || COALESCE(' & ' || (SELECT first_name FROM children WHERE id = e.co_child_id), '') AS host_child, h.tz
        FROM invitations i
        JOIN encounters e ON e.id = i.encounter_id
        JOIN friend_families f ON f.id = i.friend_family_id
@@ -30,7 +31,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
       WHERE i.id = ? AND e.household_id = ? AND e.deleted_at IS NULL`,
   )
     .bind(id, actor.householdId)
-    .first<{ token: string; scope: string; sent_at: number | null; lang: string | null; email: string | null; mail_stopped_at: number | null; email_bounced_at: number | null; parent_name: string; child_first_name: string; title: string; starts_at: number; host_child: string; tz: string }>()
+    .first<{ token: string; scope: string; sent_at: number | null; via_circle: number; lang: string | null; email: string | null; mail_stopped_at: number | null; email_bounced_at: number | null; parent_name: string; child_first_name: string; title: string; starts_at: number; host_child: string; tz: string }>()
   if (!row) return notFound()
   if (!row.email) return badRequest('Cette famille n’a pas de courriel — copie le lien.')
   if (row.mail_stopped_at) return badRequest('Cette famille ne veut plus de courriels de l’app — copie le lien.')
@@ -46,7 +47,8 @@ export const onRequestPost = authed(async (ctx, actor) => {
   const claimed = await ctx.env.DB.prepare('UPDATE invitations SET sent_at = ?, updated_at = ? WHERE id = ? AND (sent_at IS NULL OR sent_at < ?)').bind(now, now, id, now - RESEND_COOLDOWN_SEC).run()
   if (!claimed.meta.changes) return tooManyRequests('Le courriel vient de partir. Attends quelques minutes avant de le renvoyer.')
   try {
-    await sendMail(ctx.env, { to: row.email, fromName: actor.displayName, replyTo: actor.email, ...mail })
+    // A shared circle's member sees first names only: no Reply-To with the host's address.
+    await sendMail(ctx.env, { to: row.email, fromName: actor.displayName, replyTo: row.via_circle ? undefined : actor.email, ...mail })
   } catch (err) {
     // Nothing left: give the slot back so the host can try again at once.
     await ctx.env.DB.prepare('UPDATE invitations SET sent_at = ? WHERE id = ?').bind(row.sent_at, id).run()

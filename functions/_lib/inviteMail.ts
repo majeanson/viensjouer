@@ -7,6 +7,7 @@ import { mailLang } from './lang'
 import { invitationMail, withUnsubscribe } from './mailCopy'
 import { mailRoom, recordMail } from './mailBudget'
 import { nowSec, paperCode, whenLong } from './ids'
+import { FAMILY_EMAIL } from './sharedCircles'
 
 interface Row {
   id: string
@@ -20,6 +21,7 @@ interface Row {
   starts_at: number
   host_child: string
   tz: string
+  via_circle: number
 }
 
 export async function sendEncounterInvitations(
@@ -30,14 +32,14 @@ export async function sendEncounterInvitations(
 ): Promise<{ sent: number; skipped: number }> {
   if (!mailEnabled(env)) return { sent: 0, skipped: 0 }
   const { results } = await env.DB.prepare(
-    `SELECT i.id, i.token, i.scope, f.email, f.lang, f.parent_name, f.child_first_name, e.title, e.starts_at, c.first_name || COALESCE(' & ' || (SELECT first_name FROM children WHERE id = e.co_child_id), '') AS host_child, h.tz
+    `SELECT i.id, i.token, i.scope, ${FAMILY_EMAIL} AS email, (f.shared_circle_id IS NOT NULL) AS via_circle, f.lang, f.parent_name, f.child_first_name, e.title, e.starts_at, c.first_name || COALESCE(' & ' || (SELECT first_name FROM children WHERE id = e.co_child_id), '') AS host_child, h.tz
        FROM invitations i
        JOIN encounters e ON e.id = i.encounter_id
        JOIN friend_families f ON f.id = i.friend_family_id
        JOIN children c ON c.id = e.child_id
        JOIN households h ON h.id = e.household_id
       WHERE i.encounter_id = ? AND e.household_id = ? AND e.deleted_at IS NULL AND i.sent_at IS NULL AND i.reply IS NULL
-        AND f.email IS NOT NULL AND f.deleted_at IS NULL AND f.mail_stopped_at IS NULL AND f.email_bounced_at IS NULL
+        AND ${FAMILY_EMAIL} IS NOT NULL AND f.deleted_at IS NULL AND f.mail_stopped_at IS NULL AND f.email_bounced_at IS NULL
       ORDER BY i.created_at LIMIT 40`,
   )
     .bind(encounterId, host.householdId)
@@ -53,7 +55,8 @@ export async function sendEncounterInvitations(
     const link = `${origin}/${paperCode(r.token)}`
     const mail = withUnsubscribe(lang, origin, r.token, invitationMail(lang, { parent: r.parent_name, host: host.displayName, hostChild: r.host_child, child: r.child_first_name, title: r.title, when: whenLong(r.starts_at, lang, r.tz), friendOnly: r.scope === 'friend', link }))
     try {
-      await sendMail(env, { to: r.email, fromName: host.displayName, replyTo: host.email, ...mail })
+      // A shared circle's member sees first names only: no Reply-To with the host's address.
+      await sendMail(env, { to: r.email, fromName: host.displayName, replyTo: r.via_circle ? undefined : host.email, ...mail })
       sent++
     } catch (err) {
       // Nothing left: give the slot back so « Envoyer » on the page still works.

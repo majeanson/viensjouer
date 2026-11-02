@@ -34,6 +34,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
           AND (
             (f.linked_household_id = ?1 AND EXISTS (SELECT 1 FROM child_links l WHERE l.revoked_at IS NULL AND ((l.household_a = e.household_id AND l.household_b = ?1) OR (l.household_b = e.household_id AND l.household_a = ?1))))
             OR (f.email IS NOT NULL AND lower(f.email) IN (SELECT lower(email) FROM parents WHERE household_id = ?1))
+            OR f.member_household_id = ?1
           )
         GROUP BY e.id ORDER BY e.starts_at`,
     )
@@ -45,7 +46,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
          JOIN children c ON c.id = CASE WHEN l.household_a = ?1 THEN l.child_b ELSE l.child_a END
         WHERE (l.household_a = ?1 OR l.household_b = ?1) AND l.revoked_at IS NULL AND c.deleted_at IS NULL AND c.birthdate IS NOT NULL`,
     ).bind(hh),
-    ctx.env.DB.prepare('SELECT child_first_name AS first_name, child_birthdate AS birthdate FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND linked_household_id IS NULL AND child_birthdate IS NOT NULL').bind(hh),
+    ctx.env.DB.prepare('SELECT child_first_name AS first_name, child_birthdate AS birthdate FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND linked_household_id IS NULL AND shared_circle_id IS NULL AND child_birthdate IS NOT NULL').bind(hh),
   ])
 
   const items = [

@@ -11,6 +11,7 @@ import { hostReminderMail, reminderMail, withUnsubscribe } from './mailCopy'
 import { nowSec, paperCode, whenLong } from './ids'
 import { accountsOfFamily, parentsOf } from './notify'
 import { notifyReminder } from './notifyEvents'
+import { FAMILY_ACCOUNT, FAMILY_EMAIL } from './sharedCircles'
 
 interface Due {
   id: string
@@ -63,7 +64,7 @@ export async function sendDueReminders(env: Env, origin: string): Promise<number
   }
   const now = nowSec()
   const { results } = await env.DB.prepare(
-    `SELECT i.id, e.household_id, i.token, f.email, f.lang, f.linked_household_id, f.parent_name, e.title, e.starts_at, e.place, h.tz, c.first_name || COALESCE(' & ' || (SELECT first_name FROM children WHERE id = e.co_child_id), '') AS host_child
+    `SELECT i.id, e.household_id, i.token, ${FAMILY_EMAIL} AS email, f.lang, ${FAMILY_ACCOUNT} AS linked_household_id, f.parent_name, e.title, e.starts_at, e.place, h.tz, c.first_name || COALESCE(' & ' || (SELECT first_name FROM children WHERE id = e.co_child_id), '') AS host_child
        FROM invitations i
        JOIN encounters e ON e.id = i.encounter_id
        JOIN friend_families f ON f.id = i.friend_family_id

@@ -26,6 +26,7 @@ export interface Found {
   host_parent: string | null
   host_email: string | null
   circle_id: string | null
+  member_household_id: string | null
 }
 
 const HOST = `(SELECT display_name FROM parents p WHERE p.household_id = x.household_id ORDER BY p.created_at LIMIT 1) AS host_parent,
@@ -37,7 +38,7 @@ export async function findByCode(env: Env, raw: unknown): Promise<Found | null> 
   if (!code) return null
   const viaRencontre = await env.DB.prepare(
     `SELECT f.id AS family_id, f.child_first_name AS family_child, f.child_birthdate AS family_birthdate, f.linked_household_id,
-            e.household_id AS host_household, e.child_id AS host_child, c.first_name AS host_child_name, c.birthdate AS host_child_birthdate, NULL AS circle_id,
+            e.household_id AS host_household, e.child_id AS host_child, c.first_name AS host_child_name, c.birthdate AS host_child_birthdate, NULL AS circle_id, f.member_household_id,
             ${HOST.replaceAll('x.household_id', 'e.household_id')}
        FROM invitations i JOIN encounters e ON e.id = i.encounter_id JOIN friend_families f ON f.id = i.friend_family_id JOIN children c ON c.id = e.child_id
       WHERE i.token = ? AND e.deleted_at IS NULL AND f.deleted_at IS NULL`,
@@ -48,16 +49,17 @@ export async function findByCode(env: Env, raw: unknown): Promise<Found | null> 
   const now = nowSec()
   return env.DB.prepare(
     `SELECT f.id AS family_id, f.child_first_name AS family_child, f.child_birthdate AS family_birthdate, f.linked_household_id,
-            x.household_id AS host_household, x.child_id AS host_child, c.first_name AS host_child_name, c.birthdate AS host_child_birthdate, x.id AS circle_id,
+            x.household_id AS host_household, x.child_id AS host_child, c.first_name AS host_child_name, c.birthdate AS host_child_birthdate, x.id AS circle_id, NULL AS member_household_id,
             ${HOST}
        FROM circle_invites x JOIN friend_families f ON f.id = x.friend_family_id JOIN children c ON c.id = x.child_id
-      WHERE x.token = ? AND x.revoked_at IS NULL AND f.deleted_at IS NULL AND (x.expires_at > ? OR x.accepted_at IS NOT NULL)`,
+      WHERE x.token = ? AND x.shared_circle_id IS NULL AND x.revoked_at IS NULL AND f.deleted_at IS NULL AND (x.expires_at > ? OR x.accepted_at IS NOT NULL)`,
   )
     .bind(code, now)
     .first<Found>()
 }
 
-const stateOf = (f: Found, me: string): 'own' | 'linked' | 'taken' | 'linkable' => (f.host_household === me ? 'own' : f.linked_household_id === me ? 'linked' : f.linked_household_id ? 'taken' : 'linkable')
+// A rencontre sent to a shared circle's member (a hidden entry, migration 0025) is 'taken': being in a circle never links two families.
+const stateOf = (f: Found, me: string): 'own' | 'linked' | 'taken' | 'linkable' => (f.host_household === me ? 'own' : f.linked_household_id === me ? 'linked' : f.linked_household_id || f.member_household_id ? 'taken' : 'linkable')
 
 export const onRequestGet = authed(async (ctx, actor) => {
   const f = await findByCode(ctx.env, new URL(ctx.request.url).searchParams.get('code'))

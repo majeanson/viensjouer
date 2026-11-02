@@ -23,7 +23,8 @@ export interface FamilyRow {
 const FIELDS = 'id, parent_name, email, phone, child_first_name, child_birthdate, allergies, notes, linked_household_id, email_bounced_at, mail_stopped_at, nap_start, nap_end'
 
 export const onRequestGet = authed(async (ctx, actor) => {
-  const { results } = await ctx.env.DB.prepare(`SELECT ${FIELDS} FROM friend_families WHERE household_id = ? AND deleted_at IS NULL ORDER BY child_first_name`)
+  // A shared circle's hidden entries (migration 0025) are not the household's book: they show under their circle, never here.
+  const { results } = await ctx.env.DB.prepare(`SELECT ${FIELDS} FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND shared_circle_id IS NULL ORDER BY child_first_name`)
     .bind(actor.householdId)
     .all<FamilyRow>()
   return ok({ families: results })
@@ -88,7 +89,7 @@ export const onRequestPatch = authed(async (ctx, actor) => {
        nap_start = CASE WHEN ? THEN ? ELSE nap_start END,
        nap_end = CASE WHEN ? THEN ? ELSE nap_end END,
        updated_at = ?
-     WHERE id = ? AND household_id = ? AND deleted_at IS NULL`,
+     WHERE id = ? AND household_id = ? AND deleted_at IS NULL AND shared_circle_id IS NULL`,
   )
     .bind(
       str(body?.parentName, 60),
@@ -120,7 +121,7 @@ export const onRequestDelete = authed(async (ctx, actor) => {
   const body = await readJson<{ id?: string }>(ctx.request)
   const id = str(body?.id, 20)
   if (!id) return badRequest('id requis.')
-  const res = await ctx.env.DB.prepare('UPDATE friend_families SET deleted_at = ? WHERE id = ? AND household_id = ? AND deleted_at IS NULL')
+  const res = await ctx.env.DB.prepare('UPDATE friend_families SET deleted_at = ? WHERE id = ? AND household_id = ? AND deleted_at IS NULL AND shared_circle_id IS NULL')
     .bind(nowSec(), id, actor.householdId)
     .run()
   return res.meta.changes ? ok() : notFound()

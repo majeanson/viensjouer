@@ -79,6 +79,8 @@ export interface Invitation {
   adults: number | null
   kids: number | null
   scope: 'friend' | 'family'
+  /** A shared circle's member: no address shown, but « Envoyer » works (the server mails their account). */
+  via_circle?: number
 }
 
 export interface Message {
@@ -95,6 +97,15 @@ export interface Group {
   id: string
   name: string
   families: string[]
+}
+
+/** A shared circle (« Les amis du parc »): first names only. familyId is the entry of MY book to invite that member with. */
+export interface SharedCircle {
+  id: string
+  name: string
+  myChildId: string
+  members: { key: string; me: boolean; parentName: string; childName: string; familyId: string | null }[]
+  invites: { id: string; familyId: string; token: string; expiresAt: number }[]
 }
 
 export interface WindowTarget {

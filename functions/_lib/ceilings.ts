@@ -8,7 +8,7 @@ export type Thing = keyof typeof CEILING
 
 const COUNT: Record<Thing, string> = {
   children: 'SELECT COUNT(*) AS n FROM children WHERE household_id = ? AND deleted_at IS NULL',
-  families: 'SELECT COUNT(*) AS n FROM friend_families WHERE household_id = ? AND deleted_at IS NULL',
+  families: 'SELECT COUNT(*) AS n FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND shared_circle_id IS NULL',
   encounters: 'SELECT COUNT(*) AS n FROM encounters WHERE household_id = ? AND deleted_at IS NULL',
   photos: 'SELECT COUNT(*) AS n FROM souvenirs s JOIN encounters e ON e.id = s.encounter_id WHERE e.household_id = ? AND s.deleted_at IS NULL',
 }

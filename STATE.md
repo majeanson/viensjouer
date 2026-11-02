@@ -8,14 +8,16 @@
 
 ## 0. Front door (read this, skip the ledger unless you need the why)
 
-**Where it stands (2026-10-29).** Phases 1 to 5 are shipped and live; the audit, paper-cards and declutter passes are done. Everything between §3 and the end of this file is a dated ledger of *why* things are the way they are: search it (`grep -n "keyword" STATE.md`), do not read it top to bottom.
+**Where it stands (2026-11-02).** Phases 1 to 5 are shipped and live; the audit, paper-cards and declutter passes are done; shared circles of 3+ families shipped 2026-11-02 (see §3). Everything between §3 and the end of this file is a dated ledger of *why* things are the way they are: search it (`grep -n "keyword" STATE.md`), do not read it top to bottom.
 
 **Open, in order:**
 1. A VoiceOver and a TalkBack pass on the reply page, and walk it on two real phones with two real emails (the only human step left from Phase 1).
 2. **Human steps that switch things on** (each is optional, nothing breaks without it): the Resend bounce webhook (`RESEND_WEBHOOK_SECRET`), Turnstile (`TURNSTILE_SITE_KEY` in wrangler.toml + `wrangler secret put TURNSTILE_SECRET`), the owner's mail alert (`ADMIN_EMAIL`). Details in the « Everything else on the list » entry.
 3. The same « Bâti par marc.portal » line in the other repos (see memory), and the Babillard export/plan bridge (to discuss first).
+4. **Big ideas raised 2026-11-02, not started** (ranked by Claude; Marc picked shared circles first): a drop-off card per child (allergies, emergency phone, who may pick up; seen only by the hosting family, expires with the rencontre); other caregivers in a household with a limited role (grandparent, sitter); a rain plan B for park meet-ups (one tap to move and tell everyone); a child's year as a private printable keepsake (clashes with the 60-day photo window); lending between linked families. Guard: any babysitting swap must never keep a balance of who owes whom (a score).
+5. **Shared circles, left for later:** nobody can remove another member (each family can only leave); « Ils t'ont invité » does not list shared-circle codes; a member reached only through a circle cannot become a one-to-one friend from that invitation (« Ajouter à mes amis » is not offered there); the open circles are not in the windows picker.
 
-**Budgets (`npm run check:bundle`):** entry 85.0 / 86 KB, lazy chunks 12 KB (French dictionary 11.1), stylesheet 5.5 / 6 KB. The dictionary and stylesheet caps were raised on purpose on 2026-10-29 (reasoning in `scripts/check-bundle.mjs`); the entry did not move. Read the output for « exceeded », not only « ok ».
+**Budgets (`npm run check:bundle`):** entry 85.4 / 86 KB (it was already 85.4 at 57a0000, before shared circles), lazy chunks 12 KB (French dictionary 11.1), stylesheet 5.5 / 6 KB. The dictionary and stylesheet caps were raised on purpose on 2026-10-29 (reasoning in `scripts/check-bundle.mjs`); the entry did not move. Read the output for « exceeded », not only « ok ».
 
 **Don't re-open (decided):** SMS, native app, discovery, ranking, hosts choosing their own two words, a class-wide shared code, the reply page opening offline (an answer tapped with no signal is already kept and sent later; the page itself needs a network).
 
@@ -48,6 +50,18 @@
 - **Push straight to `main`.** CI is the gate; fix forward.
 
 ## 3. What just shipped
+
+### Shared circles (« Les amis du parc ») — 2026-11-02
+
+Decided with Marc before building: **any member** can invite a family of their own book (the family accepts on its own, by a code; never a shared class-wide code); members see each other's **first names only** (parent and child: no face, no email, no phone); v1 does **one thing**: a member can invite the whole circle to a rencontre; and being in a circle **never links two families** (child_links stays a one-to-one choice).
+- **Migration 0025**: `shared_circles` (a name any member may change, `created_by` gives no powers), `shared_circle_members` (household + which child, `left_at`), `circle_invites.shared_circle_id` (the same two-word door and 14-day code), and on `friend_families` the trio `shared_circle_id` / `member_household_id` / `member_child_id`.
+- **The trick that keeps it small: hidden book entries.** Joining writes, in every member's book, an entry for every other member (`_lib/sharedCircles.ts` `joinCircle`), so links, answers, reminders, the agenda and notifications work unchanged. Those entries carry first names only, are filtered out of « Amis », the ceilings, imports, groups and windows (`shared_circle_id IS NULL`), and are soft-deleted both ways when either household leaves or erases itself. The last one out closes the circle and its open codes.
+- **Mail without leaking an address**: `FAMILY_EMAIL` resolves a hidden entry's address from the member's account at send time (never stored in someone else's book), and every send to such an entry has **no Reply-To** (invitation, single « Envoyer », change notice, thank-you; reminders never had one). `FAMILY_ACCOUNT` makes notifications and reminders reach the member.
+- **One invitation per account**: `mintInvitations` dedupes on `FAMILY_ACCOUNT_ANY` (linked household, circle member, or a book entry whose typed email is an account's), preferring the host's own entry. `GET /api/shared-circles` gives each member the entry of MY book to use, so a friend who is also in a circle is one family in the picker.
+- **Endpoints**: `shared-circles` (GET list with members and my open codes, POST start, PATCH rename, DELETE leave), `shared-circle-invite` (POST make/email a code for a family of my book, DELETE withdraw), `shared-circle-join` (GET state, POST join when signed in). With no account, `POST /api/r/<code>/claim` makes one and joins (no link, no book entry back). The door (`GET /api/r/<code>`) answers `{ circle: { …, circleName } }` and `CircleDoor` shows the shared variant. A rencontre code sent to a circle member answers « taken » to `link-invitation` and refuses a claim.
+- **Screens**: « Cercles partagés » on Amis (`SharedCircles`: closed rows, open = first names, « Inviter une famille », Renommer, Quitter with the 6 s undo); « Qui inviter ? » gets one button per circle and lists members outside my book by first name; the host page's « Ajouter une famille » offers circle members; members count as emailable.
+- **Caps**: 15 households per circle, 10 circles per household, the existing 20 open circle codes per household.
+- **Tests**: `functions/api/shared-circles.test.ts` on a real database (planted red twice: a Reply-To put back, the « Amis » filter removed); `e2e/shared.spec.ts` (Amis, start and leave with undo, picker, door with and without account, axe and 320 px in light and dark). The migration was applied with wrangler's local D1 engine on a throwaway folder. Not run here: `e2e:real` (it wipes `.wrangler/state`; CI runs it before deploying).
 
 ### Declutter pass — 2026-10-29
 

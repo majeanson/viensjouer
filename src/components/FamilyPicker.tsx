@@ -4,7 +4,7 @@ import { api } from '../lib/api'
 import { K } from '../lib/query'
 import { useT } from '../i18n'
 import { Why } from './Why'
-import type { Family, Group } from '../lib/types'
+import type { Family, Group, SharedCircle } from '../lib/types'
 import { Icon } from './Icon'
 
 // « Qui inviter ? » — the families as checkboxes, with the host's groups on top as one-tap
@@ -12,7 +12,9 @@ import { Icon } from './Icon'
 // never have to leave the form to add the first friend. Two first names are enough; the email
 // is optional (without it the host copies the link). The new family is ticked on the spot.
 // Controlled: the parent owns the Set. Shared by the new-rencontre form and the windows.
-export function FamilyPicker({ families, groups, selected, onChange, loaded = true }: { families: Family[]; groups: Group[]; selected: Set<string>; onChange: (s: Set<string>) => void; loaded?: boolean }) {
+// Shared circles (when given): one button picks the whole circle, like a group; members who are not in my book are listed under the
+// circle's name with first names only. A member who is also in my book is ticked through my own entry (the server says which).
+export function FamilyPicker({ families, groups, circles = [], selected, onChange, loaded = true }: { families: Family[]; groups: Group[]; circles?: SharedCircle[]; selected: Set<string>; onChange: (s: Set<string>) => void; loaded?: boolean }) {
   const t = useT()
   const qc = useQueryClient()
   // Open by itself only for a host whose book is EMPTY once it has loaded (never while it is still loading).
@@ -27,6 +29,9 @@ export function FamilyPicker({ families, groups, selected, onChange, loaded = tr
     else next.add(id)
     onChange(next)
   }
+  const inBook = new Set(families.map((f) => f.id))
+  const circleIds = (c: SharedCircle) => c.members.map((m) => m.familyId).filter((id): id is string => !!id)
+  const shownOnce = new Set<string>()
   const toggleGroup = (g: Group) => {
     const members = g.families.filter((id) => families.some((f) => f.id === id))
     const all = members.length > 0 && members.every((id) => selected.has(id))
@@ -79,7 +84,32 @@ export function FamilyPicker({ families, groups, selected, onChange, loaded = tr
           <span><strong>{f.child_first_name}</strong> <span className="muted small">· {f.parent_name}</span></span>
         </label>
       ))}
-      {families.length === 0 && <p className="muted">{t.encounters.noFamilies}</p>}
+      {families.length === 0 && circles.length === 0 && <p className="muted">{t.encounters.noFamilies}</p>}
+      {circles.map((c) => {
+        const ids = circleIds(c)
+        if (!ids.length) return null
+        const on = ids.every((id) => selected.has(id))
+        const extra = c.members.filter((m) => m.familyId && !inBook.has(m.familyId) && !shownOnce.has(m.familyId))
+        for (const m of extra) shownOnce.add(m.familyId!)
+        return (
+          <div key={c.id} role="group" aria-label={t.shared.inPicker(c.name)} style={{ marginTop: '0.75rem' }}>
+            <button type="button" className={`btn btn--small ${on ? 'btn--on' : ''}`} onClick={() => {
+              const next = new Set(selected)
+              for (const id of ids) {
+                if (on) next.delete(id)
+                else next.add(id)
+              }
+              onChange(next)
+            }}><Icon name="users" />{t.shared.inPicker(c.name)}</button>
+            {extra.map((m) => (
+              <label key={m.key} className="check">
+                <input type="checkbox" checked={selected.has(m.familyId!)} onChange={() => toggle(m.familyId!)} />
+                <span><strong>{m.childName}</strong> <span className="muted small">· {m.parentName}</span></span>
+              </label>
+            ))}
+          </div>
+        )
+      })}
 
       {adding ? (
         <div role="group" aria-label={t.families.add} className="card" style={{ marginTop: '0.5rem', background: 'var(--paper)' }} onKeyDown={(e) => { if (e.key === 'Enter' && e.target instanceof HTMLInputElement) { e.preventDefault(); void create(e.currentTarget) } }}>

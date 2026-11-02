@@ -37,7 +37,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
   const { results: circles } = await ctx.env.DB.prepare(
     `SELECT x.household_id AS host_household, ${HOST}, c.first_name AS host_child, NULL AS title, NULL AS starts_at, x.token, x.created_at AS at
        FROM circle_invites x JOIN friend_families f ON f.id = x.friend_family_id JOIN children c ON c.id = x.child_id
-      WHERE x.household_id != ?1 AND x.accepted_at IS NULL AND x.revoked_at IS NULL AND x.expires_at > ?2 AND f.deleted_at IS NULL AND f.linked_household_id IS NULL AND ${MINE}
+      WHERE x.household_id != ?1 AND x.shared_circle_id IS NULL AND x.accepted_at IS NULL AND x.revoked_at IS NULL AND x.expires_at > ?2 AND f.deleted_at IS NULL AND f.linked_household_id IS NULL AND ${MINE}
         AND ${NOT_YET}
       ORDER BY x.created_at DESC LIMIT 20`,
   )

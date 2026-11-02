@@ -9,6 +9,7 @@ import { EMAIL_RE } from '../auth/signup'
 import { findByCode } from '../link-invitation'
 import { notify, parentsOf } from '../../_lib/notify'
 import { NOTE } from '../../_lib/notifyCopy'
+import { findSharedByCode, joinCircle } from '../../_lib/sharedCircles'
 
 // THE reciprocity door. POST /api/r/<code>/claim { displayName, email, password } — the
 // invited parent, from the reply page, becomes a household of their own:
@@ -33,7 +34,7 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   if (!displayName) return badRequest('Ton prénom est requis.')
 
   const inv = await ctx.env.DB.prepare(
-    `SELECT i.id AS invitation_id, f.id AS family_id, f.child_first_name, f.child_birthdate, f.linked_household_id,
+    `SELECT i.id AS invitation_id, f.id AS family_id, f.child_first_name, f.child_birthdate, COALESCE(f.linked_household_id, f.member_household_id) AS linked_household_id,
             e.household_id AS host_household, e.child_id AS host_child, e.status,
             c.first_name AS host_child_name, c.birthdate AS host_child_birthdate, h.name AS host_household_name,
             (SELECT display_name FROM parents p WHERE p.household_id = e.household_id ORDER BY p.created_at LIMIT 1) AS host_parent,
@@ -63,7 +64,27 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
     }>()
   // A circle invitation is claimed the same way: it names a family of the host's book and a child of the host.
   const circle = inv ? null : await findByCode(ctx.env, code)
-  if (!inv && !circle?.circle_id) return lookupMiss(ctx.env, ctx.request)
+  // A SHARED circle's code (migration 0025): a new account that joins the circle, and nothing else (no link, no book entry back).
+  if (!inv && !circle?.circle_id) {
+    const shared = await findSharedByCode(ctx.env, code)
+    if (!shared) return lookupMiss(ctx.env, ctx.request)
+    if (shared.accepted_household) return conflict('Ce code a déjà servi : connecte-toi.')
+    if (await ctx.env.DB.prepare('SELECT email FROM parents WHERE email = ?').bind(email).first()) return conflict(ACCOUNT_UNAVAILABLE)
+    const ts = nowSec()
+    const householdId = newId()
+    const childId = newId()
+    try {
+      await ctx.env.DB.batch([
+        ctx.env.DB.prepare('INSERT INTO households (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)').bind(householdId, `La famille de ${displayName}`, ts, ts),
+        ctx.env.DB.prepare('INSERT INTO parents (email, household_id, display_name, password_hash, origin, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(email, householdId, displayName, await hashPassword(password), 'reply', ts),
+        ctx.env.DB.prepare('INSERT INTO children (id, household_id, first_name, birthdate, colour, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 0, ?, ?)').bind(childId, householdId, shared.family_child, shared.family_birthdate, '#5b9a8b', ts, ts),
+      ])
+    } catch {
+      return conflict(ACCOUNT_UNAVAILABLE)
+    }
+    await joinCircle(ctx.env, { circleId: shared.circle_id, circleName: shared.circle_name, householdId, childId, invitedBy: shared.inviter_household, inviteId: shared.invite_id })
+    return signedIn(ctx.env, email, childId)
+  }
   const who = inv ?? {
     family_id: circle!.family_id,
     child_first_name: circle!.family_child,
@@ -133,8 +154,12 @@ export const onRequestPost: PagesFunction<Env> = async (ctx) => {
   }
 
   await notify(ctx.env, await parentsOf(ctx.env, who.host_household), { kind: 'linked', url: '/amis', words: (lang) => NOTE.linked(lang, { name: displayName, child: who.child_first_name }) })
+  return signedIn(ctx.env, email, childId)
+}
+
+async function signedIn(env: Env, email: string, childId: string): Promise<Response> {
   try {
-    const { session, csrf } = await signInAs(ctx.env, email)
+    const { session, csrf } = await signInAs(env, email)
     const headers = new Headers({ 'content-type': 'application/json; charset=utf-8' })
     for (const c of sessionCookies(session, csrf)) headers.append('Set-Cookie', c)
     return new Response(JSON.stringify({ ok: true, email, childId }), { status: 201, headers })

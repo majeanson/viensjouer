@@ -60,6 +60,21 @@ ${SIGN}`,
   }
 }
 
+// « Inviter dans un cercle partagé »: no rencontre, only « join our named circle ». First names only, and the mail says so.
+export function sharedCircleMail(lang: MailLang, v: { parent: string; host: string; circle: string; link: string }): MailBody {
+  const fr = `${v.host} t’invite dans le cercle « ${v.circle} » sur Viens jouer. Les familles du cercle peuvent inviter tout le cercle d’un coup, et ne voient que vos prénoms.`
+  const en = `${v.host} invites you into the circle “${v.circle}” on Viens jouer. Families in the circle can invite the whole circle at once, and only see your first names.`
+  return {
+    subject: pick(lang, `${v.host} t’invite dans « ${v.circle} »`, `${v.host} invites you into “${v.circle}”`),
+    text: pick(lang, `Bonjour ${v.parent},\n\n${fr}\n\nOuvre ce lien (un compte gratuit, ou ton compte actuel) :\n${v.link}\n\n${SIGN}`, `Hello ${v.parent},\n\n${en}\n\nOpen this link (a free account, or your current one):\n${v.link}\n\n${SIGN}`),
+    html: pick(
+      lang,
+      p(`Bonjour ${e(v.parent)},`) + p(e(fr)) + p(`<a href="${v.link}">Ouvrir</a> (un compte gratuit, ou ton compte actuel).`) + p(SIGN),
+      p(`Hello ${e(v.parent)},`) + p(e(en)) + p(`<a href="${v.link}">Open</a> (a free account, or your current one).`) + p(SIGN),
+    ),
+  }
+}
+
 export function invitationMail(lang: MailLang, v: { parent: string; host: string; hostChild: string; child: string; title: string; when: string; friendOnly: boolean; link: string }): MailBody {
   const who = pick(
     lang,

@@ -13,6 +13,7 @@ import { headcount, hereAllowed, homeCardOrNull, parseDetails, souvenirsVisible,
 import { photosEnabled } from '../../_lib/photos'
 import { retiredHost } from '../../_lib/retired'
 import { findByCode } from '../link-invitation'
+import { findSharedByCode, firstName } from '../../_lib/sharedCircles'
 
 // THE install-free side. The token in the path is the whole credential: one card, one
 // family. No cookie, no CSRF (worker/index.ts exempts `r/`), rate-limited by address.
@@ -92,6 +93,9 @@ export const onRequestGet: PagesFunction<Env> = async (ctx) => {
     // The same two words may be a circle invitation (« Inviter dans mon cercle »): no rencontre, only « be linked with us ».
     const circle = await findByCode(ctx.env, ctx.params.token as string | undefined)
     if (circle?.circle_id) return ok({ circle: { hostName: circle.host_parent?.trim().split(/\s+/)[0] ?? null, hostChild: circle.host_child_name, familyChild: circle.family_child, used: circle.linked_household_id !== null } })
+    // Or an invitation into a SHARED circle (« Les amis du parc »): its name, who asked, and nothing about the members until one joins.
+    const shared = await findSharedByCode(ctx.env, normalizeLinkCode(ctx.params.token as string | undefined))
+    if (shared) return ok({ circle: { hostName: firstName(shared.inviter_parent) || null, hostChild: '', familyChild: shared.family_child, used: shared.accepted_household !== null, circleName: shared.circle_name } })
     return lookupMiss(ctx.env, ctx.request)
   }
   const alive = linkAlive(r.encounter, nowSec())

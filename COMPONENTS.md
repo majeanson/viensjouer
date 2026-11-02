@@ -42,7 +42,9 @@
 | `NotificationsCard` | Compte, Notifications: what you are told, and the switch for this device | In plain words; on iPhone it says to add the app to the home screen first. |
 | `LinkFamilies` | On an invitation page, for someone signed in with their own account: one tap links the two households | Not shown to the host, to a family already linked to another account, or in a trial. |
 | `CircleInvite` | On a family of Amis that is not linked: a code with no rencontre, sent by email, text or on paper | Nothing is sent by itself; the code stops working after 14 days. |
-| `CircleDoor` | What a two-word code opens when it is a circle invitation | Signed in: one tap (`LinkFamilies`). No account: a quick one is made and linked at once. |
+| `CircleDoor` | What a two-word code opens when it is a circle invitation | Signed in: one tap (`LinkFamilies`, or `SharedCircleJoin` for a shared circle). No account: a quick one is made and linked (or joined) at once. |
+| `SharedCircles` | « Cercles partagés » on Amis: named circles of several families | Closed rows; open: members by first name only, « Inviter une famille » from MY book (email, text, paper), rename, leave with undo. |
+| `SharedCircleJoin` | On a shared circle's door, for someone signed in: one tap to join | Child picker when several. Joining links nobody. |
 | `InvitedBy` | « Ils t'ont invité » on Amis: hosts who invited you and are not in your circle, one tap to add | Shows nothing when there is nobody to add. |
 | `PartnerNudge` | The one line on Rencontres asking a solo host to invite the other parent | |
 | `CardCode` | Home page: the two words of a card, one box each (a space jumps, a paste spreads); focus moves only while typing | |

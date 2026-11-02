@@ -7,11 +7,11 @@ import { nowSec } from '../_lib/ids'
 export const onRequestGet = authed(async (ctx, actor) => {
   const hh = actor.householdId
   const db = ctx.env.DB
-  const [household, parents, children, families, encounters, invitations, messages, groups, groupMembers, windows, windowTargets, homeCard, souvenirs, bring, changes, childLinks] = await db.batch([
+  const [household, parents, children, families, encounters, invitations, messages, groups, groupMembers, windows, windowTargets, homeCard, souvenirs, bring, changes, childLinks, sharedCircles] = await db.batch([
     db.prepare('SELECT id, name, tz, created_at FROM households WHERE id = ?').bind(hh),
     db.prepare('SELECT email, display_name, remind_host, notify_answers, created_at FROM parents WHERE household_id = ?').bind(hh),
     db.prepare('SELECT id, first_name, birthdate, colour, nap_start, nap_end, created_at FROM children WHERE household_id = ? AND deleted_at IS NULL').bind(hh),
-    db.prepare('SELECT id, parent_name, email, phone, child_first_name, child_birthdate, allergies, notes, nap_start, nap_end, created_at FROM friend_families WHERE household_id = ? AND deleted_at IS NULL').bind(hh),
+    db.prepare('SELECT id, parent_name, email, phone, child_first_name, child_birthdate, allergies, notes, nap_start, nap_end, shared_circle_id, created_at FROM friend_families WHERE household_id = ? AND deleted_at IS NULL').bind(hh),
     db.prepare('SELECT id, child_id, kind, title, starts_at, ends_at, place, address, note, status, series_id, details, created_at FROM encounters WHERE household_id = ? AND deleted_at IS NULL').bind(hh),
     db.prepare('SELECT i.encounter_id, i.friend_family_id, i.reply, i.reply_note, i.reply_at, i.remind_at, i.adults, i.kids, i.scope FROM invitations i JOIN encounters e ON e.id = i.encounter_id WHERE e.household_id = ? AND e.deleted_at IS NULL').bind(hh),
     db.prepare('SELECT m.encounter_id, m.author_kind, m.author_label, m.text, m.created_at FROM encounter_messages m JOIN encounters e ON e.id = m.encounter_id WHERE m.deleted_at IS NULL AND e.household_id = ? AND e.deleted_at IS NULL').bind(hh),
@@ -24,6 +24,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
     db.prepare('SELECT b.encounter_id, b.label, b.claimed_label FROM bring_items b JOIN encounters e ON e.id = b.encounter_id WHERE e.household_id = ? AND e.deleted_at IS NULL').bind(hh),
     db.prepare('SELECT c.encounter_id, c.field, c.old_value, c.new_value, c.created_at FROM encounter_changes c JOIN encounters e ON e.id = c.encounter_id WHERE e.household_id = ? AND e.deleted_at IS NULL').bind(hh),
     db.prepare('SELECT l.id, l.created_at, CASE WHEN l.household_a = ?1 THEN l.child_a ELSE l.child_b END AS my_child_id, c.first_name AS their_child FROM child_links l JOIN children c ON c.id = CASE WHEN l.household_a = ?1 THEN l.child_b ELSE l.child_a END WHERE (l.household_a = ?1 OR l.household_b = ?1) AND l.revoked_at IS NULL').bind(hh),
+    db.prepare('SELECT s.id, s.name, m.child_id AS my_child_id, m.joined_at FROM shared_circle_members m JOIN shared_circles s ON s.id = m.circle_id WHERE m.household_id = ? AND m.left_at IS NULL AND s.deleted_at IS NULL').bind(hh),
   ])
   const body = {
     exportedAt: nowSec(),
@@ -42,6 +43,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
     changes: changes.results,
     bring: bring.results,
     childLinks: childLinks.results,
+    sharedCircles: sharedCircles.results,
   }
   return new Response(JSON.stringify(body, null, 2), {
     headers: { 'content-type': 'application/json; charset=utf-8', 'content-disposition': 'attachment; filename="viens-jouer-mes-donnees.json"', 'cache-control': 'no-store' },

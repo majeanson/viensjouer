@@ -41,7 +41,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
     .bind(hh)
     .all<LinkRow>()
   const { results: book } = await ctx.env.DB.prepare(
-    'SELECT id, parent_name, child_first_name, child_birthdate, linked_household_id FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND linked_household_id IS NULL ORDER BY child_first_name',
+    'SELECT id, parent_name, child_first_name, child_birthdate, linked_household_id FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND linked_household_id IS NULL AND shared_circle_id IS NULL ORDER BY child_first_name',
   )
     .bind(hh)
     .all<{ id: string; parent_name: string; child_first_name: string; child_birthdate: string | null }>()

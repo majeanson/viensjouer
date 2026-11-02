@@ -15,6 +15,7 @@ import { sendEncounterInvitations } from '../_lib/inviteMail'
 import { notifyChanged, notifyInvited } from '../_lib/notifyEvents'
 import { mailRoom, recordMail } from '../_lib/mailBudget'
 import { cleanDetails, defaultScope, hereAllowed, isScope, parseDetails, type Scope } from '../_lib/kinds'
+import { FAMILY_ACCOUNT_ANY, FAMILY_EMAIL } from '../_lib/sharedCircles'
 
 // The host side of a rencontre.
 //   GET    /api/encounters            → upcoming + recent, with each invitation's reply
@@ -42,10 +43,13 @@ interface InviteRow {
   adults: number | null
   kids: number | null
   scope: Scope
+  via_circle: number
 }
 
+// via_circle: a shared circle's member (migration 0025). Their address is never shown; « Envoyer » still works, through the server.
 const INVITE_SELECT = `SELECT i.id, i.friend_family_id, i.token, i.reply, i.reply_note, i.reply_at, i.sent_at,
-                              f.parent_name, f.child_first_name, f.email, f.email_bounced_at, f.mail_stopped_at, f.allergies, i.adults, i.kids, i.scope
+                              f.parent_name, f.child_first_name, f.email, f.email_bounced_at, f.mail_stopped_at, f.allergies, i.adults, i.kids, i.scope,
+                              (f.shared_circle_id IS NOT NULL) AS via_circle
                          FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id`
 
 export const onRequestGet = authed(async (ctx, actor) => {
@@ -128,17 +132,21 @@ type Body = {
 
 async function mintInvitations(db: D1Database, householdId: string, encounterId: string, familyIds: string[], scope: Scope): Promise<{ familyId: string; token: string }[]> {
   if (!familyIds.length) return []
-  // Only families from THIS household's book, and not one already on the card.
+  // Only families from THIS household's book, and not one already on the card. One invitation per account: a family picked twice
+  // (my own entry AND a shared circle's hidden one, or two circles) is invited once, through my own entry when there is one.
   const { results: owned } = await db
-    .prepare(`SELECT id FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND id IN (${familyIds.map(() => '?').join(',')})`)
+    .prepare(`SELECT f.id, ${FAMILY_ACCOUNT_ANY} AS account FROM friend_families f WHERE f.household_id = ? AND f.deleted_at IS NULL AND f.id IN (${familyIds.map(() => '?').join(',')}) ORDER BY (f.shared_circle_id IS NOT NULL), f.created_at`)
     .bind(householdId, ...familyIds)
-    .all<{ id: string }>()
-  const { results: already } = await db.prepare('SELECT friend_family_id FROM invitations WHERE encounter_id = ?').bind(encounterId).all<{ friend_family_id: string }>()
+    .all<{ id: string; account: string | null }>()
+  const { results: already } = await db.prepare(`SELECT i.friend_family_id, ${FAMILY_ACCOUNT_ANY} AS account FROM invitations i JOIN friend_families f ON f.id = i.friend_family_id WHERE i.encounter_id = ?`).bind(encounterId).all<{ friend_family_id: string; account: string | null }>()
   const skip = new Set(already.map((r) => r.friend_family_id))
+  const accounts = new Set(already.map((r) => r.account).filter(Boolean))
   const ts = nowSec()
   const stmts: D1PreparedStatement[] = []
   const minted: { familyId: string; token: string }[] = []
-  for (const r of owned.filter((x) => !skip.has(x.id))) {
+  for (const r of owned) {
+    if (skip.has(r.id) || (r.account && accounts.has(r.account))) continue
+    if (r.account) accounts.add(r.account)
     const code = await freshLinkCode(db, 'invitations')
     minted.push({ familyId: r.id, token: code })
     stmts.push(
@@ -329,21 +337,22 @@ export const onRequestPatch = authed(async (ctx, actor) => {
 
 async function notifyChange(env: Parameters<typeof mailEnabled>[0], request: Request, householdId: string, origin: string, hostName: string, encounterId: string, title: string, changes: Change[], reason: string | null = null, hostEmail?: string): Promise<{ sent: number; skipped: number }> {
   const { results } = await env.DB.prepare(
-    `SELECT i.token, f.email, f.lang, f.parent_name, h.tz FROM invitations i
+    `SELECT i.token, ${FAMILY_EMAIL} AS email, f.lang, f.parent_name, h.tz, (f.shared_circle_id IS NOT NULL) AS via_circle FROM invitations i
        JOIN friend_families f ON f.id = i.friend_family_id
        JOIN encounters e ON e.id = i.encounter_id
        JOIN households h ON h.id = e.household_id
-      WHERE i.encounter_id = ? AND f.email IS NOT NULL AND f.mail_stopped_at IS NULL AND f.email_bounced_at IS NULL AND f.deleted_at IS NULL AND (i.reply IS NULL OR i.reply != 'no') LIMIT 40`,
+      WHERE i.encounter_id = ? AND ${FAMILY_EMAIL} IS NOT NULL AND f.mail_stopped_at IS NULL AND f.email_bounced_at IS NULL AND f.deleted_at IS NULL AND (i.reply IS NULL OR i.reply != 'no') LIMIT 40`,
   )
     .bind(encounterId)
-    .all<{ token: string; email: string; lang: string | null; parent_name: string; tz: string }>()
+    .all<{ token: string; email: string; lang: string | null; parent_name: string; tz: string; via_circle: number }>()
   let sent = 0
   const room = await mailRoom(env, householdId)
   for (const r of results.slice(0, room)) {
     const lang = mailLang(r.lang, request)
     const link = `${origin}/${paperCode(r.token)}`
     try {
-      await sendMail(env, { to: r.email, fromName: hostName, replyTo: hostEmail, ...withUnsubscribe(lang, origin, r.token, updateMail(lang, { parent: r.parent_name, host: hostName, title, lines: [...changeLines(changes, r.tz, lang), ...(reason ? [`${lang === 'fr' ? 'Le mot de l’hôte' : 'A word from the host'} : ${reason}`] : [])], link })) })
+      // A shared circle's member sees first names only: no Reply-To with the host's address.
+      await sendMail(env, { to: r.email, fromName: hostName, replyTo: r.via_circle ? undefined : hostEmail, ...withUnsubscribe(lang, origin, r.token, updateMail(lang, { parent: r.parent_name, host: hostName, title, lines: [...changeLines(changes, r.tz, lang), ...(reason ? [`${lang === 'fr' ? 'Le mot de l’hôte' : 'A word from the host'} : ${reason}`] : [])], link })) })
       sent++
     } catch (err) {
       console.error('[mail] change', err)

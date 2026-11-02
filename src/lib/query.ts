@@ -11,6 +11,7 @@ export const K = {
   families: ['families'] as const,
   circle: ['circle'] as const,
   groups: ['groups'] as const,
+  sharedCircles: ['shared-circles'] as const,
   windows: ['windows'] as const,
   calendar: ['calendar'] as const,
   homeCard: ['home-card'] as const,

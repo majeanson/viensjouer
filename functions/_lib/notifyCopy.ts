@@ -17,6 +17,10 @@ export const NOTE = {
     title: pick(lang, `${v.name} est sur Viens jouer`, `${v.name} is on Viens jouer`),
     body: pick(lang, `${v.child} est maintenant dans ton cercle.`, `${v.child} is now in your circle.`),
   }),
+  joinedCircle: (lang: MailLang, v: { name: string; child: string; circle: string }): Words => ({
+    title: pick(lang, `${v.name} est dans « ${v.circle} »`, `${v.name} joined “${v.circle}”`),
+    body: pick(lang, `${v.child} fait maintenant partie du cercle.`, `${v.child} is now part of the circle.`),
+  }),
   changed: (lang: MailLang, v: { title: string; lines: string[] }): Words => ({
     title: pick(lang, `Changement : ${v.title}`, `Change: ${v.title}`),
     body: v.lines.slice(0, 3).join(' · '),

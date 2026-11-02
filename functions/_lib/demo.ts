@@ -35,6 +35,10 @@ export const SWEEP_ORDER: { table: string; sql: (ids: string) => string }[] = [
   { table: 'friend_group_members', sql: (i) => `DELETE FROM friend_group_members WHERE group_id IN (SELECT id FROM friend_groups WHERE household_id IN (${i}))` },
   { table: 'friend_groups', sql: (i) => `DELETE FROM friend_groups WHERE household_id IN (${i})` },
   { table: 'child_links', sql: (i) => `DELETE FROM child_links WHERE household_a IN (${i}) OR household_b IN (${i})` },
+  // Shared circles (0025): a circle goes when no OTHER household is still in it; the memberships go; the hidden entries the going
+  // households had in OTHER members' books are marked removed (their invitations keep the names, like a removed family).
+  { table: 'shared_circles', sql: (i) => `DELETE FROM shared_circles WHERE id IN (SELECT circle_id FROM shared_circle_members WHERE household_id IN (${i})) AND NOT EXISTS (SELECT 1 FROM shared_circle_members o WHERE o.circle_id = shared_circles.id AND o.left_at IS NULL AND o.household_id NOT IN (${i}))` },
+  { table: 'shared_circle_members', sql: (i) => `DELETE FROM shared_circle_members WHERE household_id IN (${i}) OR circle_id NOT IN (SELECT id FROM shared_circles)` },
   { table: 'friend_families', sql: (i) => `DELETE FROM friend_families WHERE household_id IN (${i})` },
   { table: 'children', sql: (i) => `DELETE FROM children WHERE household_id IN (${i})` },
   { table: 'home_cards', sql: (i) => `DELETE FROM home_cards WHERE household_id IN (${i})` },
@@ -69,7 +73,8 @@ export async function deleteHouseholds(env: Env, ids: string[]): Promise<void> {
     return env.DB.prepare(sql).bind(...Array.from({ length: uses }, () => ids).flat())
   })
   const unlink = env.DB.prepare(`UPDATE friend_families SET linked_household_id = NULL, linked_child_id = NULL WHERE linked_household_id IN (${marks})`).bind(...ids)
-  await env.DB.batch([unlink, ...stmts])
+  const unshare = env.DB.prepare(`UPDATE friend_families SET deleted_at = COALESCE(deleted_at, ?) WHERE member_household_id IN (${marks})`).bind(nowSec(), ...ids)
+  await env.DB.batch([unlink, unshare, ...stmts])
 }
 
 // Delete aged-out sandboxes. Bounded per call so a mint stays cheap.

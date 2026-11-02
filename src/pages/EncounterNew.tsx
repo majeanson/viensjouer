@@ -11,7 +11,7 @@ import { FREQUENCIES, MAX_OCCURRENCES, repeatTimes, type Frequency } from '../li
 import { FamilyPicker } from '../components/FamilyPicker'
 import { HomeCardForm } from '../components/HomeCard'
 import { Windows } from './Windows'
-import type { Child, Encounter, Family, Group, Invitation, Kind } from '../lib/types'
+import type { Child, Encounter, Family, Group, Invitation, Kind, SharedCircle } from '../lib/types'
 import { WhenInput } from '../components/WhenInput'
 import { Icon, kindIcon } from '../components/Icon'
 import { BackLink } from '../components/BackLink'
@@ -44,6 +44,7 @@ export function EncounterNew() {
   const kids = useQuery({ queryKey: K.children, queryFn: () => api<{ children: Child[] }>('children') })
   const fams = useQuery({ queryKey: K.families, queryFn: () => api<{ families: Family[] }>('families') })
   const grp = useQuery({ queryKey: K.groups, queryFn: () => api<{ groups: Group[] }>('groups') })
+  const shared = useQuery({ queryKey: K.sharedCircles, queryFn: () => api<{ circles: SharedCircle[] }>('shared-circles') })
   const placesQ = useQuery({ queryKey: ['places'], queryFn: () => api<{ places: { place: string; map_url: string | null; address: string | null; kind: string }[] }>('places'), staleTime: 60_000 })
   const [reused, setReused] = useState(false)
   const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
@@ -148,7 +149,10 @@ export function EncounterNew() {
     fill(params.get('say') ?? '')
   }, [fams.data])
 
-  const mailableNow = (fams.data?.families ?? []).some((f) => picked.has(f.id) && f.email && !f.mail_stopped_at && !f.email_bounced_at)
+  // Members of a shared circle who are not in my book have an account: the server can always mail them (their address stays hidden).
+  const bookIds = new Set((fams.data?.families ?? []).map((f) => f.id))
+  const circlePicked = new Set((shared.data?.circles ?? []).flatMap((c) => c.members).map((m) => m.familyId).filter((id): id is string => !!id && picked.has(id) && !bookIds.has(id)))
+  const mailableNow = circlePicked.size > 0 || (fams.data?.families ?? []).some((f) => picked.has(f.id) && f.email && !f.mail_stopped_at && !f.email_bounced_at)
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setErr(null)
@@ -201,7 +205,7 @@ export function EncounterNew() {
   ]
 
   // Families picked that can be emailed right now (an address, no stop, no bounce).
-  const mailable = (fams.data?.families ?? []).filter((f) => picked.has(f.id) && f.email && !f.mail_stopped_at && !f.email_bounced_at).length
+  const mailable = circlePicked.size + (fams.data?.families ?? []).filter((f) => picked.has(f.id) && f.email && !f.mail_stopped_at && !f.email_bounced_at).length
   const slots = napSlots([children.find((c) => c.id === chosen) ?? {}, ...(fams.data?.families ?? []).filter((f) => picked.has(f.id))])
   const napChips: [string, string][] = [
     [t.form.quick.beforeNap(clockLabel(slots.before, lang)), slots.before],
@@ -255,7 +259,7 @@ export function EncounterNew() {
           <div className="card">
             <h3><Icon name="users" />{t.encounters.invite}</h3>
             {lastIds.length > 0 && !lastIds.every((id) => picked.has(id)) && <button type="button" className="btn btn--small" onClick={() => setPicked((p) => new Set([...p, ...lastIds]))}><Icon name="history" />{t.form.sameAsLast}</button>}
-            <FamilyPicker loaded={!!fams.data} families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
+            <FamilyPicker loaded={!!fams.data} families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} circles={shared.data?.circles ?? []} selected={picked} onChange={setPicked} />
             {me.mail && picked.size > 0 && (
               <p className="muted small" style={{ margin: '0.75rem 0 0' }}><Icon name={mailable > 0 ? 'mail' : 'note'} />{mailable > 0 ? t.encounters.autoSend(mailable) : t.encounters.sendNowNone}</p>
             )}

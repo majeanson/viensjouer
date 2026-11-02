@@ -57,7 +57,7 @@ export const onRequestPost = authed(async (ctx, actor) => {
   if (!child) return badRequest('Enfant inconnu.')
   const wanted = (Array.isArray(body?.families) ? body!.families : []).filter((v): v is string => typeof v === 'string').slice(0, 100)
   if (!wanted.length) return badRequest('Choisis au moins une famille.')
-  const { results: owned } = await ctx.env.DB.prepare(`SELECT id FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND id IN (${wanted.map(() => '?').join(',')})`)
+  const { results: owned } = await ctx.env.DB.prepare(`SELECT id FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND shared_circle_id IS NULL AND id IN (${wanted.map(() => '?').join(',')})`)
     .bind(actor.householdId, ...wanted)
     .all<{ id: string }>()
   if (!owned.length) return badRequest('Aucune de ces familles n’est dans ton carnet.')

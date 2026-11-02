@@ -28,7 +28,7 @@ export function cleanImportRows(raw: unknown): ImportRow[] | null {
 
 /** One batch; a family already in the book with the same child and parent names (live) is skipped, not doubled. */
 export async function insertFamilies(db: D1Database, householdId: string, rows: ImportRow[]): Promise<{ added: number; skipped: number }> {
-  const { results } = await db.prepare('SELECT lower(parent_name) AS p, lower(child_first_name) AS c FROM friend_families WHERE household_id = ? AND deleted_at IS NULL').bind(householdId).all<{ p: string; c: string }>()
+  const { results } = await db.prepare('SELECT lower(parent_name) AS p, lower(child_first_name) AS c FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND shared_circle_id IS NULL').bind(householdId).all<{ p: string; c: string }>()
   const have = new Set(results.map((x) => `${x.p}|${x.c}`))
   const ts = nowSec()
   const stmts: D1PreparedStatement[] = []

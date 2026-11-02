@@ -14,7 +14,7 @@ import { fromRow, isPrivate, showValue, type ChangeRow } from '../lib/changes'
 import { Why } from '../components/Why'
 import { kidsComing } from '../lib/scope'
 import { useDeferredRemove, useToast } from '../lib/toast'
-import type { Encounter, Family, Invitation, Message, Relais, Souvenir } from '../lib/types'
+import type { Encounter, Family, Invitation, Message, Relais, Souvenir, SharedCircle } from '../lib/types'
 import { Icon, kindIcon } from '../components/Icon'
 import { BackLink } from '../components/BackLink'
 import { MessageBoard, boardNewCount, type BoardMessage } from '../components/MessageBoard'
@@ -76,6 +76,7 @@ export function EncounterDetail() {
   const msgRm = useDeferredRemove()
   const q = useQuery({ queryKey: K.encounter(id), queryFn: () => api<Detail>(`encounters?id=${id}`), refetchInterval: 30_000 })
   const fams = useQuery({ queryKey: K.families, queryFn: () => api<{ families: Family[] }>('families') })
+  const shared = useQuery({ queryKey: K.sharedCircles, queryFn: () => api<{ circles: SharedCircle[] }>('shared-circles') })
   const health = useQuery({ queryKey: ['health'], queryFn: () => api<{ photos: boolean }>('health'), staleTime: 60_000 })
   const [copied, setCopied] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -217,7 +218,9 @@ export function EncounterDetail() {
   const canThank = e.status !== 'cancelled' && e.starts_at <= nowSecs && nowSecs - e.starts_at <= 30 * 86_400 && !e.thanked_at
   const changes = rawChanges ?? []
   const invited = new Set(invitations.map((i) => i.friend_family_id))
-  const notYet = (fams.data?.families ?? []).filter((f) => !invited.has(f.id))
+  // The families of my book, then the members of my shared circles that are not in it (first names only), each once.
+  const fromCircles = (shared.data?.circles ?? []).flatMap((c) => c.members).filter((m) => m.familyId).map((m) => ({ id: m.familyId!, child_first_name: m.childName, parent_name: m.parentName }))
+  const notYet = [...(fams.data?.families ?? []), ...fromCircles].filter((f, i, all) => !invited.has(f.id) && all.findIndex((x) => x.id === f.id) === i)
   const relaisOf = (invId: string) => relais.find((r) => r.invitation_id === invId)
   // The head-count, read from the families that said yes: one child for a friend-only invitation,
   // what the family said (or one) for a whole-family one.
@@ -232,7 +235,7 @@ export function EncounterDetail() {
   ]
   const silent = invitations.filter((i) => !i.reply)
   // Who can be emailed right now: an address, mail wired, no « ne plus recevoir », no bounce.
-  const canMail = (i: Invitation) => !!me.mail && !!i.email && !i.email_bounced_at && !i.mail_stopped_at
+  const canMail = (i: Invitation) => !!me.mail && (!!i.email || !!i.via_circle) && !i.email_bounced_at && !i.mail_stopped_at
   const unsentMail = invitations.filter((i) => !i.reply && !i.sent_at && canMail(i))
   const silentWithMail = invitations.filter((i) => !i.reply && !!i.sent_at && canMail(i))
   const anyEmail = invitations.some(canMail)
@@ -272,7 +275,7 @@ export function EncounterDetail() {
           e={e}
           gift={e.details.gift ?? null}
           planB={e.details.planB ?? null}
-          canNotify={!!me.mail && invitations.some((i) => i.email && i.reply !== 'no')}
+          canNotify={!!me.mail && invitations.some((i) => (i.email || i.via_circle) && i.reply !== 'no')}
           onClose={() => setEditing(false)}
           onSaved={(r) => {
             setEditing(false)
@@ -558,7 +561,7 @@ export function EncounterDetail() {
           <p className="muted small">{t.encounters.postponeHint}</p>
           <label className="field"><span>{t.encounters.postponeWhy}</span><input className="input" name="why" maxLength={200} placeholder={t.encounters.postponePlaceholder} /></label>
           {e.series_id && <label className="check"><input type="checkbox" name="series" /><span>{t.encounters.postponeSeries}</span></label>}
-          {!!me.mail && invitations.some((i) => i.email && i.reply !== 'no') && <label className="check"><input type="checkbox" name="notify" defaultChecked /><span>{t.edit.notify}</span></label>}
+          {!!me.mail && invitations.some((i) => (i.email || i.via_circle) && i.reply !== 'no') && <label className="check"><input type="checkbox" name="notify" defaultChecked /><span>{t.edit.notify}</span></label>}
           <div className="cluster">
             <button className="btn btn--primary" disabled={patch.isPending}>{t.encounters.postpone}</button>
             <button type="button" className="btn" onClick={() => setPostponing(false)}>{t.edit.cancel}</button>
@@ -582,7 +585,7 @@ export function EncounterDetail() {
           <h3><Icon name="message" />{t.encounters.whyCancel}</h3>
           <p className="muted small">{t.encounters.whyCancelHint}</p>
           <label className="field"><span className="sr-only">{t.encounters.whyCancel}</span><input className="input" name="why" maxLength={200} placeholder={t.encounters.whyCancelPlaceholder} /></label>
-          {!!me.mail && invitations.some((i) => i.email && i.reply !== 'no') && <label className="check"><input type="checkbox" name="notify" /><span>{t.edit.notify}</span></label>}
+          {!!me.mail && invitations.some((i) => (i.email || i.via_circle) && i.reply !== 'no') && <label className="check"><input type="checkbox" name="notify" /><span>{t.edit.notify}</span></label>}
           <button className="btn btn--primary" disabled={message.isPending}>{t.board.send}</button>
         </form>
       )}

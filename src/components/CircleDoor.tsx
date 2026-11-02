@@ -8,12 +8,15 @@ import { useT } from '../i18n'
 import { Header } from './Header'
 import { Icon } from './Icon'
 import { LinkFamilies } from './LinkFamilies'
+import { SharedCircleJoin } from './SharedCircleJoin'
 
 export interface CircleInfo {
   hostName: string | null
   hostChild: string
   familyChild: string
   used: boolean
+  /** Set for an invitation into a SHARED circle (« Les amis du parc »): joining it links nobody. */
+  circleName?: string
 }
 
 // The page a two-word code opens when it is a CIRCLE invitation (« Inviter dans mon cercle »): no rencontre, just « would you like to be
@@ -33,19 +36,20 @@ export function CircleDoor({ token, info }: { token: string; info: CircleInfo })
     onError: (e: Error) => setErr(e.message),
   })
   const host = info.hostName ?? ''
+  const shared = info.circleName !== undefined
   return (
     <div className="shell">
       <Header />
       <main id="main" tabIndex={-1}>
         <section className="card">
-          <p className="kind" style={{ margin: 0 }}>{t.circleDoor.kind}</p>
-          <h1 style={{ marginTop: '0.25rem' }}>{t.circleDoor.title(host)}</h1>
-          <p className="muted">{t.circleDoor.hint(info.hostChild, info.familyChild)}</p>
+          <p className="kind" style={{ margin: 0 }}>{shared ? t.shared.doorKind : t.circleDoor.kind}</p>
+          <h1 style={{ marginTop: '0.25rem' }}>{shared ? t.shared.doorTitle(host, info.circleName!) : t.circleDoor.title(host)}</h1>
+          <p className="muted">{shared ? t.shared.doorHint : t.circleDoor.hint(info.hostChild, info.familyChild)}</p>
         </section>
         {info.used && !me.signedIn ? (
           <div className="notice" role="status">{t.circleDoor.used} <Link to="/">{t.circleDoor.signIn}</Link></div>
         ) : me.signedIn ? (
-          <LinkFamilies token={token} />
+          shared ? <SharedCircleJoin token={token} /> : <LinkFamilies token={token} />
         ) : (
           <>
             <ValidForm className="card" onSubmit={(ev) => { ev.preventDefault(); setErr(null); claim.mutate(Object.fromEntries(new FormData(ev.currentTarget).entries())) }}>

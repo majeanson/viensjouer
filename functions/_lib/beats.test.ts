@@ -1,14 +1,24 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { realDb } from './testDb'
 import { beat, beatAge } from './beats'
 import { warnIfMailNearFree } from './mailBudget'
 import { onRequestGet as health } from '../api/health'
 import { nowSec } from './ids'
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 
 describe('cron heartbeat', () => {
+  // Freeze the clock. beat() stores nowSec() and beatAge()/health read nowSec()
+  // again; a real second boundary falling between the two makes the age 1 instead
+  // of 0, which flaked `npm test` red on main after #8 (and that gates the deploy).
+  // A fixed Date.now makes every nowSec() in a test resolve to the same second.
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000)
+  })
   it('is null until the cron has run once, then counts seconds since', async () => {
     const { db, env } = realDb()
     expect(await beatAge(env, 'cron')).toBeNull()

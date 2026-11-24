@@ -9,7 +9,7 @@
 
 import type { Env } from './env'
 import { nowSec } from './ids'
-import { timingSafeBytes } from './password'
+import { safeEqual, timingSafeBytes } from './password'
 
 const SESSION_COOKIE = 'vj_session'
 const CSRF_COOKIE = 'vj_csrf'
@@ -117,5 +117,8 @@ export async function currentParent(env: Env, request: Request): Promise<Current
 export function verifyCsrf(request: Request): boolean {
   const cookie = readCookie(request, CSRF_COOKIE)
   const header = request.headers.get('X-CSRF-Token')
-  return !!cookie && !!header && cookie === header
+  // Constant-time compare, like every other secret check here (safeEqual). A plain `===`
+  // short-circuits on the first differing byte; double-submit keeps the leak small, but
+  // this was the one compare in the app that wasn't timing-safe.
+  return !!cookie && !!header && safeEqual(cookie, header)
 }

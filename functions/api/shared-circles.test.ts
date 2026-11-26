@@ -14,6 +14,7 @@ import * as calendar from './calendar'
 import * as reply from './r/[token]'
 import * as claim from './r/claim'
 import * as link from './link-invitation'
+import * as byMe from './invited-by'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -131,6 +132,36 @@ describe('a shared circle, start to finish', () => {
     expect((await call(circles, 'Delete', s, marc, 'shared-circles', { id })).status).toBe(200)
     expect(rows(s, `SELECT deleted_at IS NOT NULL AS closed FROM shared_circles WHERE id = '${id}'`)).toEqual([{ closed: 1 }])
     expect(await list(s, 'marc@x.org')).toEqual([])
+  })
+})
+
+describe('« Ils t’ont invité » lists an open shared-circle code', () => {
+  const invitedBy = async (s: S, email: string) => (await json(await call(byMe, 'Get', s, await as(s, email), 'invited-by'))).hosts as Record<string, unknown>[]
+
+  it('shows it to the invitee (by email), first names only, and hides it once joined, withdrawn or expired', async () => {
+    const s = seed()
+    const marc = await as(s, 'marc@x.org')
+    const { id } = await json(await call(circles, 'Post', s, marc, 'shared-circles', { name: 'Les amis du parc' }))
+    const code = await json(await call(invite, 'Post', s, marc, 'shared-circle-invite', { circleId: id, familyId: 'fj' }))
+    const rows1 = await invitedBy(s, 'julie@x.org')
+    expect(rows1).toEqual([{ hostName: 'Marc', hostChild: 'Noé', title: null, startsAt: null, token: code.token, kind: 'shared', circleName: 'Les amis du parc' }])
+    expect(JSON.stringify(rows1)).not.toMatch(/@|Jeanson/)
+    // Not to the inviter, nor to a stranger.
+    expect(await invitedBy(s, 'marc@x.org')).toEqual([])
+    // Joined: gone, even though the code row is still there for history.
+    const julie = await as(s, 'julie@x.org')
+    expect((await call(join, 'Post', s, julie, 'shared-circle-join', { code: code.token })).status).toBe(200)
+    expect(await invitedBy(s, 'julie@x.org')).toEqual([])
+    // A member whose code was never used (another member's code for the same circle): still hidden, she is in.
+    s.db.exec(`INSERT INTO circle_invites (id, household_id, child_id, friend_family_id, token, created_at, expires_at, shared_circle_id) VALUES ('ci2', 'h1', 'c1', 'fj', 'deux-mots', ${nowSec()}, ${nowSec() + 86_400}, '${id}')`)
+    expect(await invitedBy(s, 'julie@x.org')).toEqual([])
+    // She leaves: the open code shows again; withdrawn or expired, it does not.
+    expect((await call(circles, 'Delete', s, julie, 'shared-circles', { id })).status).toBe(200)
+    expect((await invitedBy(s, 'julie@x.org')).map((h) => h.token)).toEqual(['deux-mots'])
+    s.db.exec(`UPDATE circle_invites SET expires_at = ${nowSec() - 1} WHERE id = 'ci2'`)
+    expect(await invitedBy(s, 'julie@x.org')).toEqual([])
+    s.db.exec(`UPDATE circle_invites SET expires_at = ${nowSec() + 86_400}, revoked_at = ${nowSec()} WHERE id = 'ci2'`)
+    expect(await invitedBy(s, 'julie@x.org')).toEqual([])
   })
 })
 

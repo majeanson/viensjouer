@@ -13,12 +13,14 @@ interface Host {
   title: string | null
   startsAt: number | null
   token: string
-  kind: 'rencontre' | 'circle'
+  kind: 'rencontre' | 'circle' | 'shared'
+  circleName?: string
 }
 
 // « Ils t'ont invité » on Amis: families that invited you (to a rencontre or into their circle) and are not in your circle yet, one tap
 // to add them: the same link as « Lier nos familles » (they land in your book already linked, so you can invite back). Shows nothing when
-// there is nobody to add.
+// there is nobody to add. An open code into a shared circle is its own line (the circle's name, the inviter's first name) and its button
+// joins that circle (POST /api/shared-circle-join), which links nobody.
 export function InvitedBy() {
   const t = useT()
   const { lang } = useLang()
@@ -28,9 +30,10 @@ export function InvitedBy() {
   const [childId, setChildId] = useState('')
   const children = kids.data?.children ?? []
   const add = useMutation({
-    mutationFn: (token: string) => api('link-invitation', { method: 'POST', body: { code: token, ...(childId ? { childId } : {}) } }),
-    onSuccess: () => {
-      for (const k of [['invited-by'], K.families, K.circle, K.calendar]) void qc.invalidateQueries({ queryKey: k })
+    mutationFn: (h: Host) => api(h.kind === 'shared' ? 'shared-circle-join' : 'link-invitation', { method: 'POST', body: { code: h.token, ...(childId ? { childId } : {}) } }),
+    onSuccess: (_r, h) => {
+      const keys = h.kind === 'shared' ? [['invited-by'], K.sharedCircles] : [['invited-by'], K.families, K.circle, K.calendar]
+      for (const k of keys) void qc.invalidateQueries({ queryKey: k })
     },
   })
   const hosts = q.data?.hosts ?? []
@@ -55,9 +58,13 @@ export function InvitedBy() {
           <span>
             <strong>{h.hostName ?? t.invitedBy.someone}</strong> <span className="muted small">· {h.hostChild}</span>
             <br />
-            <span className="muted small">{h.kind === 'circle' ? t.invitedBy.circle : `${h.title ?? ''}${h.startsAt ? ` · ${whenShort(h.startsAt, lang)}` : ''}`}</span>
+            <span className="muted small">
+              {h.kind === 'shared' ? t.invitedBy.shared(h.circleName ?? '') : h.kind === 'circle' ? t.invitedBy.circle : `${h.title ?? ''}${h.startsAt ? ` · ${whenShort(h.startsAt, lang)}` : ''}`}
+            </span>
           </span>
-          <button className="btn btn--small btn--primary" disabled={add.isPending || (many && !childId)} onClick={() => add.mutate(h.token)}>{t.invitedBy.add}</button>
+          <button className="btn btn--small btn--primary" disabled={add.isPending || (many && !childId)} onClick={() => add.mutate(h)}>
+            {h.kind === 'shared' ? <><Icon name="users" />{t.invitedBy.join}</> : t.invitedBy.add}
+          </button>
         </div>
       ))}
     </section>

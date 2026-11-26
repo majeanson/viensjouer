@@ -217,6 +217,8 @@ export const EN: Core = {
     hint: 'Add them to your friends: you join each other’s circle, and you can invite them back.',
     add: 'Add to my friends',
     circle: 'Wants you in their circle',
+    shared: (name: string) => `Shared circle “${name}”`,
+    join: 'Join',
     someone: 'A family',
   },
   circleInvite: {

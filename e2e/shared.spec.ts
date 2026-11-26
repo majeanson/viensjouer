@@ -140,6 +140,22 @@ test('signed in: the shared code asks for one tap to join, and never offers to l
   await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'shared-circle-join')?.body).toEqual({ code: 'banquet-liseron' })
 })
 
+test('« Ils t’ont invité » lists an open shared-circle code by its name and the inviter’s first name; « Rejoindre » joins it', async ({ page }) => {
+  let hosts = [{ hostName: 'Julie', hostChild: 'Léa', title: null, startsAt: null, token: 'banquet-liseron', kind: 'shared', circleName: 'La garderie' }]
+  const stub = await host(page, {
+    'GET invited-by': () => ({ json: { hosts } }),
+    'POST shared-circle-join': () => ((hosts = []), { json: { state: 'member', circleId: 's2' } }),
+  })
+  await page.goto('/amis')
+  const card = page.getByRole('region', { name: 'Ils t’ont invité' })
+  await expect(card).toContainText('Cercle partagé « La garderie »')
+  await expect(card).toContainText('Julie')
+  await card.getByRole('button', { name: 'Rejoindre' }).click()
+  await expect.poll(() => stub.calls.find((c) => c.method === 'POST' && c.path === 'shared-circle-join')?.body).toEqual({ code: 'banquet-liseron' })
+  expect(stub.calls.some((c) => c.method === 'POST' && c.path === 'link-invitation')).toBe(false)
+  await expect(card).toHaveCount(0)
+})
+
 test('the open circle and its door have no serious accessibility violation and fit a 320 px screen, in light and dark', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 })
   await host(page, { 'GET r/banquet-liseron': () => ({ json: DOOR }) })

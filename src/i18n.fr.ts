@@ -215,6 +215,8 @@ export const FR = {
     hint: 'Ajoute-les à tes amis : vous entrez dans le cercle l’un de l’autre, et tu pourras les inviter à ton tour.',
     add: 'Ajouter à mes amis',
     circle: 'Veut te garder dans son cercle',
+    shared: (name: string) => `Cercle partagé « ${name} »`,
+    join: 'Rejoindre',
     someone: 'Une famille',
   },
   circleInvite: {

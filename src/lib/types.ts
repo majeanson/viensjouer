@@ -116,7 +116,8 @@ export interface WindowTarget {
   reply_note: string | null
   parent_name: string
   child_first_name: string
-  email: string | null
+  // 1 when the server has an address for « Envoyer » (never the address itself: a circle member's is theirs).
+  emailable: number
 }
 
 export interface OpenWindow {

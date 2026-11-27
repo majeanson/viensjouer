@@ -6,7 +6,7 @@ import { K } from '../lib/query'
 import { useT } from '../i18n'
 import { fromLocalInput, toLocalInput } from '../lib/format'
 import { FamilyPicker } from '../components/FamilyPicker'
-import type { Child, Family, Group } from '../lib/types'
+import type { Child, Family, Group, SharedCircle } from '../lib/types'
 import { WhenInput } from '../components/WhenInput'
 import { Icon } from '../components/Icon'
 
@@ -20,6 +20,7 @@ export function Windows() {
   const kids = useQuery({ queryKey: K.children, queryFn: () => api<{ children: Child[] }>('children') })
   const fams = useQuery({ queryKey: K.families, queryFn: () => api<{ families: Family[] }>('families') })
   const grp = useQuery({ queryKey: K.groups, queryFn: () => api<{ groups: Group[] }>('groups') })
+  const shared = useQuery({ queryKey: K.sharedCircles, queryFn: () => api<{ circles: SharedCircle[] }>('shared-circles') })
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [childId, setChildId] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -71,7 +72,7 @@ export function Windows() {
           <div className="field"><span><Icon name="clock" />{t.windows.to}</span><WhenInput name="endsAt" label={t.windows.to} defaultValue={toLocalInput(defaultStart + 3 * 3600)} /></div>
           <label className="field"><span><Icon name="note" />{t.encounters.note}</span><input className="input" name="note" maxLength={500} placeholder={t.windows.notePlaceholder} /></label>
           <h3><Icon name="users" />{t.encounters.invite}</h3>
-          <FamilyPicker loaded={!!fams.data} families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} selected={picked} onChange={setPicked} />
+          <FamilyPicker loaded={!!fams.data} families={fams.data?.families ?? []} groups={grp.data?.groups ?? []} circles={shared.data?.circles ?? []} selected={picked} onChange={setPicked} />
           <div className="cluster" style={{ marginTop: '0.75rem' }}>
             <button className="btn btn--primary" disabled={create.isPending || picked.size === 0 || !pickedChild}>{t.windows.create}</button>
           </div>

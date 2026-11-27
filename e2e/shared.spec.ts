@@ -114,6 +114,34 @@ test('« Qui inviter ? »: one tap picks the whole circle, members outside my bo
   await expect(page.getByRole('checkbox', { name: /Zoé/ })).not.toBeChecked()
 })
 
+test('« Je suis libre »: the circle is one tap in the window picker too, and the window goes to each member once', async ({ page }) => {
+  const stub = await host(page, { 'POST windows': () => ({ status: 201, json: { id: 'w1' } }) })
+  await page.goto('/rencontres/nouvelle')
+  await page.getByRole('tab', { name: 'Je suis libre, qui veut venir ?' }).click()
+  const circle = page.getByRole('group', { name: 'Cercle « Les amis du parc »' })
+  await expect(circle.getByText('Max', { exact: true })).toBeVisible()
+  await expect(circle.getByText('Léa', { exact: true })).toHaveCount(0)
+  await circle.getByRole('button', { name: 'Cercle « Les amis du parc »' }).click()
+  await expect(page.getByRole('checkbox', { name: /Léa/ })).toBeChecked()
+  await expect(page.getByRole('checkbox', { name: /Zoé/ })).not.toBeChecked()
+  await page.getByRole('button', { name: 'Envoyer la fenêtre' }).click()
+  await expect.poll(() => (stub.calls.find((c) => c.method === 'POST' && c.path === 'windows')?.body?.families as string[] | undefined)?.slice().sort()).toEqual(['f1', 'hidden-max'])
+})
+
+test('the window picker with a circle has no serious accessibility violation and fits a 320 px screen, in light and dark', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 })
+  await host(page)
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme })
+    await page.goto('/rencontres/nouvelle')
+    await page.getByRole('tab', { name: 'Je suis libre, qui veut venir ?' }).click()
+    await expect(page.getByRole('group', { name: 'Cercle « Les amis du parc »' })).toBeVisible()
+    const { violations } = await new AxeBuilder({ page }).analyze()
+    expect(violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id), scheme).toEqual([])
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), scheme).toBeLessThanOrEqual(320)
+  }
+})
+
 const DOOR = { circle: { hostName: 'Julie', hostChild: '', familyChild: 'Zoé', used: false, circleName: 'Les amis du parc' } }
 
 test('a visitor opens a shared circle code: its name, who asks, that only first names show, and a quick account', async ({ page }) => {

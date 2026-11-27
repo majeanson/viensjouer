@@ -50,7 +50,7 @@ export function WindowRow({ w }: { w: OpenWindow }) {
             <div className="paper">{linkLabel(tg.token, 'w')}</div>
             <div className="cluster">
               <button className="btn btn--small" onClick={() => void copy(tg.token)}>{copied === tg.token ? t.encounters.copied : t.encounters.copy}</button>
-              {me.mail && tg.email && <button className="btn btn--small" disabled={send.isPending} onClick={() => send.mutate(tg.id)}>{t.encounters.send}</button>}
+              {me.mail && !!tg.emailable && <button className="btn btn--small" disabled={send.isPending} onClick={() => send.mutate(tg.id)}>{t.encounters.send}</button>}
             </div>
           </div>
         ))}

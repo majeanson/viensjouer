@@ -15,6 +15,7 @@ import * as reply from './r/[token]'
 import * as claim from './r/claim'
 import * as link from './link-invitation'
 import * as byMe from './invited-by'
+import * as windows from './windows'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -34,7 +35,7 @@ async function as(s: S, email: string) {
   const { session, csrf } = await signInAs(s.env, email)
   return sessionCookies(session, csrf).map((c) => c.split(';')[0]).join('; ')
 }
-type Method = 'Get' | 'Post' | 'Patch' | 'Delete'
+type Method = 'Get' | 'Post' | 'Put' | 'Patch' | 'Delete'
 const call = (mod: object, method: Method, s: S, cookie: string, path: string, body?: unknown, params: Record<string, string> = {}) =>
   (mod[`onRequest${method}` as keyof typeof mod] as unknown as (c: unknown) => Promise<Response>)({ env: s.env, request: new Request(`https://x.test/api/${path}`, { method: method.toUpperCase(), headers: { cookie, 'content-type': 'application/json', 'cf-connecting-ip': '9.9.9.9' }, body: body === undefined ? undefined : JSON.stringify(body) }), params, waitUntil: () => {} })
 const json = async (r: Response) => (await r.json()) as Record<string, unknown>
@@ -200,6 +201,55 @@ describe('inviting the circle to a rencontre', () => {
     // Paul's invitation page offers no « Ajouter à mes amis »: a circle never links two families.
     const token = rows(s, `SELECT token FROM invitations WHERE id = '${paulRow.id}'`)[0].token as string
     expect((await json(await call(link, 'Get', s, await as(s, 'paul@x.org'), `link-invitation?code=${token}`))).state).toBe('taken')
+  })
+
+  it('a window can be opened to a member’s hidden entry: one target per account, mailed with no Reply-To, no address on the list', async () => {
+    const s = withMail(seed())
+    const { id, julie } = await marcAndJulie(s)
+    const p = await json(await call(invite, 'Post', s, julie, 'shared-circle-invite', { circleId: id, familyId: 'fp' }))
+    await call(claim, 'Post', s, '', `r/${p.token}/claim`, { displayName: 'Paul', email: 'paul@x.org', password: 'longenough' }, { token: String(p.token) })
+    const marc = await as(s, 'marc@x.org')
+    const hiddenPaul = rows(s, "SELECT f.id FROM friend_families f JOIN parents p ON p.household_id = f.member_household_id WHERE f.household_id = 'h1' AND p.email = 'paul@x.org'")[0].id as string
+    const hiddenJulie = rows(s, "SELECT id FROM friend_families WHERE household_id = 'h1' AND member_household_id = 'h2'")[0].id as string
+    const at = nowSec() + 3 * 86_400
+    const made = await call(windows, 'Post', s, marc, 'windows', { childId: 'c1', startsAt: at, endsAt: at + 7200, families: ['fj', hiddenJulie, hiddenPaul] })
+    expect(made.status).toBe(201)
+    const wid = (await json(made)).id as string
+    // Julie picked twice: one target, through Marc's own entry.
+    expect(rows(s, `SELECT friend_family_id FROM window_targets WHERE window_id = '${wid}' ORDER BY friend_family_id = 'fj' DESC`).map((r) => r.friend_family_id)).toEqual(['fj', hiddenPaul])
+    // The list says Paul can be emailed, and never carries an address.
+    const list = await json(await call(windows, 'Get', s, marc, 'windows'))
+    expect(JSON.stringify(list)).not.toMatch(/@/)
+    const targets = (list.windows as { targets: { id: string; child_first_name: string; emailable: number }[] }[])[0].targets
+    const paulTarget = targets.find((t) => t.child_first_name === 'Max')!
+    expect(paulTarget.emailable).toBe(1)
+    // « Envoyer »: to Paul's own address, with no Reply-To.
+    const sent: { to: string[]; reply_to?: string[] }[] = []
+    vi.stubGlobal('fetch', async (_u: string, init: { body: string }) => (sent.push(JSON.parse(init.body)), new Response('{"id":"x"}')))
+    expect((await call(windows, 'Put', s, marc, 'windows', { targetId: paulTarget.id })).status).toBe(200)
+    expect(sent).toEqual([expect.objectContaining({ to: ['paul@x.org'] })])
+    expect(sent[0].reply_to).toBeUndefined()
+    // A family of my own book still gets Marc's address to answer to.
+    const julieTarget = targets.find((t) => t.child_first_name === 'Léa')!
+    expect((await call(windows, 'Put', s, marc, 'windows', { targetId: julieTarget.id })).status).toBe(200)
+    expect(sent[1].reply_to).toEqual(['marc@x.org'])
+  })
+
+  it('a window refuses the entry of a member who left, even one whose hidden entry was left behind', async () => {
+    const s = seed()
+    const { id, julie } = await marcAndJulie(s)
+    const marc = await as(s, 'marc@x.org')
+    const hiddenJulie = rows(s, "SELECT id FROM friend_families WHERE household_id = 'h1' AND member_household_id = 'h2'")[0].id as string
+    const at = nowSec() + 3 * 86_400
+    const open = (families: string[]) => call(windows, 'Post', s, marc, 'windows', { childId: 'c1', startsAt: at, endsAt: at + 7200, families })
+    // A stale row: her membership ended but the entry was not swept (the live check must not rely on the sweep alone).
+    s.db.exec(`UPDATE shared_circle_members SET left_at = ${nowSec()} WHERE household_id = 'h2'`)
+    expect((await open([hiddenJulie])).status).toBe(400)
+    s.db.exec(`UPDATE shared_circle_members SET left_at = NULL WHERE household_id = 'h2'`)
+    expect((await open([hiddenJulie])).status).toBe(201)
+    // The ordinary way out: she leaves, the entry goes, the window refuses it.
+    expect((await call(circles, 'Delete', s, julie, 'shared-circles', { id })).status).toBe(200)
+    expect((await open([hiddenJulie])).status).toBe(400)
   })
 
   it('a member who deletes their account disappears from the others’ circle and picker', async () => {

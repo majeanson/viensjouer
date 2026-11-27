@@ -6,6 +6,7 @@ import { mailEnabled, sendMail } from '../_lib/mail'
 import { mailLang } from '../_lib/lang'
 import { windowMail, withUnsubscribe } from '../_lib/mailCopy'
 import { isDemoEmail } from '../_lib/demo'
+import { FAMILY_ACCOUNT_ANY, FAMILY_EMAIL } from '../_lib/sharedCircles'
 
 // « Une fenêtre ouverte » — host side. An offer of time (we are free Sunday afternoon) to
 // chosen families; each addressee gets a /w/<code> link and answers « on se voit ! » or
@@ -23,9 +24,10 @@ interface TargetRow {
   reply_note: string | null
   parent_name: string
   child_first_name: string
-  email: string | null
+  emailable: number
 }
 
+// No address leaves the server: « Envoyer » needs only to know one exists (a shared circle's member's lives in their account).
 export const onRequestGet = authed(async (ctx, actor) => {
   const since = nowSec() - 7 * 86_400
   const { results: windows } = await ctx.env.DB.prepare(
@@ -34,7 +36,7 @@ export const onRequestGet = authed(async (ctx, actor) => {
     .bind(actor.householdId, since)
     .all<{ id: string; child_id: string; starts_at: number; ends_at: number; note: string | null }>()
   const { results: targets } = await ctx.env.DB.prepare(
-    `SELECT t.id, t.window_id, t.token, t.reply, t.reply_note, f.parent_name, f.child_first_name, f.email
+    `SELECT t.id, t.window_id, t.token, t.reply, t.reply_note, f.parent_name, f.child_first_name, (${FAMILY_EMAIL} IS NOT NULL) AS emailable
        FROM window_targets t
        JOIN open_windows w ON w.id = t.window_id
        JOIN friend_families f ON f.id = t.friend_family_id
@@ -57,9 +59,26 @@ export const onRequestPost = authed(async (ctx, actor) => {
   if (!child) return badRequest('Enfant inconnu.')
   const wanted = (Array.isArray(body?.families) ? body!.families : []).filter((v): v is string => typeof v === 'string').slice(0, 100)
   if (!wanted.length) return badRequest('Choisis au moins une famille.')
-  const { results: owned } = await ctx.env.DB.prepare(`SELECT id FROM friend_families WHERE household_id = ? AND deleted_at IS NULL AND shared_circle_id IS NULL AND id IN (${wanted.map(() => '?').join(',')})`)
+  // Families of MY book, and a shared circle's hidden entry only while it is live (both of us still in an open circle). One target
+  // per account, as for a rencontre (encounters.ts mintInvitations): picked twice, it goes through my own entry.
+  const { results: picked } = await ctx.env.DB.prepare(
+    `SELECT f.id, ${FAMILY_ACCOUNT_ANY} AS account FROM friend_families f
+      WHERE f.household_id = ? AND f.deleted_at IS NULL AND f.id IN (${wanted.map(() => '?').join(',')})
+        AND (f.shared_circle_id IS NULL OR EXISTS (SELECT 1 FROM shared_circles s
+              JOIN shared_circle_members me ON me.circle_id = s.id AND me.household_id = f.household_id AND me.left_at IS NULL
+              JOIN shared_circle_members them ON them.circle_id = s.id AND them.household_id = f.member_household_id AND them.left_at IS NULL
+             WHERE s.id = f.shared_circle_id AND s.deleted_at IS NULL))
+      ORDER BY (f.shared_circle_id IS NOT NULL), f.created_at`,
+  )
     .bind(actor.householdId, ...wanted)
-    .all<{ id: string }>()
+    .all<{ id: string; account: string | null }>()
+  const accounts = new Set<string>()
+  const owned = picked.filter((r) => {
+    if (!r.account) return true
+    if (accounts.has(r.account)) return false
+    accounts.add(r.account)
+    return true
+  })
   if (!owned.length) return badRequest('Aucune de ces familles n’est dans ton carnet.')
   const id = newId()
   const ts = nowSec()
@@ -79,7 +98,7 @@ export const onRequestPut = authed(async (ctx, actor) => {
   const targetId = str(body?.targetId, 20)
   if (!targetId) return badRequest('targetId requis.')
   const row = await ctx.env.DB.prepare(
-    `SELECT t.token, f.lang, f.email, f.mail_stopped_at, f.email_bounced_at, f.parent_name, f.child_first_name, w.starts_at, w.ends_at, w.note, c.first_name AS host_child, h.tz
+    `SELECT t.token, f.lang, ${FAMILY_EMAIL} AS email, (f.shared_circle_id IS NOT NULL) AS via_circle, f.mail_stopped_at, f.email_bounced_at, f.parent_name, f.child_first_name, w.starts_at, w.ends_at, w.note, c.first_name AS host_child, h.tz
        FROM window_targets t
        JOIN open_windows w ON w.id = t.window_id
        JOIN friend_families f ON f.id = t.friend_family_id
@@ -88,7 +107,7 @@ export const onRequestPut = authed(async (ctx, actor) => {
       WHERE t.id = ? AND w.household_id = ? AND w.deleted_at IS NULL`,
   )
     .bind(targetId, actor.householdId)
-    .first<{ token: string; lang: string | null; email: string | null; mail_stopped_at: number | null; email_bounced_at: number | null; parent_name: string; child_first_name: string; starts_at: number; ends_at: number; note: string | null; host_child: string; tz: string }>()
+    .first<{ token: string; lang: string | null; email: string | null; via_circle: number; mail_stopped_at: number | null; email_bounced_at: number | null; parent_name: string; child_first_name: string; starts_at: number; ends_at: number; note: string | null; host_child: string; tz: string }>()
   if (!row) return notFound()
   if (!row.email) return badRequest('Cette famille n’a pas de courriel — copie le lien.')
   if (row.mail_stopped_at) return badRequest('Cette famille ne veut plus de courriels de l’app — copie le lien.')
@@ -97,7 +116,7 @@ export const onRequestPut = authed(async (ctx, actor) => {
   const link = `${new URL(ctx.request.url).origin}/w/${paperCode(row.token)}`
   const lang = mailLang(row.lang, ctx.request)
   const when = whenLong(row.starts_at, lang, row.tz)
-  await sendMail(ctx.env, { to: row.email, fromName: actor.displayName, replyTo: actor.email, ...withUnsubscribe(lang, new URL(ctx.request.url).origin, row.token, windowMail(lang, { parent: row.parent_name, host: actor.displayName, hostChild: row.host_child, child: row.child_first_name, when, note: row.note, link })) })
+  await sendMail(ctx.env, { to: row.email, fromName: actor.displayName, replyTo: row.via_circle ? undefined : actor.email, ...withUnsubscribe(lang, new URL(ctx.request.url).origin, row.token, windowMail(lang, { parent: row.parent_name, host: actor.displayName, hostChild: row.host_child, child: row.child_first_name, when, note: row.note, link })) })
   await recordMail(ctx.env, actor.householdId)
   return ok()
 })
